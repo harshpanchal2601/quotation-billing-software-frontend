@@ -11,7 +11,8 @@ import { useState, type PropsWithChildren } from 'react';
 
 import { EmptyState } from '../../../components/common/EmptyState';
 import { ErrorState } from '../../../components/common/ErrorState';
-import { toApiError } from '../../../services/apiClient';
+import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
+import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
 import {
   bankDetailsQueryKey,
   createBankDetailRequest,
@@ -34,6 +35,7 @@ export function BankDetailsPage() {
   const [deletingBankDetail, setDeletingBankDetail] = useState<BankDetail | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
+  const [dialogFieldErrors, setDialogFieldErrors] = useState<ApiFieldErrors>({});
   const [pageError, setPageError] = useState<string | null>(null);
 
   const query = useQuery({ queryKey: bankDetailsQueryKey, queryFn: listBankDetailsRequest });
@@ -45,7 +47,7 @@ export function BankDetailsPage() {
       closeDialog();
       setSuccessMessage('Bank account added.');
     },
-    onError: (error) => setDialogError(toApiError(error).message),
+    onError: setDialogApiError,
   });
 
   const updateMutation = useMutation({
@@ -55,7 +57,7 @@ export function BankDetailsPage() {
       closeDialog();
       setSuccessMessage('Bank account saved.');
     },
-    onError: (error) => setDialogError(toApiError(error).message),
+    onError: setDialogApiError,
   });
 
   const deleteMutation = useMutation({
@@ -80,12 +82,14 @@ export function BankDetailsPage() {
   function openAddDialog() {
     setEditingBankDetail(null);
     setDialogError(null);
+    setDialogFieldErrors({});
     setDialogOpen(true);
   }
 
   function openEditDialog(bankDetail: BankDetail) {
     setEditingBankDetail(bankDetail);
     setDialogError(null);
+    setDialogFieldErrors({});
     setDialogOpen(true);
   }
 
@@ -93,9 +97,18 @@ export function BankDetailsPage() {
     setDialogOpen(false);
     setEditingBankDetail(null);
     setDialogError(null);
+    setDialogFieldErrors({});
+  }
+
+  function setDialogApiError(error: unknown) {
+    const apiError = toApiError(error);
+    setDialogError(apiError.message);
+    setDialogFieldErrors(apiError.fieldErrors);
   }
 
   async function handleDialogSubmit(values: BankDetailsSubmitValues) {
+    setDialogError(null);
+    setDialogFieldErrors({});
     if (editingBankDetail === null) {
       await createMutation.mutateAsync(values);
       return;
@@ -120,7 +133,12 @@ export function BankDetailsPage() {
     );
   }
 
-  const isMutating = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || defaultMutation.isPending;
+  const busyBankDetailId = defaultMutation.isPending
+    ? defaultMutation.variables
+    : deleteMutation.isPending
+      ? deleteMutation.variables
+      : null;
+  const showRefreshing = query.isFetching && !query.isPending;
   const bankDetails = query.data;
 
   return (
@@ -134,6 +152,8 @@ export function BankDetailsPage() {
           <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={openAddDialog}>Add Bank Account</Button>
         </Stack>
         {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+        <RefreshIndicator show={showRefreshing} />
+        <Box aria-busy={query.isPending || showRefreshing}>
         {bankDetails.length === 0 ? (
           <EmptyState title="No bank accounts yet" description="Add a bank account to make payment details available for quotations." />
         ) : (
@@ -142,15 +162,17 @@ export function BankDetailsPage() {
             onEdit={openEditDialog}
             onDelete={setDeletingBankDetail}
             onSetDefault={(bankDetail) => void defaultMutation.mutateAsync(bankDetail.id)}
-            disabled={isMutating}
+            busyBankDetailId={busyBankDetailId}
           />
         )}
+        </Box>
       </Stack>
       <BankDetailsDialog
         open={dialogOpen}
         bankDetail={editingBankDetail}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
         errorMessage={dialogError}
+        fieldErrors={dialogFieldErrors}
         onClose={closeDialog}
         onSubmit={handleDialogSubmit}
       />
@@ -181,4 +203,3 @@ function SettingsPageShell({ title, description, children }: PropsWithChildren<{
     </Stack>
   );
 }
-

@@ -11,6 +11,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
@@ -48,6 +49,7 @@ export function BrandingAssetCard({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const displayUrl = previewUrl ?? resolveAssetUrl(imageUrl, updatedAt);
+  const busyLabel = fileName ? `Uploading ${fileName}...` : 'Updating image...';
 
   useEffect(() => () => {
     if (previewUrl !== null) URL.revokeObjectURL(previewUrl);
@@ -109,7 +111,7 @@ export function BrandingAssetCard({
   }
 
   return (
-    <Card variant="outlined" sx={{ height: '100%' }}>
+    <Card variant="outlined" sx={{ height: '100%' }} aria-busy={isBusy}>
       <CardContent>
         <Stack spacing={2}>
           <Box>
@@ -144,10 +146,16 @@ export function BrandingAssetCard({
             />
           </Box>
           {fileName ? <Typography variant="body2">Selected: {fileName}</Typography> : null}
+          {isBusy ? (
+            <Box role="status" aria-live="polite">
+              <Typography variant="body2" color="text.secondary" mb={0.5}>{busyLabel}</Typography>
+              <LinearProgress aria-label={busyLabel} />
+            </Box>
+          ) : null}
           {error ? <Alert severity="error">{error}</Alert> : null}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            <Button component="label" variant="outlined" startIcon={<UploadOutlinedIcon />} disabled={isBusy}>
-              {imageUrl ? 'Replace image' : 'Select image'}
+            <Button component="label" variant="outlined" startIcon={<UploadOutlinedIcon />} disabled={isBusy} loading={isBusy && fileName !== null}>
+              {isBusy && fileName !== null ? 'Uploading...' : imageUrl ? 'Replace image' : 'Select image'}
               <input
                 ref={inputRef}
                 hidden
@@ -161,9 +169,10 @@ export function BrandingAssetCard({
               color="error"
               startIcon={<DeleteOutlineOutlinedIcon />}
               disabled={isBusy || imageUrl === null}
+              loading={isBusy && fileName === null}
               onClick={() => setConfirmOpen(true)}
             >
-              Remove image
+              {isBusy && fileName === null ? 'Removing...' : 'Remove image'}
             </Button>
           </Stack>
         </Stack>
@@ -175,7 +184,7 @@ export function BrandingAssetCard({
         </DialogContent>
         <DialogActions>
           <Button autoFocus onClick={() => setConfirmOpen(false)} disabled={isBusy}>Cancel</Button>
-          <Button color="error" onClick={() => void handleDelete()} disabled={isBusy}>Remove</Button>
+          <Button color="error" onClick={() => void handleDelete()} loading={isBusy}>Remove</Button>
         </DialogActions>
       </Dialog>
     </Card>

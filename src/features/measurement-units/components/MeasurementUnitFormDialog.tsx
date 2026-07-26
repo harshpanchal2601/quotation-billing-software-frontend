@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { toApiError } from '../../../services/apiClient';
+import { applyApiFieldErrors } from '../../../services/formErrors';
 import {
   createMeasurementUnitRequest,
   updateMeasurementUnitRequest,
@@ -39,14 +40,7 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
   const [serverError, setServerError] = useState<string | null>(null);
   const isEditing = Boolean(unit);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<MeasurementUnitFormValues>({
+  const form = useForm<MeasurementUnitFormValues>({
     resolver: zodResolver(measurementUnitFormSchema),
     defaultValues: {
       name: '',
@@ -55,6 +49,14 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
       isActive: true,
     },
   });
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = form;
 
   const allowDecimalValue = watch('allowDecimal');
   const isActiveValue = watch('isActive');
@@ -103,12 +105,15 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
       onClose();
     },
     onError: (error) => {
-      setServerError(toApiError(error).message);
+      const apiError = toApiError(error);
+      applyApiFieldErrors(form, apiError.fieldErrors);
+      setServerError(apiError.message);
     },
   });
 
   async function onSubmit(values: MeasurementUnitFormValues) {
     setServerError(null);
+    form.clearErrors();
     try {
       await mutation.mutateAsync(values);
     } catch {

@@ -115,6 +115,17 @@ function renderDashboardPage() {
 }
 
 describe('Dashboard Frontend Feature', () => {
+  it('shows dashboard skeletons instead of false zero values during initial load', () => {
+    const pendingDashboard = deferred<DashboardOverviewData>();
+    vi.spyOn(dashboardApi, 'getDashboardOverviewRequest').mockReturnValue(pendingDashboard.promise);
+
+    renderDashboardPage();
+
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
+    expect(screen.queryByText('₹0.00')).not.toBeInTheDocument();
+    expect(screen.queryByText('No recent quotations')).not.toBeInTheDocument();
+  });
+
   it('renders metric cards with real backend quotation values and global master-data counts', async () => {
     vi.spyOn(dashboardApi, 'getDashboardOverviewRequest').mockResolvedValue(mockDashboardData);
 
@@ -135,3 +146,13 @@ describe('Dashboard Frontend Feature', () => {
     expect(screen.getByText('Accepted and completed quotation value')).toBeInTheDocument();
   });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}

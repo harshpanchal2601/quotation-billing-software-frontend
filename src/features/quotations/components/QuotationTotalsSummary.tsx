@@ -14,6 +14,8 @@ type QuotationTotalsSummaryProps = {
   taxMode?: TaxMode;
   quotationDiscountType?: DiscountType;
   isCalculating?: boolean;
+  state?: 'empty' | 'calculating' | 'ready' | 'invalid' | 'error';
+  message?: string | null;
 };
 
 export function QuotationTotalsSummary({
@@ -21,12 +23,21 @@ export function QuotationTotalsSummary({
   currency = 'INR',
   taxMode = 'CGST_SGST',
   isCalculating = false,
+  state,
+  message,
 }: QuotationTotalsSummaryProps) {
+  const summaryState = state ?? (totals ? 'ready' : isCalculating ? 'calculating' : 'empty');
+
   if (!totals) {
     return (
       <Card variant="outlined" sx={{ borderRadius: 2, bgcolor: 'background.paper', p: 2 }}>
-        <Typography variant="body2" color="text.secondary" align="center">
-          {isCalculating ? 'Calculating quotation totals...' : 'Add line items to generate calculation preview.'}
+        <Typography
+          variant="body2"
+          color={summaryState === 'error' || summaryState === 'invalid' ? 'warning.main' : 'text.secondary'}
+          align="center"
+          role={summaryState === 'error' ? 'alert' : 'status'}
+        >
+          {message || (isCalculating ? 'Calculating quotation totals...' : 'Add a valid line item to generate calculation preview.')}
         </Typography>
       </Card>
     );
@@ -39,6 +50,8 @@ export function QuotationTotalsSummary({
     <Card variant="outlined" sx={{ borderRadius: 2, bgcolor: 'background.paper', position: 'relative' }}>
       {isCalculating ? (
         <Box
+          role="status"
+          aria-live="polite"
           sx={{
             position: 'absolute',
             top: 0,
@@ -52,7 +65,12 @@ export function QuotationTotalsSummary({
             justifyContent: 'center',
           }}
         >
-          <CircularProgress size={24} />
+          <Box textAlign="center">
+            <CircularProgress size={24} aria-label="Calculating quotation totals" />
+            <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+              Calculating...
+            </Typography>
+          </Box>
         </Box>
       ) : null}
 
@@ -60,6 +78,16 @@ export function QuotationTotalsSummary({
         <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
           Calculation Summary
         </Typography>
+        {message ? (
+          <Typography
+            variant="caption"
+            color={summaryState === 'error' ? 'warning.main' : 'text.secondary'}
+            role={summaryState === 'error' ? 'alert' : 'status'}
+            sx={{ display: 'block', mb: 1 }}
+          >
+            {message}
+          </Typography>
+        ) : null}
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Row label="Subtotal" value={formatCurrency(totals.subtotal, currency)} />

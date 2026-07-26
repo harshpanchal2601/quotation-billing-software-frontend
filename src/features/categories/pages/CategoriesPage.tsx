@@ -15,6 +15,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { EmptyState } from '../../../components/common/EmptyState';
 import { ErrorState } from '../../../components/common/ErrorState';
+import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
 import { toApiError } from '../../../services/apiClient';
 import {
   deleteCategoryRequest,
@@ -93,7 +94,12 @@ export function CategoriesPage() {
 
   const sortValue = `${params.sortBy}:${params.sortOrder}`;
   const isFiltered = Boolean(params.search || params.isActive !== undefined);
-  const isMutating = statusMutation.isPending || deleteMutation.isPending;
+  const busyCategoryId = statusMutation.isPending
+    ? statusMutation.variables?.id
+    : deleteMutation.isPending
+      ? deleteMutation.variables?.id
+      : null;
+  const showRefreshing = query.isFetching && !query.isPending;
 
   function handleOpenCreate() {
     setEditingCategory(null);
@@ -170,6 +176,8 @@ export function CategoriesPage() {
         </TextField>
       </Stack>
 
+      <RefreshIndicator show={showRefreshing} />
+      <Box aria-busy={query.isPending || showRefreshing}>
       {query.isPending ? (
         <Stack spacing={1}>
           {Array.from({ length: 6 }).map((_, index) => (
@@ -206,7 +214,7 @@ export function CategoriesPage() {
 
           <CategoryTable
             categories={query.data.categories}
-            disabled={isMutating}
+            busyCategoryId={busyCategoryId}
             onView={(cat) => setDetailsCategoryId(cat.id)}
             onEdit={handleOpenEdit}
             onStatusChange={(cat) => setStatusTarget(cat)}
@@ -226,6 +234,7 @@ export function CategoriesPage() {
           />
         </>
       ) : null}
+      </Box>
 
       <CategoryFormDialog
         open={formOpen}

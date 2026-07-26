@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { toApiError } from '../../../services/apiClient';
+import { applyApiFieldErrors } from '../../../services/formErrors';
 import { createCategoryRequest, updateCategoryRequest } from '../api/categories.api';
 import { categoriesQueryKeys } from '../categories.query-keys';
 import { categoryFormSchema, type CategoryFormValues } from '../categories.schema';
@@ -36,14 +37,7 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
   const isEditing = Boolean(category);
   const isProtected = category ? isProtectedCategory(category.slug) : false;
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<CategoryFormValues>({
+  const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: '',
@@ -51,6 +45,14 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
       isActive: true,
     },
   });
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = form;
 
   const isActiveValue = watch('isActive');
 
@@ -94,12 +96,15 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
       onClose();
     },
     onError: (error) => {
-      setServerError(toApiError(error).message);
+      const apiError = toApiError(error);
+      applyApiFieldErrors(form, apiError.fieldErrors);
+      setServerError(apiError.message);
     },
   });
 
   async function onSubmit(values: CategoryFormValues) {
     setServerError(null);
+    form.clearErrors();
     try {
       await mutation.mutateAsync(values);
     } catch {

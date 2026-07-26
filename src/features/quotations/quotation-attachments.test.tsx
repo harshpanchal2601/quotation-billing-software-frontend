@@ -63,6 +63,16 @@ describe('Quotation Attachments Frontend Component', () => {
     vi.mocked(attachmentsApi.getQuotationAttachmentsRequest).mockResolvedValue(mockAttachmentListResponse);
   });
 
+  it('does not show the empty attachment state before the first request completes', () => {
+    const pendingAttachments = deferred<QuotationAttachmentListResponse>();
+    vi.mocked(attachmentsApi.getQuotationAttachmentsRequest).mockReturnValue(pendingAttachments.promise);
+
+    renderWithProviders(<QuotationAttachmentsSection quotationId={1} onFeedback={mockOnFeedback} />);
+
+    expect(screen.getByText(/Supporting Attachments/i)).toBeInTheDocument();
+    expect(screen.queryByText(/No supporting attachments uploaded/i)).not.toBeInTheDocument();
+  });
+
   it('renders attachment section and lists uploaded documents with size formatting', async () => {
     renderWithProviders(<QuotationAttachmentsSection quotationId={1} onFeedback={mockOnFeedback} />);
 
@@ -106,4 +116,29 @@ describe('Quotation Attachments Frontend Component', () => {
     expect(screen.getByText(/Delete Attachment\?/i)).toBeInTheDocument();
     expect(screen.getByText(/Are you sure you want to delete/i)).toBeInTheDocument();
   });
+
+  it('shows row-level download loading for the selected attachment only', async () => {
+    const pendingDownload = deferred<{ blob: Blob; filename: string }>();
+    vi.mocked(attachmentsApi.downloadQuotationAttachmentBlobRequest).mockReturnValue(pendingDownload.promise);
+
+    const user = userEvent.setup();
+    renderWithProviders(<QuotationAttachmentsSection quotationId={1} onFeedback={mockOnFeedback} />);
+
+    await screen.findAllByText('layout-drawing.pdf');
+    const downloadButtons = screen.getAllByRole('button', { name: /download/i });
+    await user.click(downloadButtons[0]!);
+
+    expect(screen.getByRole('button', { name: /downloading/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Download technical-specs.docx' })).not.toBeDisabled();
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}

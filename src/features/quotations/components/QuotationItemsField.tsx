@@ -29,15 +29,17 @@ export function QuotationItemsField({
   });
 
   const handleSelectItem = (index: number, selected: ItemOption | null) => {
+    const options = { shouldDirty: true, shouldTouch: true, shouldValidate: true };
+
     if (selected) {
-      setValue(`items.${index}.itemId`, selected.id);
-      setValue(`items.${index}.itemName`, selected.name);
-      setValue(`items.${index}.description`, selected.shortDescription || '');
-      setValue(`items.${index}.measurementUnit`, selected.measurementUnit.symbol);
-      setValue(`items.${index}.unitRate`, selected.defaultRate);
-      setValue(`items.${index}.gstRate`, selected.gstRate);
+      setValue(`items.${index}.itemId`, selected.id, options);
+      setValue(`items.${index}.itemName`, selected.name, options);
+      setValue(`items.${index}.description`, selected.shortDescription || '', options);
+      setValue(`items.${index}.measurementUnit`, selected.measurementUnit.symbol, options);
+      setValue(`items.${index}.unitRate`, selected.defaultRate, options);
+      setValue(`items.${index}.gstRate`, selected.gstRate, options);
     } else {
-      setValue(`items.${index}.itemId`, null);
+      setValue(`items.${index}.itemId`, null, options);
     }
   };
 

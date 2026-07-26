@@ -20,6 +20,7 @@ import {
   downloadQuotationAttachmentBlobRequest,
   getQuotationAttachmentPreviewBlobRequest,
 } from '../api/quotation-attachments.api';
+import { toApiError } from '../../../services/apiClient';
 import type { QuotationAttachment } from '../quotation-attachments.types';
 import { formatFileSize } from '../quotation-attachments.utils';
 
@@ -68,8 +69,9 @@ export function QuotationAttachmentPreviewDialog({
             if (active) setBlobUrl(createdUrl);
           }
         })
-        .catch((err: Error) => {
-          if (active) setError(err.message || 'Failed to load preview');
+        .catch((err: unknown) => {
+          const apiError = toApiError(err);
+          if (active && !apiError.cancelled) setError(apiError.message);
         })
         .finally(() => {
           if (active) setLoading(false);
@@ -113,8 +115,8 @@ export function QuotationAttachmentPreviewDialog({
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Download failed';
-      if (onDownloadError) onDownloadError(msg);
+      const apiError = toApiError(err);
+      if (onDownloadError && !apiError.cancelled) onDownloadError(apiError.message);
     } finally {
       setDownloading(false);
     }

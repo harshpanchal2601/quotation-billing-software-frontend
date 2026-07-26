@@ -4,6 +4,7 @@ import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithProviders } from '../../test/render';
+import { measurementUnitFormSchema } from './measurement-units.schema';
 import type { MeasurementUnitListItem } from './measurement-units.types';
 import { MeasurementUnitsPage } from './pages/MeasurementUnitsPage';
 
@@ -24,6 +25,24 @@ afterEach(() => {
 });
 
 describe('measurement unit frontend', () => {
+  it('validates measurement unit symbol length against the backend contract', () => {
+    const fiftyCharacterSymbol = 'A'.repeat(50);
+
+    expect(measurementUnitFormSchema.parse({
+      name: 'Long Symbol Unit',
+      symbol: fiftyCharacterSymbol,
+      allowDecimal: true,
+      isActive: true,
+    }).symbol).toBe(fiftyCharacterSymbol);
+
+    expect(measurementUnitFormSchema.safeParse({
+      name: 'Too Long Symbol Unit',
+      symbol: 'A'.repeat(51),
+      allowDecimal: true,
+      isActive: true,
+    }).success).toBe(false);
+  });
+
   it('renders measurement unit list and preserves exact symbol string casing', async () => {
     unitsApi.listMeasurementUnitsRequest.mockResolvedValue({
       measurementUnits: [unitListItem({ name: 'Square Meter', symbol: 'm²' })],

@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import axios from 'axios';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -87,7 +88,13 @@ describe('settings validation and utilities', () => {
     expect(parsed.accountNumber).toBe('001234567890');
     expect(maskAccountNumber(parsed.accountNumber)).toBe('••••••••7890');
     expect(maskAccountNumber('1234')).toBe('••••1234');
-    expect(bankDetailsSchema.safeParse({ ...bankFormValues(), ifscCode: 'BAD' }).success).toBe(false);
+    expect(bankDetailsSchema.parse({ ...bankFormValues(), ifscCode: ' barb0ahmeda ' }).ifscCode).toBe('BARB0AHMEDA');
+    expect(bankDetailsSchema.parse({ ...bankFormValues(), ifscCode: '' }).ifscCode).toBeUndefined();
+    const invalidIfsc = bankDetailsSchema.safeParse({ ...bankFormValues(), ifscCode: 'BAD' });
+    expect(invalidIfsc.success).toBe(false);
+    if (!invalidIfsc.success) {
+      expect(invalidIfsc.error.issues[0]?.message).toBe('Enter a valid 11-character IFSC code, for example BARB0AHMEDA.');
+    }
   });
 });
 
@@ -197,6 +204,35 @@ describe('BankDetailsPage', () => {
     }));
     expect(await screen.findByText('Bank account added.')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('dialog', { name: /add bank account/i })).not.toBeInTheDocument());
+  });
+
+  it('keeps the bank dialog open and maps API field errors', async () => {
+    cleanup();
+    bankApi.listBankDetailsRequest.mockResolvedValue([]);
+    bankApi.createBankDetailRequest.mockRejectedValue(new axios.AxiosError('Request failed', undefined, undefined, undefined, {
+      status: 400,
+      statusText: 'Bad Request',
+      headers: {},
+      config: { headers: new axios.AxiosHeaders() },
+      data: {
+        success: false,
+        message: 'Validation failed',
+        errors: { fieldErrors: { accountNumber: ['Account number already exists.'] } },
+      },
+    }));
+    renderSettings(<BankDetailsPage />);
+
+    await screen.findByText('No bank accounts yet');
+    await userEvent.click(screen.getByRole('button', { name: /add bank account/i }));
+    await userEvent.type(screen.getByLabelText(/bank name/i), 'HDFC Bank');
+    await userEvent.type(screen.getByLabelText(/account name/i), 'Buminex');
+    await userEvent.type(screen.getByLabelText(/account number/i), '001234567890');
+    await waitFor(() => expect(screen.getByRole('button', { name: /save account/i })).toBeEnabled());
+    await userEvent.click(screen.getByRole('button', { name: /save account/i }));
+
+    expect(await screen.findByText('Validation failed')).toBeInTheDocument();
+    expect(await screen.findByText('Account number already exists.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /add bank account/i })).toBeInTheDocument();
   });
 
   it('masks account numbers, edits, sets default and deletes with confirmation', async () => {

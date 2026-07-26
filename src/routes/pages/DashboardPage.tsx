@@ -12,10 +12,11 @@ import Grid from '@mui/material/Grid';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { ErrorState } from '../../components/common/ErrorState';
+import { toApiError } from '../../services/apiClient';
 import { useAuth } from '../../features/auth/auth.hooks';
 import { getDashboardOverviewRequest } from '../../features/dashboard/api/dashboard.api';
 import { DashboardMetricCard } from '../../features/dashboard/components/DashboardMetricCard';
@@ -50,6 +51,7 @@ export function DashboardPage() {
     queryKey: dashboardQueryKeys.overview(queryParams),
     queryFn: () => getDashboardOverviewRequest(queryParams),
     staleTime: 60000,
+    placeholderData: keepPreviousData,
   });
 
   const handlePeriodChange = (newPeriod: DashboardPeriod, newFrom?: string, newTo?: string) => {
@@ -93,7 +95,7 @@ export function DashboardPage() {
   if (isError || !data) {
     return (
       <ErrorState
-        message={error instanceof Error ? error.message : 'Failed to load dashboard overview data.'}
+        message={toApiError(error).message}
         onRetry={refetch}
       />
     );

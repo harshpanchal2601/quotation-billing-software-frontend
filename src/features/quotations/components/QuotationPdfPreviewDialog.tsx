@@ -51,12 +51,12 @@ export function QuotationPdfPreviewDialog({
   }, [pdfBlob]);
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" fullScreen={fullScreen}>
+    <Dialog open={open} onClose={() => (!isLoading ? onClose() : undefined)} fullWidth maxWidth="lg" fullScreen={fullScreen} aria-busy={isLoading}>
       <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h6" fontWeight={700}>
           Quotation PDF Preview — {quotationNumber}
         </Typography>
-        <IconButton aria-label="close" onClick={onClose} size="small">
+        <IconButton aria-label="close" onClick={onClose} size="small" disabled={isLoading}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -64,7 +64,7 @@ export function QuotationPdfPreviewDialog({
       <DialogContent dividers sx={{ p: 0, height: { xs: 'calc(100vh - 120px)', md: '75vh' }, display: 'flex', flexDirection: 'column' }}>
         {isLoading ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexGrow: 1, p: 4, gap: 2 }}>
-            <CircularProgress size={40} />
+            <CircularProgress size={40} aria-label="Generating PDF preview" />
             <Typography variant="body2" color="text.secondary">
               Generating PDF document for quotation {quotationNumber}...
             </Typography>
@@ -91,7 +91,7 @@ export function QuotationPdfPreviewDialog({
       </DialogContent>
 
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} color="inherit">
+        <Button onClick={onClose} color="inherit" disabled={isLoading}>
           Close
         </Button>
         <Button

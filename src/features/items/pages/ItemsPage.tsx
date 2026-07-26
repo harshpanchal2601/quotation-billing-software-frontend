@@ -15,6 +15,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { EmptyState } from '../../../components/common/EmptyState';
 import { ErrorState } from '../../../components/common/ErrorState';
+import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
 import { paths } from '../../../routes/routeConfig';
 import { toApiError } from '../../../services/apiClient';
 import { getCategoryOptionsRequest } from '../../categories/api/categories.api';
@@ -111,7 +112,12 @@ export function ItemsPage() {
       params.minRate !== undefined ||
       params.maxRate !== undefined,
   );
-  const isMutating = statusMutation.isPending || deleteMutation.isPending;
+  const busyItemId = statusMutation.isPending
+    ? statusMutation.variables?.id
+    : deleteMutation.isPending
+      ? deleteMutation.variables?.id
+      : null;
+  const showRefreshing = query.isFetching && !query.isPending;
 
   return (
     <Stack spacing={3}>
@@ -272,6 +278,8 @@ export function ItemsPage() {
         </Stack>
       </Stack>
 
+      <RefreshIndicator show={showRefreshing} />
+      <Box aria-busy={query.isPending || showRefreshing}>
       {query.isPending ? (
         <Stack spacing={1}>
           {Array.from({ length: 6 }).map((_, index) => (
@@ -308,7 +316,7 @@ export function ItemsPage() {
 
           <ItemTable
             items={query.data.items}
-            disabled={isMutating}
+            busyItemId={busyItemId}
             onView={(itm) => navigate(`${paths.items}/${itm.id}`)}
             onEdit={(itm) => navigate(`${paths.items}/${itm.id}/edit`)}
             onStatusChange={(itm) => setStatusTarget(itm)}
@@ -328,6 +336,7 @@ export function ItemsPage() {
           />
         </>
       ) : null}
+      </Box>
 
       <ItemStatusDialog
         item={statusTarget}

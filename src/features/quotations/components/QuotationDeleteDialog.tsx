@@ -30,7 +30,7 @@ export function QuotationDeleteDialog({
   onConfirm,
 }: QuotationDeleteDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)} fullWidth maxWidth="xs">
       <DialogTitle color="error.main">Delete Draft Quotation</DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
         <DialogContentText sx={{ mb: 2 }}>
@@ -46,7 +46,7 @@ export function QuotationDeleteDialog({
         <Button onClick={onClose} color="inherit" disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button onClick={onConfirm} variant="contained" color="error" disabled={isSubmitting}>
+        <Button onClick={onConfirm} variant="contained" color="error" loading={isSubmitting} loadingPosition="start">
           {isSubmitting ? 'Deleting...' : 'Delete Quotation'}
         </Button>
       </DialogActions>

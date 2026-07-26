@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { ErrorState } from '../../../components/common/ErrorState';
+import { toApiError } from '../../../services/apiClient';
 import {
   deleteQuotationRequest,
   downloadQuotationPdfBlobRequest,
@@ -61,6 +62,7 @@ export function QuotationDetailsPage() {
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [activeDocumentId, setActiveDocumentId] = useState<number | null>(null);
 
@@ -84,8 +86,9 @@ export function QuotationDetailsPage() {
       queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all });
       setStatusDialogOpen(false);
     },
-    onError: (err: Error) => {
-      setFeedback({ open: true, message: err.message || 'Failed to update status', severity: 'error' });
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: 'error' });
     },
   });
 
@@ -97,12 +100,14 @@ export function QuotationDetailsPage() {
       setDeleteDialogOpen(false);
       navigate('/quotations');
     },
-    onError: (err: Error) => {
-      setFeedback({ open: true, message: err.message || 'Failed to delete quotation', severity: 'error' });
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: 'error' });
     },
   });
 
   const handlePreviewPdf = async () => {
+    if (pdfLoading) return;
     setPdfPreviewOpen(true);
     setPdfLoading(true);
     setPdfError(null);
@@ -118,14 +123,17 @@ export function QuotationDetailsPage() {
       const blob = await getQuotationPdfPreviewBlobRequest(quotationId, docId);
       setPdfBlob(blob);
     } catch (err: unknown) {
-      setPdfError(err instanceof Error ? err.message : 'Failed to generate PDF preview');
+      const apiError = toApiError(err);
+      if (!apiError.cancelled) setPdfError(apiError.message);
     } finally {
       setPdfLoading(false);
     }
   };
 
   const handleDownloadPdf = async () => {
+    if (pdfDownloading) return;
     try {
+      setPdfDownloading(true);
       let docId = activeDocumentId;
       if (!docId) {
         const genResult = await generateQuotationPdfRequest(quotationId);
@@ -146,7 +154,10 @@ export function QuotationDetailsPage() {
 
       setFeedback({ open: true, message: `PDF downloaded: ${filename}`, severity: 'success' });
     } catch (err: unknown) {
-      setFeedback({ open: true, message: err instanceof Error ? err.message : 'Failed to download PDF', severity: 'error' });
+      const apiError = toApiError(err);
+      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: 'error' });
+    } finally {
+      setPdfDownloading(false);
     }
   };
 
@@ -161,7 +172,7 @@ export function QuotationDetailsPage() {
 
   if (isError || !quotation) {
     return (
-      <ErrorState message={error instanceof Error ? error.message : 'The requested quotation could not be loaded.'} onRetry={refetch} />
+      <ErrorState message={toApiError(error).message} onRetry={refetch} />
     );
   }
 
@@ -199,8 +210,10 @@ export function QuotationDetailsPage() {
             color="primary"
             startIcon={<PictureAsPdfOutlinedIcon />}
             onClick={handlePreviewPdf}
+            loading={pdfLoading}
+            loadingPosition="start"
           >
-            Preview PDF
+            {pdfLoading ? 'Generating...' : 'Preview PDF'}
           </Button>
 
           <Button
@@ -208,8 +221,10 @@ export function QuotationDetailsPage() {
             color="primary"
             startIcon={<DownloadOutlinedIcon />}
             onClick={handleDownloadPdf}
+            loading={pdfDownloading}
+            loadingPosition="start"
           >
-            Download PDF
+            {pdfDownloading ? 'Downloading...' : 'Download PDF'}
           </Button>
 
           {isDraft ? (
@@ -228,6 +243,7 @@ export function QuotationDetailsPage() {
             color="inherit"
             startIcon={<SwapHorizOutlinedIcon />}
             onClick={() => setStatusDialogOpen(true)}
+            disabled={statusMutation.isPending}
           >
             Change Status
           </Button>
@@ -238,6 +254,7 @@ export function QuotationDetailsPage() {
               color="error"
               startIcon={<DeleteOutlineOutlinedIcon />}
               onClick={() => setDeleteDialogOpen(true)}
+              disabled={deleteMutation.isPending}
             >
               Delete
             </Button>

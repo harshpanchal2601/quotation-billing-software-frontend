@@ -15,6 +15,7 @@ import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { EmptyState } from '../../../components/common/EmptyState';
 import { ErrorState } from '../../../components/common/ErrorState';
+import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
 import { paths } from '../../../routes/routeConfig';
 import { toApiError } from '../../../services/apiClient';
 import { deleteCompanyRequest, listCompaniesRequest, updateCompanyStatusRequest } from '../api/companies.api';
@@ -80,7 +81,12 @@ export function CompaniesPage() {
 
   const sortValue = `${params.sortBy}:${params.sortOrder}`;
   const isFiltered = Boolean(params.search || params.isActive !== undefined);
-  const isMutating = statusMutation.isPending || deleteMutation.isPending;
+  const busyCompanyId = statusMutation.isPending
+    ? statusMutation.variables?.id
+    : deleteMutation.isPending
+      ? deleteMutation.variables?.id
+      : null;
+  const showRefreshing = query.isFetching && !query.isPending;
 
   return (
     <Stack spacing={3}>
@@ -106,6 +112,8 @@ export function CompaniesPage() {
           {sortOptions.map((option) => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
         </TextField>
       </Stack>
+      <RefreshIndicator show={showRefreshing} />
+      <Box aria-busy={query.isPending || showRefreshing}>
       {query.isPending ? <Stack spacing={1}>{Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} height={64} />)}</Stack> : null}
       {query.isError ? (
         <Stack spacing={1}>
@@ -119,7 +127,7 @@ export function CompaniesPage() {
       {query.data && query.data.companies.length > 0 ? (
         <>
           <Typography color="text.secondary">{query.data.pagination.total} companies found</Typography>
-          <CompanyTable companies={query.data.companies} disabled={isMutating} onStatusChange={setStatusTarget} onDelete={setDeleteTarget} />
+          <CompanyTable companies={query.data.companies} busyCompanyId={busyCompanyId} onStatusChange={setStatusTarget} onDelete={setDeleteTarget} />
           <TablePagination
             component="div"
             count={query.data.pagination.total}
@@ -131,6 +139,7 @@ export function CompaniesPage() {
           />
         </>
       ) : null}
+      </Box>
       <CompanyStatusDialog company={statusTarget} isSubmitting={statusMutation.isPending} onClose={() => setStatusTarget(null)} onConfirm={async () => { if (statusTarget) await statusMutation.mutateAsync(statusTarget); }} />
       <DeleteCompanyDialog company={deleteTarget} isDeleting={deleteMutation.isPending} onClose={() => setDeleteTarget(null)} onConfirm={async () => { if (deleteTarget) await deleteMutation.mutateAsync(deleteTarget); }} />
       <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>

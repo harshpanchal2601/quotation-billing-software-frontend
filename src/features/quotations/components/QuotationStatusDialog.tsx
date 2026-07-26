@@ -38,12 +38,12 @@ export function QuotationStatusDialog({
   const [comment, setComment] = useState('');
 
   const handleConfirm = () => {
-    if (!targetStatus) return;
+    if (!targetStatus || isSubmitting) return;
     onConfirm(targetStatus, comment.trim() || undefined);
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)} fullWidth maxWidth="xs">
       <DialogTitle>Update Quotation Status</DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
         <DialogContentText sx={{ mb: 2 }}>
@@ -62,6 +62,7 @@ export function QuotationStatusDialog({
                 value={targetStatus}
                 label="New Status"
                 onChange={(e) => setTargetStatus(e.target.value as QuotationStatus)}
+                disabled={isSubmitting}
               >
                 {allowedNext.map((st) => (
                   <MenuItem key={st} value={st}>
@@ -79,6 +80,7 @@ export function QuotationStatusDialog({
               fullWidth
               size="small"
               placeholder="Add an optional comment describing why the status is changing..."
+              disabled={isSubmitting}
             />
           </>
         )}
@@ -91,7 +93,9 @@ export function QuotationStatusDialog({
           onClick={handleConfirm}
           variant="contained"
           color="primary"
-          disabled={!targetStatus || isSubmitting || allowedNext.length === 0}
+          disabled={!targetStatus || allowedNext.length === 0}
+          loading={isSubmitting}
+          loadingPosition="start"
         >
           {isSubmitting ? 'Updating...' : 'Update Status'}
         </Button>

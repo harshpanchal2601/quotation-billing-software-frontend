@@ -6,11 +6,13 @@ import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import TablePagination from '@mui/material/TablePagination';
 import Typography from '@mui/material/Typography';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { ErrorState } from '../../../components/common/ErrorState';
+import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
+import { toApiError } from '../../../services/apiClient';
 import { listCompaniesRequest } from '../../companies/api/companies.api';
 import {
   deleteQuotationRequest,
@@ -69,9 +71,10 @@ export function QuotationsPage() {
   }, [searchParams]);
 
   // Fetch Quotation List
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: quotationsQueryKeys.list(params),
     queryFn: () => listQuotationsRequest(params),
+    placeholderData: keepPreviousData,
   });
 
   // Fetch Companies for Filter Dropdown
@@ -96,8 +99,9 @@ export function QuotationsPage() {
       queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all });
       setStatusDialogTarget(null);
     },
-    onError: (err: Error) => {
-      setFeedback({ open: true, message: err.message || 'Failed to update quotation status', severity: 'error' });
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: 'error' });
     },
   });
 
@@ -109,8 +113,9 @@ export function QuotationsPage() {
       queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all });
       setDeleteDialogTarget(null);
     },
-    onError: (err: Error) => {
-      setFeedback({ open: true, message: err.message || 'Failed to delete draft quotation', severity: 'error' });
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: 'error' });
     },
   });
 
@@ -141,6 +146,7 @@ export function QuotationsPage() {
 
   const quotations = data?.quotations || [];
   const pagination = data?.pagination;
+  const showRefreshing = isFetching && !isLoading;
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
@@ -173,13 +179,15 @@ export function QuotationsPage() {
       />
 
       {/* Content State */}
+      <RefreshIndicator show={showRefreshing} label="Refreshing quotations..." />
+
       {isLoading ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Skeleton variant="rectangular" height={50} sx={{ borderRadius: 2 }} />
           <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
         </Box>
       ) : isError ? (
-        <ErrorState message={error instanceof Error ? error.message : 'An error occurred loading quotations'} onRetry={refetch} />
+        <ErrorState message={toApiError(error).message} onRetry={refetch} />
       ) : quotations.length === 0 ? (
         <Box sx={{ p: 6, textAlign: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
           <Typography variant="h6" fontWeight={600} gutterBottom>
@@ -201,7 +209,7 @@ export function QuotationsPage() {
           )}
         </Box>
       ) : (
-        <>
+        <Box aria-busy={isLoading || showRefreshing}>
           <QuotationTable
             quotations={quotations}
             onOpenStatusDialog={(quo) => setStatusDialogTarget(quo)}
@@ -220,7 +228,7 @@ export function QuotationsPage() {
               sx={{ mt: 2 }}
             />
           ) : null}
-        </>
+        </Box>
       )}
 
       {/* Status Transition Dialog */}

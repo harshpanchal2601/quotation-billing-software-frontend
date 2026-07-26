@@ -15,6 +15,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { EmptyState } from '../../../components/common/EmptyState';
 import { ErrorState } from '../../../components/common/ErrorState';
+import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
 import { toApiError } from '../../../services/apiClient';
 import {
   deleteMeasurementUnitRequest,
@@ -101,7 +102,12 @@ export function MeasurementUnitsPage() {
   const isFiltered = Boolean(
     params.search || params.isActive !== undefined || params.allowDecimal !== undefined,
   );
-  const isMutating = statusMutation.isPending || deleteMutation.isPending;
+  const busyUnitId = statusMutation.isPending
+    ? statusMutation.variables?.id
+    : deleteMutation.isPending
+      ? deleteMutation.variables?.id
+      : null;
+  const showRefreshing = query.isFetching && !query.isPending;
 
   function handleOpenCreate() {
     setEditingUnit(null);
@@ -195,6 +201,8 @@ export function MeasurementUnitsPage() {
         </TextField>
       </Stack>
 
+      <RefreshIndicator show={showRefreshing} />
+      <Box aria-busy={query.isPending || showRefreshing}>
       {query.isPending ? (
         <Stack spacing={1}>
           {Array.from({ length: 6 }).map((_, index) => (
@@ -231,7 +239,7 @@ export function MeasurementUnitsPage() {
 
           <MeasurementUnitTable
             units={query.data.measurementUnits}
-            disabled={isMutating}
+            busyUnitId={busyUnitId}
             onView={(u) => setDetailsUnitId(u.id)}
             onEdit={handleOpenEdit}
             onStatusChange={(u) => setStatusTarget(u)}
@@ -251,6 +259,7 @@ export function MeasurementUnitsPage() {
           />
         </>
       ) : null}
+      </Box>
 
       <MeasurementUnitFormDialog
         open={formOpen}

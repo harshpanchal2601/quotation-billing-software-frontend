@@ -14,6 +14,8 @@ import TextField from '@mui/material/TextField';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
+import type { ApiFieldErrors } from '../../../services/apiClient';
+import { applyApiFieldErrors } from '../../../services/formErrors';
 import { bankDetailsSchema, type BankDetailsFormValues, type BankDetailsSubmitValues } from '../schemas/bank-details.schema';
 import type { BankDetail } from '../settings.types';
 
@@ -36,11 +38,12 @@ type BankDetailsDialogProps = {
   bankDetail: BankDetail | null;
   isSubmitting: boolean;
   errorMessage: string | null;
+  fieldErrors: ApiFieldErrors;
   onClose: () => void;
   onSubmit: (values: BankDetailsSubmitValues) => Promise<void>;
 };
 
-export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage, onClose, onSubmit }: BankDetailsDialogProps) {
+export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage, fieldErrors, onClose, onSubmit }: BankDetailsDialogProps) {
   const form = useForm<BankDetailsFormValues, unknown, BankDetailsSubmitValues>({
     resolver: zodResolver(bankDetailsSchema),
     defaultValues: emptyValues,
@@ -55,7 +58,20 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
     form.reset(bankDetailToFormValues(bankDetail));
   }, [bankDetail, form, open]);
 
+  useEffect(() => {
+    if (open) applyApiFieldErrors(form, fieldErrors);
+  }, [fieldErrors, form, open]);
+
   const title = bankDetail === null ? 'Add bank account' : 'Edit bank account';
+
+  async function handleValidSubmit(values: BankDetailsSubmitValues) {
+    form.clearErrors();
+    try {
+      await onSubmit(values);
+    } catch {
+      // The parent mutation exposes API errors through errorMessage and fieldErrors.
+    }
+  }
 
   return (
     <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)} fullWidth maxWidth="md">
@@ -64,7 +80,7 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
         <DialogContentText mb={2}>
           Account numbers are stored as text so leading zeros and bank-specific formats are preserved.
         </DialogContentText>
-        <Stack component="form" id="bank-details-form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate>
+        <Stack component="form" id="bank-details-form" spacing={2} onSubmit={(event) => void form.handleSubmit(handleValidSubmit)(event)} noValidate aria-busy={isSubmitting}>
           {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <Controller
@@ -154,8 +170,8 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-        <Button type="submit" form="bank-details-form" variant="contained" disabled={isSubmitting || !form.formState.isValid}>
-          {isSubmitting ? 'Saving' : 'Save account'}
+        <Button type="submit" form="bank-details-form" variant="contained" disabled={!form.formState.isValid} loading={isSubmitting} loadingPosition="start">
+          {isSubmitting ? 'Saving...' : 'Save account'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -176,4 +192,3 @@ function bankDetailToFormValues(bankDetail: BankDetail | null): BankDetailsFormV
     isDefault: bankDetail.isDefault,
   };
 }
-

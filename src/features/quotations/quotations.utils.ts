@@ -1,4 +1,4 @@
-import type { DiscountType, QuotationStatus, TaxMode } from './quotations.types';
+import type { CalculationPreviewInput, DiscountType, QuotationItemInput, QuotationStatus, TaxMode } from './quotations.types';
 
 export function formatCurrency(amount: number | string | null | undefined, currency: string = 'INR'): string {
   if (amount === null || amount === undefined || amount === '') return `${currency} 0.00`;
@@ -113,4 +113,118 @@ export function omitEmptyParams<T extends Record<string, unknown>>(obj: T): Part
     }
   }
   return result;
+}
+
+export function formatDateOnlyLocal(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function addCalendarDaysToDateOnly(dateOnly: string, days: number): string {
+  const parsed = parseDateOnlyParts(dateOnly);
+  if (!parsed) return dateOnly;
+
+  const date = new Date(parsed.year, parsed.month - 1, parsed.day);
+  date.setDate(date.getDate() + days);
+  return formatDateOnlyLocal(date);
+}
+
+export function isValidDateOnly(value: unknown): value is string {
+  return parseDateOnlyParts(value) !== null;
+}
+
+export function compareDateOnly(left: string, right: string): number {
+  return left.localeCompare(right);
+}
+
+export function toInputDateOnly(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const dateOnly = value.includes('T') ? value.split('T')[0] : value;
+  return isValidDateOnly(dateOnly) ? dateOnly : null;
+}
+
+export function buildCalculationPreviewInput(input: {
+  taxMode?: TaxMode;
+  quotationDiscountType?: DiscountType;
+  quotationDiscountValue?: number | string;
+  freightAmount?: number | string;
+  otherCharges?: number | string;
+  items?: QuotationItemInput[];
+}): CalculationPreviewInput | null {
+  const validItems = (input.items ?? []).reduce<QuotationItemInput[]>((accumulator, line, index) => {
+    if (!isCalculationReadyLine(line)) return accumulator;
+
+    accumulator.push({
+      itemId: line.itemId ?? null,
+      lineNumber: accumulator.length + 1,
+      itemName: line.itemName?.trim() || `Item #${index + 1}`,
+      description: null,
+      measurementUnit: line.measurementUnit?.trim() || 'NOS',
+      quantity: line.quantity,
+      unitRate: line.unitRate,
+      discountType: line.discountType ?? 'NONE',
+      discountValue: line.discountValue ?? 0,
+      gstRate: line.gstRate ?? 18,
+      sortOrder: accumulator.length,
+    });
+
+    return accumulator;
+  }, []);
+
+  if (validItems.length === 0) return null;
+
+  return {
+    taxMode: input.taxMode,
+    quotationDiscountType: input.quotationDiscountType,
+    quotationDiscountValue: input.quotationDiscountValue ?? 0,
+    freightAmount: input.freightAmount ?? 0,
+    otherCharges: input.otherCharges ?? 0,
+    items: validItems,
+  };
+}
+
+function isCalculationReadyLine(line: QuotationItemInput | undefined): line is QuotationItemInput {
+  if (!line) return false;
+  if (!line.itemId && !line.itemName?.trim()) return false;
+  if (!isPositiveNumber(line.quantity)) return false;
+  if (!isPositiveNumber(line.unitRate)) return false;
+  if (!isNonNegativeNumber(line.discountValue ?? 0)) return false;
+  if (!isNonNegativeNumber(line.gstRate ?? 18) || Number(line.gstRate ?? 18) > 100) return false;
+  return true;
+}
+
+function isPositiveNumber(value: unknown) {
+  return isFiniteNumber(value) && Number(value) > 0;
+}
+
+function isNonNegativeNumber(value: unknown) {
+  return isFiniteNumber(value) && Number(value) >= 0;
+}
+
+function isFiniteNumber(value: unknown) {
+  if (value === '' || value === null || value === undefined) return false;
+  return Number.isFinite(Number(value));
+}
+
+function parseDateOnlyParts(value: unknown) {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
 }

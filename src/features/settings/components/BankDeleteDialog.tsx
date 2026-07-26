@@ -33,9 +33,10 @@ export function BankDeleteDialog({ bankDetail, isDeleting, onClose, onConfirm }:
       </DialogContent>
       <DialogActions>
         <Button autoFocus onClick={onClose} disabled={isDeleting}>Cancel</Button>
-        <Button color="error" onClick={() => void onConfirm()} disabled={isDeleting}>Delete account</Button>
+        <Button color="error" onClick={() => void onConfirm()} loading={isDeleting} loadingPosition="start">
+          {isDeleting ? 'Deleting...' : 'Delete account'}
+        </Button>
       </DialogActions>
     </Dialog>
   );
 }
-

@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
@@ -24,6 +25,8 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
+import { toApiError } from '../../../services/apiClient';
 import {
   downloadQuotationPdfBlobRequest,
   generateQuotationPdfRequest,
@@ -49,16 +52,18 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [activeDocNumber, setActiveDocNumber] = useState<string>('');
+  const [activeDocId, setActiveDocId] = useState<number | null>(null);
 
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedDocForEmail, setSelectedDocForEmail] = useState<GeneratedDocumentHistoryItem | null>(null);
 
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: quotationDocumentsQueryKeys.list(quotation.id),
     queryFn: () => getGeneratedDocumentHistoryRequest(quotation.id),
     enabled: Boolean(quotation.id && quotation.id > 0),
+    staleTime: 30000,
   });
 
   const documents = data?.documents || [];
@@ -69,13 +74,16 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
       onFeedback('New quotation PDF generated successfully', 'success');
       queryClient.invalidateQueries({ queryKey: quotationDocumentsQueryKeys.all });
     },
-    onError: (err: Error) => {
-      onFeedback(err.message || 'Failed to generate PDF', 'error');
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (!apiError.cancelled) onFeedback(apiError.message, 'error');
     },
   });
 
   const handlePreviewPdf = async (doc: GeneratedDocumentHistoryItem) => {
+    if (pdfLoading) return;
     setActiveDocNumber(doc.quotationNumber);
+    setActiveDocId(doc.id);
     setPdfPreviewOpen(true);
     setPdfLoading(true);
     setPdfError(null);
@@ -85,13 +93,15 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
       const blob = await getQuotationPdfPreviewBlobRequest(quotation.id, doc.id);
       setPdfBlob(blob);
     } catch (err: unknown) {
-      setPdfError(err instanceof Error ? err.message : 'Failed to load PDF preview');
+      const apiError = toApiError(err);
+      if (!apiError.cancelled) setPdfError(apiError.message);
     } finally {
       setPdfLoading(false);
     }
   };
 
   const handleDownloadPdf = async (doc: GeneratedDocumentHistoryItem) => {
+    if (downloadingId === doc.id) return;
     try {
       setDownloadingId(doc.id);
       const { blob, filename } = await downloadQuotationPdfBlobRequest(quotation.id, doc.id);
@@ -104,19 +114,22 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err: unknown) {
-      onFeedback(err instanceof Error ? err.message : 'Failed to download PDF', 'error');
+      const apiError = toApiError(err);
+      if (!apiError.cancelled) onFeedback(apiError.message, 'error');
     } finally {
       setDownloadingId(null);
     }
   };
 
   const handleOpenEmailDialog = (doc: GeneratedDocumentHistoryItem) => {
+    if (generatePdfMutation.isPending || downloadingId === doc.id || pdfLoading) return;
     setSelectedDocForEmail(doc);
     setEmailDialogOpen(true);
   };
+  const showRefreshing = isFetching && !isLoading;
 
   return (
-    <Paper variant="outlined" sx={{ p: 3, mt: 3, borderRadius: 2 }}>
+    <Paper variant="outlined" sx={{ p: 3, mt: 3, borderRadius: 2 }} aria-busy={isLoading || showRefreshing}>
       {/* Header */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -142,7 +155,8 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           size="small"
           startIcon={<PictureAsPdfOutlinedIcon />}
           onClick={() => generatePdfMutation.mutate()}
-          disabled={generatePdfMutation.isPending}
+          loading={generatePdfMutation.isPending}
+          loadingPosition="start"
         >
           {generatePdfMutation.isPending ? 'Generating PDF...' : 'Generate New PDF'}
         </Button>
@@ -151,6 +165,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
       <Divider sx={{ mb: 2 }} />
 
       {/* Content */}
+      <RefreshIndicator show={showRefreshing} label="Refreshing document history..." />
       {isLoading ? (
         <Stack spacing={1}>
           <Skeleton variant="rectangular" height={48} />
@@ -165,7 +180,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
             </Button>
           }
         >
-          {error instanceof Error ? error.message : 'Failed to load document history'}
+          {toApiError(error).message}
         </Alert>
       ) : documents.length === 0 ? (
         <Box sx={{ py: 4, px: 2, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
@@ -178,9 +193,10 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
             variant="outlined"
             sx={{ mt: 1.5 }}
             onClick={() => generatePdfMutation.mutate()}
-            disabled={generatePdfMutation.isPending}
+            loading={generatePdfMutation.isPending}
+            loadingPosition="start"
           >
-            Generate Initial Quotation PDF
+            {generatePdfMutation.isPending ? 'Generating...' : 'Generate Initial Quotation PDF'}
           </Button>
         </Box>
       ) : (
@@ -223,11 +239,11 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                             <IconButton
                               size="small"
                               color="primary"
-                              disabled={!doc.isAvailable}
+                              disabled={!doc.isAvailable || (pdfLoading && activeDocId === doc.id)}
                               onClick={() => handlePreviewPdf(doc)}
                               aria-label={`Preview ${doc.displayFilename}`}
                             >
-                              <VisibilityOutlinedIcon fontSize="small" />
+                              {pdfLoading && activeDocId === doc.id ? <CircularProgress size={18} aria-label={`Loading preview for ${doc.displayFilename}`} /> : <VisibilityOutlinedIcon fontSize="small" />}
                             </IconButton>
                           </span>
                         </Tooltip>
@@ -241,7 +257,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                               onClick={() => handleDownloadPdf(doc)}
                               aria-label={`Download ${doc.displayFilename}`}
                             >
-                              <DownloadOutlinedIcon fontSize="small" />
+                              {downloadingId === doc.id ? <CircularProgress size={18} aria-label={`Downloading ${doc.displayFilename}`} /> : <DownloadOutlinedIcon fontSize="small" />}
                             </IconButton>
                           </span>
                         </Tooltip>
@@ -252,7 +268,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                               size="small"
                               variant="outlined"
                               color="primary"
-                              disabled={!doc.isAvailable}
+                              disabled={!doc.isAvailable || generatePdfMutation.isPending || downloadingId === doc.id || (pdfLoading && activeDocId === doc.id)}
                               startIcon={<EmailOutlinedIcon fontSize="small" />}
                               onClick={() => handleOpenEmailDialog(doc)}
                               sx={{ py: 0.25, px: 1, minWidth: 0, fontSize: '0.75rem' }}
@@ -296,25 +312,29 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                     <Button
                       size="small"
                       variant="outlined"
-                      disabled={!doc.isAvailable}
+                      disabled={!doc.isAvailable || (pdfLoading && activeDocId === doc.id)}
+                      loading={pdfLoading && activeDocId === doc.id}
+                      loadingPosition="start"
                       startIcon={<VisibilityOutlinedIcon />}
                       onClick={() => handlePreviewPdf(doc)}
                     >
-                      Preview
+                      {pdfLoading && activeDocId === doc.id ? 'Loading...' : 'Preview'}
                     </Button>
                     <Button
                       size="small"
                       variant="outlined"
-                      disabled={!doc.isAvailable || downloadingId === doc.id}
+                      disabled={!doc.isAvailable}
+                      loading={downloadingId === doc.id}
+                      loadingPosition="start"
                       startIcon={<DownloadOutlinedIcon />}
                       onClick={() => handleDownloadPdf(doc)}
                     >
-                      Download
+                      {downloadingId === doc.id ? 'Downloading...' : 'Download'}
                     </Button>
                     <Button
                       size="small"
                       variant="contained"
-                      disabled={!doc.isAvailable}
+                      disabled={!doc.isAvailable || generatePdfMutation.isPending || downloadingId === doc.id || (pdfLoading && activeDocId === doc.id)}
                       startIcon={<EmailOutlinedIcon />}
                       onClick={() => handleOpenEmailDialog(doc)}
                     >
@@ -337,7 +357,8 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
         error={pdfError}
         onClose={() => setPdfPreviewOpen(false)}
         onDownload={() => {
-          if (documents.length > 0) handleDownloadPdf(documents[0]);
+          const activeDocument = documents.find((doc) => doc.id === activeDocId);
+          if (activeDocument) handleDownloadPdf(activeDocument);
         }}
       />
 

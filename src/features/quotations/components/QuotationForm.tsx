@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -12,23 +13,37 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
+import { Controller, FormProvider, type Path, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { getItemOptionsRequest } from '../../items/api/items.api';
 import { listBankDetailsRequest } from '../../settings/api/bank-details.api';
+import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
+import { applyApiFieldErrors } from '../../../services/formErrors';
 import { calculatePreviewRequest } from '../api/quotations.api';
 import type { CalculatedQuotationTotals, CalculationPreviewInput, QuotationDetail } from '../quotations.types';
 import { quotationFormSchema, type QuotationFormSubmitValues } from '../quotations.schema';
-import { formatDiscountTypeLabel, formatTaxModeLabel } from '../quotations.utils';
+import {
+  addCalendarDaysToDateOnly,
+  buildCalculationPreviewInput,
+  compareDateOnly,
+  formatDateOnlyLocal,
+  formatDiscountTypeLabel,
+  formatTaxModeLabel,
+} from '../quotations.utils';
 import { QuotationCustomerSection } from './QuotationCustomerSection';
 import { QuotationItemsField } from './QuotationItemsField';
 import { QuotationTotalsSummary } from './QuotationTotalsSummary';
+
+const EMPTY_FIELD_ERRORS: ApiFieldErrors = {};
 
 type QuotationFormProps = {
   initialValues?: Partial<QuotationFormSubmitValues>;
   editingQuotation?: QuotationDetail | null;
   isSubmitting?: boolean;
+  serverError?: string | null;
+  fieldErrors?: ApiFieldErrors;
+  defaultValidityDays?: number;
   onCancel: () => void;
   onSubmit: (values: QuotationFormSubmitValues) => void;
 };
@@ -37,11 +52,15 @@ export function QuotationForm({
   initialValues,
   editingQuotation,
   isSubmitting = false,
+  serverError = null,
+  fieldErrors = EMPTY_FIELD_ERRORS,
+  defaultValidityDays = 30,
   onCancel,
   onSubmit,
 }: QuotationFormProps) {
-  const defaultQuoDate = new Date().toISOString().split('T')[0]!;
-  const defaultValidUntil = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]!;
+  const defaultQuoDate = formatDateOnlyLocal(new Date());
+  const defaultValidUntil = addCalendarDaysToDateOnly(defaultQuoDate, defaultValidityDays);
+  const autoValidUntilRef = useRef(defaultValidUntil);
 
   const methods = useForm<QuotationFormSubmitValues>({
     resolver: zodResolver(quotationFormSchema),
@@ -88,7 +107,17 @@ export function QuotationForm({
     },
   });
 
-  const { watch, handleSubmit, control } = methods;
+  const { handleSubmit, control } = methods;
+  const serverFieldNamesRef = useRef<Array<Path<QuotationFormSubmitValues>>>([]);
+
+  useEffect(() => {
+    if (serverFieldNamesRef.current.length > 0) {
+      methods.clearErrors(serverFieldNamesRef.current);
+    }
+
+    applyApiFieldErrors(methods, fieldErrors);
+    serverFieldNamesRef.current = Object.keys(fieldErrors) as Array<Path<QuotationFormSubmitValues>>;
+  }, [fieldErrors, methods]);
 
   // Master Item options
   const { data: itemOptions = [] } = useQuery({
@@ -104,7 +133,10 @@ export function QuotationForm({
 
   // Calculation Preview state
   const [calculatedTotals, setCalculatedTotals] = useState<CalculatedQuotationTotals | null>(null);
+  const [previewState, setPreviewState] = useState<'empty' | 'calculating' | 'ready' | 'invalid' | 'error'>('empty');
+  const [previewMessage, setPreviewMessage] = useState<string | null>(null);
   const latestRequestIdRef = useRef(0);
+  const latestPayloadKeyRef = useRef<string | null>(null);
 
   const previewMutation = useMutation({
     mutationFn: ({ payload, requestId }: { payload: CalculationPreviewInput; requestId: number }) =>
@@ -112,78 +144,125 @@ export function QuotationForm({
     onSuccess: ({ data, requestId }) => {
       if (requestId === latestRequestIdRef.current) {
         setCalculatedTotals(data);
+        setPreviewState('ready');
+        setPreviewMessage(null);
       }
+    },
+    onError: (error, variables) => {
+      if (variables.requestId !== latestRequestIdRef.current) return;
+
+      const apiError = toApiError(error);
+      if (apiError.cancelled) {
+        setPreviewState(calculatedTotals ? 'ready' : 'empty');
+        setPreviewMessage(null);
+        return;
+      }
+
+      setPreviewState('error');
+      setPreviewMessage(apiError.message || 'Calculation preview is unavailable. Update the inputs to retry.');
     },
   });
   const { mutate: calculatePreview, isPending: isPreviewCalculating } = previewMutation;
 
-  const watchedItems = watch('items');
-  const watchedTaxMode = watch('taxMode');
-  const watchedDiscType = watch('quotationDiscountType');
-  const watchedDiscVal = watch('quotationDiscountValue');
-  const watchedFreight = watch('freightAmount');
-  const watchedOtherCharges = watch('otherCharges');
+  const watchedCalculationValues = useWatch({
+    control,
+    name: [
+      'items',
+      'taxMode',
+      'quotationDiscountType',
+      'quotationDiscountValue',
+      'freightAmount',
+      'otherCharges',
+    ],
+  });
+  const watchedQuotationDate = useWatch({ control, name: 'quotationDate' });
+  const watchedValidUntil = useWatch({ control, name: 'validUntil' });
+  const watchedTaxMode = watchedCalculationValues[1];
+  const watchedDiscType = watchedCalculationValues[2];
+  const watchedCurrency = useWatch({ control, name: 'currency' });
 
-  // Debounced calculation preview trigger with race protection
   useEffect(() => {
-    const validLines = (watchedItems || []).filter(
-      (line) =>
-        line &&
-        Number(line.quantity) > 0 &&
-        Number(line.unitRate) > 0 &&
-        String(line.itemName || line.description || '').trim().length > 0,
-    );
+    if (!watchedQuotationDate) return;
 
-    if (validLines.length === 0) {
-      latestRequestIdRef.current += 1;
-      setCalculatedTotals(null);
+    const nextAutoValidUntil = addCalendarDaysToDateOnly(watchedQuotationDate, defaultValidityDays);
+    const shouldMaintainAutoValidity =
+      !editingQuotation &&
+      watchedValidUntil === autoValidUntilRef.current;
+
+    if (shouldMaintainAutoValidity) {
+      autoValidUntilRef.current = nextAutoValidUntil;
+      methods.setValue('validUntil', nextAutoValidUntil, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: true,
+      });
       return;
     }
 
+    if (watchedValidUntil && compareDateOnly(watchedValidUntil, watchedQuotationDate) < 0) {
+      methods.setValue('validUntil', null, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+    }
+  }, [defaultValidityDays, editingQuotation, methods, watchedQuotationDate, watchedValidUntil]);
+
+  // Debounced calculation preview trigger with race protection
+  useEffect(() => {
+    const [items, taxMode, quotationDiscountType, quotationDiscountValue, freightAmount, otherCharges] =
+      watchedCalculationValues;
+    const payload = buildCalculationPreviewInput({
+      items,
+      taxMode,
+      quotationDiscountType,
+      quotationDiscountValue,
+      freightAmount,
+      otherCharges,
+    });
+
+    if (!payload) {
+      latestRequestIdRef.current += 1;
+      latestPayloadKeyRef.current = null;
+      if (calculatedTotals) {
+        setPreviewState('invalid');
+        setPreviewMessage('Current line-item inputs are incomplete or invalid. Previous valid totals remain visible.');
+      } else {
+        setPreviewState('empty');
+        setPreviewMessage('Add a valid line item to generate calculation preview.');
+      }
+      return;
+    }
+
+    const payloadKey = JSON.stringify(payload);
+    if (payloadKey === latestPayloadKeyRef.current) return;
+    latestPayloadKeyRef.current = payloadKey;
+
     const currentRequestId = latestRequestIdRef.current + 1;
     latestRequestIdRef.current = currentRequestId;
+    setPreviewState(calculatedTotals ? 'ready' : 'calculating');
+    setPreviewMessage(calculatedTotals ? 'Updating totals from the latest inputs...' : null);
 
     const timer = setTimeout(() => {
       calculatePreview({
-        payload: {
-          taxMode: watchedTaxMode,
-          quotationDiscountType: watchedDiscType,
-          quotationDiscountValue: watchedDiscVal,
-          freightAmount: watchedFreight,
-          otherCharges: watchedOtherCharges,
-          items: validLines.map((l, i) => ({
-            itemId: l.itemId,
-            lineNumber: i + 1,
-            itemName: l.itemName || `Item #${i + 1}`,
-            description: l.description,
-            measurementUnit: l.measurementUnit || 'NOS',
-            quantity: l.quantity,
-            unitRate: l.unitRate,
-            discountType: l.discountType,
-            discountValue: l.discountValue,
-            gstRate: l.gstRate,
-            sortOrder: i,
-          })),
-        },
+        payload,
         requestId: currentRequestId,
       });
     }, 350);
 
     return () => clearTimeout(timer);
   }, [
-    watchedItems,
-    watchedTaxMode,
-    watchedDiscType,
-    watchedDiscVal,
-    watchedFreight,
-    watchedOtherCharges,
+    watchedCalculationValues,
     calculatePreview,
+    calculatedTotals,
   ]);
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate aria-busy={isSubmitting || isPreviewCalculating}>
         <Stack spacing={3}>
+          {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+
           {/* Header Info Banner if editing */}
           {editingQuotation ? (
             <Card variant="outlined" sx={{ bgcolor: 'grey.50', p: 2 }}>
@@ -237,8 +316,9 @@ export function QuotationForm({
                       type="date"
                       label="Valid Until"
                       InputLabelProps={{ shrink: true }}
+                      inputProps={{ min: watchedQuotationDate || undefined }}
                       error={Boolean(error)}
-                      helperText={error?.message}
+                      helperText={error?.message || (watchedQuotationDate ? `Must be on or after ${watchedQuotationDate}.` : undefined)}
                     />
                   )}
                 />
@@ -279,7 +359,7 @@ export function QuotationForm({
           <QuotationItemsField
             itemOptions={itemOptions}
             calculatedTotals={calculatedTotals}
-            currency={watch('currency')}
+            currency={watchedCurrency}
           />
 
           {/* Header Discounts & Extra Charges */}
@@ -360,10 +440,12 @@ export function QuotationForm({
           {/* Totals Summary */}
           <QuotationTotalsSummary
             totals={calculatedTotals}
-            currency={watch('currency')}
+            currency={watchedCurrency}
             taxMode={watchedTaxMode}
             quotationDiscountType={watchedDiscType}
-            isCalculating={isPreviewCalculating}
+            isCalculating={isPreviewCalculating || previewState === 'calculating'}
+            state={previewState}
+            message={previewMessage}
           />
 
           {/* Bank Details & Terms */}
@@ -458,8 +540,8 @@ export function QuotationForm({
             <Button color="inherit" onClick={onCancel} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving Quotation...' : editingQuotation ? 'Update Draft Quotation' : 'Save Quotation Draft'}
+            <Button type="submit" variant="contained" color="primary" loading={isSubmitting} loadingPosition="start">
+              {isSubmitting ? 'Saving quotation...' : editingQuotation ? 'Update Draft Quotation' : 'Save Quotation Draft'}
             </Button>
           </Box>
         </Stack>

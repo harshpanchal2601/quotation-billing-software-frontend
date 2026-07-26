@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 
 import { getQuotationAttachmentsRequest } from '../api/quotation-attachments.api';
 import { sendQuotationEmailRequest } from '../api/quotation-documents.api';
+import { toApiError } from '../../../services/apiClient';
 import type { GeneratedDocumentHistoryItem } from '../quotation-documents.types';
 import type { QuotationDetail } from '../quotations.types';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
@@ -124,8 +125,9 @@ export function QuotationEmailDialog({
       );
       handleClose();
     },
-    onError: (err: Error) => {
-      setError(err.message || 'Failed to send email');
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (!apiError.cancelled) setError(apiError.message);
     },
   });
 
@@ -143,7 +145,7 @@ export function QuotationEmailDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isSizeOverLimit) {
+    if (!emailMutation.isPending && !isSizeOverLimit) {
       emailMutation.mutate();
     }
   };
@@ -152,7 +154,7 @@ export function QuotationEmailDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth fullScreen={isMobile} aria-labelledby="send-email-dialog-title">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} aria-busy={emailMutation.isPending}>
         <DialogTitle id="send-email-dialog-title" sx={{ pb: 1 }}>
           <Stack direction="row" alignItems="center" spacing={1}>
             <EmailOutlinedIcon color="primary" />
@@ -310,10 +312,12 @@ export function QuotationEmailDialog({
             <Button
               type="submit"
               variant="contained"
-              disabled={emailMutation.isPending || !toInput.trim() || !subject.trim() || !message.trim() || isSizeOverLimit}
+              disabled={!toInput.trim() || !subject.trim() || !message.trim() || isSizeOverLimit}
+              loading={emailMutation.isPending}
+              loadingPosition="start"
               startIcon={<EmailOutlinedIcon />}
             >
-              {emailMutation.isPending ? 'Sending Email...' : 'Send Email'}
+              {emailMutation.isPending ? 'Sending email...' : 'Send Email'}
             </Button>
           </Stack>
         </DialogActions>

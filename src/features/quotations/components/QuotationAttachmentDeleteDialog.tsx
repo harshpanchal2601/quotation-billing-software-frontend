@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { toApiError } from '../../../services/apiClient';
 import { deleteQuotationAttachmentRequest } from '../api/quotation-attachments.api';
 import type { QuotationAttachment } from '../quotation-attachments.types';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
@@ -41,8 +42,9 @@ export function QuotationAttachmentDeleteDialog({
       onSuccess(`Deleted "${attachment?.originalFilename}" successfully`);
       handleClose();
     },
-    onError: (err: Error) => {
-      setError(err.message || 'Failed to delete attachment');
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (!apiError.cancelled) setError(apiError.message);
     },
   });
 
@@ -86,7 +88,8 @@ export function QuotationAttachmentDeleteDialog({
           onClick={handleConfirm}
           color="error"
           variant="contained"
-          disabled={deleteMutation.isPending}
+          loading={deleteMutation.isPending}
+          loadingPosition="start"
         >
           {deleteMutation.isPending ? 'Deleting...' : 'Delete Attachment'}
         </Button>

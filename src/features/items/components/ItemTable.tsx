@@ -30,7 +30,7 @@ import {
 
 type ItemTableProps = {
   items: ItemListItem[];
-  disabled?: boolean;
+  busyItemId?: number | null;
   onView: (item: ItemListItem) => void;
   onEdit: (item: ItemListItem) => void;
   onStatusChange: (item: ItemListItem) => void;
@@ -39,7 +39,7 @@ type ItemTableProps = {
 
 export function ItemTable({
   items,
-  disabled = false,
+  busyItemId = null,
   onView,
   onEdit,
   onStatusChange,
@@ -135,7 +135,7 @@ export function ItemTable({
                       size="small"
                       aria-label={`Actions for ${item.name}`}
                       onClick={(e) => handleOpenMenu(e, item)}
-                      disabled={disabled}
+                      disabled={busyItemId === item.id}
                     >
                       <MoreVertIcon fontSize="small" />
                     </IconButton>
@@ -251,7 +251,7 @@ export function ItemTable({
                       size="small"
                       aria-label={`Actions for ${item.name}`}
                       onClick={(e) => handleOpenMenu(e, item)}
-                      disabled={disabled}
+                      disabled={busyItemId === item.id}
                     >
                       <MoreVertIcon fontSize="small" />
                     </IconButton>

@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { cleanup, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { Route, Routes } from 'react-router-dom';
@@ -134,6 +134,25 @@ describe('company frontend', () => {
     expect(await screen.findByText('Company cannot be deleted because quotations are linked to it.')).toBeInTheDocument();
   });
 
+  it('shows row-specific loading while a company status change is pending', async () => {
+    const pendingStatus = deferred<CompanyListItem>();
+    companiesApi.listCompaniesRequest.mockResolvedValue({
+      companies: [companyListItem(), companyListItem({ id: 2, companyCode: 'COMP-000002', name: 'Beta Pharma' })],
+      pagination: { page: 1, limit: 20, total: 2, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+    });
+    companiesApi.updateCompanyStatusRequest.mockReturnValue(pendingStatus.promise);
+
+    renderCompany(<CompaniesPage />, '/companies');
+
+    expect(await screen.findAllByText('Acme Pharma')).not.toHaveLength(0);
+    const deactivateButtons = screen.getAllByRole('button', { name: /^deactivate$/i });
+    await userEvent.click(deactivateButtons[0]!);
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^deactivate$/i }));
+
+    expect(deactivateButtons[0]).toBeDisabled();
+    expect(deactivateButtons[1]).not.toBeDisabled();
+  });
+
   it('shows paginated quotation history amounts with returned currency', async () => {
     companiesApi.getCompanyRequest.mockResolvedValue(companyDetail());
     companiesApi.listCompanyQuotationsRequest.mockResolvedValue({
@@ -206,4 +225,14 @@ function quotation(): CompanyQuotation {
     grandTotal: '10000.00',
     createdAt: '2026-01-01T00:00:00.000Z',
   };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
 }

@@ -10,7 +10,7 @@ export const measurementUnitFormSchema = z.object({
     .string()
     .trim()
     .min(1, 'Symbol is required')
-    .max(20, 'Symbol must not exceed 20 characters'),
+    .max(50, 'Symbol must not exceed 50 characters'),
   allowDecimal: z.boolean().default(true),
   isActive: z.boolean().default(true),
 });

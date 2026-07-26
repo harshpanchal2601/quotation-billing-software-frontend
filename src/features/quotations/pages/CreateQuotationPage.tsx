@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { getQuotationSettingsRequest } from '../../settings/api/quotation-settings.api';
+import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
 import { createQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
 import { quotationsQueryKeys } from '../quotations.query-keys';
@@ -21,6 +22,8 @@ export function CreateQuotationPage() {
     message: '',
     severity: 'success',
   });
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<ApiFieldErrors>({});
 
   // Load quotation settings for defaults
   const { data: quotationSettings } = useQuery({
@@ -49,12 +52,17 @@ export function CreateQuotationPage() {
         })),
       }),
     onSuccess: (created) => {
+      setServerError(null);
+      setFieldErrors({});
       setFeedback({ open: true, message: `Quotation ${created.quotationNumber} created successfully!`, severity: 'success' });
       queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all });
       navigate(`/quotations/${created.id}`);
     },
-    onError: (err: Error) => {
-      setFeedback({ open: true, message: err.message || 'Failed to create quotation', severity: 'error' });
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (apiError.cancelled) return;
+      setServerError(apiError.message);
+      setFieldErrors(apiError.fieldErrors);
     },
   });
 
@@ -82,9 +90,18 @@ export function CreateQuotationPage() {
 
       <QuotationForm
         initialValues={initialValues}
+        defaultValidityDays={quotationSettings?.defaultValidityDays ?? 30}
         isSubmitting={createMutation.isPending}
+        serverError={serverError}
+        fieldErrors={fieldErrors}
         onCancel={() => navigate('/quotations')}
-        onSubmit={(values) => createMutation.mutate(values)}
+        onSubmit={(values) => {
+          if (!createMutation.isPending) {
+            setServerError(null);
+            setFieldErrors({});
+            createMutation.mutate(values);
+          }
+        }}
       />
 
       <Snackbar

@@ -13,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useRef, useState } from 'react';
 
+import { toApiError } from '../../../services/apiClient';
 import { uploadQuotationAttachmentRequest } from '../api/quotation-attachments.api';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
 import { formatFileSize } from '../quotation-attachments.utils';
@@ -56,9 +57,10 @@ export function QuotationAttachmentUploadDialog({
       onSuccess(`Uploaded "${att.originalFilename}" successfully`);
       handleClose();
     },
-    onError: (err: Error) => {
+    onError: (error) => {
+      const apiError = toApiError(error);
       setUploadProgress(null);
-      setValidationError(err.message || 'Failed to upload attachment');
+      if (!apiError.cancelled) setValidationError(apiError.message);
     },
   });
 
@@ -145,7 +147,7 @@ export function QuotationAttachmentUploadDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth aria-labelledby="upload-attachment-dialog-title">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} aria-busy={uploadMutation.isPending}>
         <DialogTitle id="upload-attachment-dialog-title">Upload Quotation Attachment</DialogTitle>
 
         <DialogContent dividers>
@@ -244,7 +246,9 @@ export function QuotationAttachmentUploadDialog({
           <Button
             type="submit"
             variant="contained"
-            disabled={!selectedFile || uploadMutation.isPending || remainingCapacity <= 0}
+            disabled={!selectedFile || remainingCapacity <= 0}
+            loading={uploadMutation.isPending}
+            loadingPosition="start"
           >
             {uploadMutation.isPending ? 'Uploading...' : 'Upload Attachment'}
           </Button>

@@ -27,12 +27,12 @@ import { CompanyStatusChip } from './CompanyStatusChip';
 
 type CompanyTableProps = {
   companies: CompanyListItem[];
-  disabled?: boolean;
+  busyCompanyId?: number | null;
   onStatusChange: (company: CompanyListItem) => void;
   onDelete: (company: CompanyListItem) => void;
 };
 
-export function CompanyTable({ companies, disabled, onStatusChange, onDelete }: CompanyTableProps) {
+export function CompanyTable({ companies, busyCompanyId, onStatusChange, onDelete }: CompanyTableProps) {
   return (
     <>
       <TableContainer component={Paper} variant="outlined" sx={{ display: { xs: 'none', lg: 'block' } }}>
@@ -66,7 +66,7 @@ export function CompanyTable({ companies, disabled, onStatusChange, onDelete }: 
                 <TableCell>{company.quotationCount}</TableCell>
                 <TableCell><CompanyStatusChip isActive={company.isActive} /></TableCell>
                 <TableCell>{formatReadableDate(company.updatedAt)}</TableCell>
-                <TableCell align="right"><CompanyActions company={company} disabled={disabled} onStatusChange={onStatusChange} onDelete={onDelete} /></TableCell>
+                <TableCell align="right"><CompanyActions company={company} disabled={busyCompanyId === company.id} onStatusChange={onStatusChange} onDelete={onDelete} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -88,8 +88,8 @@ export function CompanyTable({ companies, disabled, onStatusChange, onDelete }: 
               <Stack direction="row" spacing={1} flexWrap="wrap">
                 <Button component={RouterLink} to={`${paths.companies}/${company.id}`} size="small" startIcon={<VisibilityOutlinedIcon />}>View</Button>
                 <Button component={RouterLink} to={`${paths.companies}/${company.id}/edit`} size="small" startIcon={<EditOutlinedIcon />}>Edit</Button>
-                <Button size="small" startIcon={<PowerSettingsNewOutlinedIcon />} onClick={() => onStatusChange(company)} disabled={disabled}>{company.isActive ? 'Deactivate' : 'Activate'}</Button>
-                <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(company)} disabled={disabled}>Delete</Button>
+                <Button size="small" startIcon={<PowerSettingsNewOutlinedIcon />} onClick={() => onStatusChange(company)} loading={busyCompanyId === company.id}>{company.isActive ? 'Deactivate' : 'Activate'}</Button>
+                <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(company)} loading={busyCompanyId === company.id}>Delete</Button>
               </Stack>
             </Stack>
           </Paper>

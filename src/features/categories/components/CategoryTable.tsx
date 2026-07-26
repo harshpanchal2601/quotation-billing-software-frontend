@@ -25,7 +25,7 @@ import { isProtectedCategory } from '../categories.utils';
 
 type CategoryTableProps = {
   categories: CategoryListItem[];
-  disabled?: boolean;
+  busyCategoryId?: number | null;
   onView: (category: CategoryListItem) => void;
   onEdit: (category: CategoryListItem) => void;
   onStatusChange: (category: CategoryListItem) => void;
@@ -34,7 +34,7 @@ type CategoryTableProps = {
 
 export function CategoryTable({
   categories,
-  disabled = false,
+  busyCategoryId = null,
   onView,
   onEdit,
   onStatusChange,
@@ -109,7 +109,7 @@ export function CategoryTable({
                       Linked Items: <strong>{cat.linkedItemCount}</strong>
                     </Typography>
                     <Stack direction="row" spacing={1}>
-                      <IconButton size="small" aria-label={`Actions for ${cat.name}`} onClick={(e) => handleOpenMenu(e, cat)} disabled={disabled}>
+                      <IconButton size="small" aria-label={`Actions for ${cat.name}`} onClick={(e) => handleOpenMenu(e, cat)} disabled={busyCategoryId === cat.id}>
                         <MoreVertIcon fontSize="small" />
                       </IconButton>
                     </Stack>
@@ -191,7 +191,7 @@ export function CategoryTable({
                       size="small"
                       aria-label={`Actions for ${cat.name}`}
                       onClick={(e) => handleOpenMenu(e, cat)}
-                      disabled={disabled}
+                      disabled={busyCategoryId === cat.id}
                     >
                       <MoreVertIcon fontSize="small" />
                     </IconButton>

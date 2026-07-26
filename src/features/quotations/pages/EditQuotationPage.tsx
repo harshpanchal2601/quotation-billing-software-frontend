@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { ErrorState } from '../../../components/common/ErrorState';
+import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
 import { getQuotationRequest, updateQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
 import { quotationsQueryKeys } from '../quotations.query-keys';
@@ -26,6 +27,8 @@ export function EditQuotationPage() {
     message: '',
     severity: 'success',
   });
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<ApiFieldErrors>({});
 
   const { data: quotation, isLoading, isError, error, refetch } = useQuery({
     queryKey: quotationsQueryKeys.detail(quotationId),
@@ -54,12 +57,17 @@ export function EditQuotationPage() {
         })),
       }),
     onSuccess: (updated) => {
+      setServerError(null);
+      setFieldErrors({});
       setFeedback({ open: true, message: `Quotation ${updated.quotationNumber} updated successfully!`, severity: 'success' });
       queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all });
       navigate(`/quotations/${updated.id}`);
     },
-    onError: (err: Error) => {
-      setFeedback({ open: true, message: err.message || 'Failed to update quotation draft', severity: 'error' });
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (apiError.cancelled) return;
+      setServerError(apiError.message);
+      setFieldErrors(apiError.fieldErrors);
     },
   });
 
@@ -74,7 +82,7 @@ export function EditQuotationPage() {
 
   if (isError || !quotation) {
     return (
-      <ErrorState message={error instanceof Error ? error.message : 'The requested quotation could not be loaded.'} onRetry={refetch} />
+      <ErrorState message={toApiError(error).message} onRetry={refetch} />
     );
   }
 
@@ -146,8 +154,16 @@ export function EditQuotationPage() {
         initialValues={initialValues}
         editingQuotation={quotation}
         isSubmitting={updateMutation.isPending}
+        serverError={serverError}
+        fieldErrors={fieldErrors}
         onCancel={() => navigate(`/quotations/${quotation.id}`)}
-        onSubmit={(values) => updateMutation.mutate(values)}
+        onSubmit={(values) => {
+          if (!updateMutation.isPending) {
+            setServerError(null);
+            setFieldErrors({});
+            updateMutation.mutate(values);
+          }
+        }}
       />
 
       <Snackbar

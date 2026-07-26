@@ -24,10 +24,10 @@ type BankDetailsTableProps = {
   onEdit: (bankDetail: BankDetail) => void;
   onDelete: (bankDetail: BankDetail) => void;
   onSetDefault: (bankDetail: BankDetail) => void;
-  disabled?: boolean;
+  busyBankDetailId?: number | null;
 };
 
-export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, disabled }: BankDetailsTableProps) {
+export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, busyBankDetailId }: BankDetailsTableProps) {
   return (
     <>
       <TableContainer component={Paper} variant="outlined" sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -62,17 +62,17 @@ export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, 
                 </TableCell>
                 <TableCell align="right">
                   <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                    <IconButton aria-label={`Edit ${bankDetail.bankName}`} onClick={() => onEdit(bankDetail)} disabled={disabled}>
+                    <IconButton aria-label={`Edit ${bankDetail.bankName}`} onClick={() => onEdit(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       aria-label={`Set ${bankDetail.bankName} as default`}
                       onClick={() => onSetDefault(bankDetail)}
-                      disabled={disabled || bankDetail.isDefault}
+                      disabled={busyBankDetailId === bankDetail.id || bankDetail.isDefault}
                     >
                       <StarBorderOutlinedIcon fontSize="small" />
                     </IconButton>
-                    <IconButton aria-label={`Delete ${bankDetail.bankName}`} color="error" onClick={() => onDelete(bankDetail)} disabled={disabled}>
+                    <IconButton aria-label={`Delete ${bankDetail.bankName}`} color="error" onClick={() => onDelete(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>
                       <DeleteOutlineOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Stack>
@@ -96,11 +96,11 @@ export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, 
               <Typography>Account: {maskAccountNumber(bankDetail.accountNumber)}</Typography>
               <Typography color="text.secondary">IFSC: {bankDetail.ifscCode ?? '-'} · Branch: {bankDetail.branchName ?? '-'}</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(bankDetail)} disabled={disabled}>Edit</Button>
-                <Button size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => onSetDefault(bankDetail)} disabled={disabled || bankDetail.isDefault}>
-                  Set default
+                <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>Edit</Button>
+                <Button size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => onSetDefault(bankDetail)} disabled={bankDetail.isDefault} loading={busyBankDetailId === bankDetail.id}>
+                  {busyBankDetailId === bankDetail.id ? 'Updating...' : 'Set default'}
                 </Button>
-                <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(bankDetail)} disabled={disabled}>Delete</Button>
+                <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>Delete</Button>
               </Stack>
             </Stack>
           </Paper>
@@ -109,4 +109,3 @@ export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, 
     </>
   );
 }
-

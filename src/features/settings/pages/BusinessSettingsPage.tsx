@@ -96,50 +96,55 @@ export function BusinessSettingsPage() {
   }
 
   const profile = query.data;
-  const isBusy = updateMutation.isPending || uploadMutation.isPending || deleteMutation.isPending;
+  const activeBrandingAsset = uploadMutation.isPending
+    ? uploadMutation.variables?.assetType
+    : deleteMutation.isPending
+      ? deleteMutation.variables
+      : null;
+  const isFormBusy = updateMutation.isPending;
 
   return (
     <SettingsPageHeader title="Business Settings" description="Manage company identity, contact details and branding assets.">
-      <Stack component="form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate>
+      <Stack component="form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isFormBusy}>
         {serverError ? <Alert severity="error">{serverError}</Alert> : null}
         {form.formState.isDirty ? <Alert severity="info">You have unsaved changes.</Alert> : null}
         <SettingsSection title="Company information">
           <TwoColumnGrid>
-            <ProfileTextField form={form} name="legalName" label="Legal name" required autoComplete="organization" disabled={isBusy} />
-            <ProfileTextField form={form} name="displayName" label="Display name" required autoComplete="organization" disabled={isBusy} />
-            <ProfileTextField form={form} name="website" label="Website" autoComplete="url" disabled={isBusy} />
-            <ProfileTextField form={form} name="defaultCurrency" label="Default currency" required disabled={isBusy} />
+            <ProfileTextField form={form} name="legalName" label="Legal name" required autoComplete="organization" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="displayName" label="Display name" required autoComplete="organization" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="website" label="Website" autoComplete="url" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="defaultCurrency" label="Default currency" required disabled={isFormBusy} />
           </TwoColumnGrid>
         </SettingsSection>
         <SettingsSection title="Legal and tax information">
           <TwoColumnGrid>
-            <ProfileTextField form={form} name="gstin" label="GSTIN" disabled={isBusy} />
-            <ProfileTextField form={form} name="pan" label="PAN" disabled={isBusy} />
-            <ProfileTextField form={form} name="cin" label="CIN" disabled={isBusy} />
+            <ProfileTextField form={form} name="gstin" label="GSTIN" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="pan" label="PAN" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="cin" label="CIN" disabled={isFormBusy} />
           </TwoColumnGrid>
         </SettingsSection>
         <SettingsSection title="Address">
           <TwoColumnGrid>
-            <ProfileTextField form={form} name="addressLine1" label="Address line 1" required autoComplete="address-line1" disabled={isBusy} />
-            <ProfileTextField form={form} name="addressLine2" label="Address line 2" autoComplete="address-line2" disabled={isBusy} />
-            <ProfileTextField form={form} name="city" label="City" required autoComplete="address-level2" disabled={isBusy} />
-            <ProfileTextField form={form} name="state" label="State" required autoComplete="address-level1" disabled={isBusy} />
-            <ProfileTextField form={form} name="postalCode" label="Postal code" required autoComplete="postal-code" disabled={isBusy} />
-            <ProfileTextField form={form} name="country" label="Country" required autoComplete="country-name" disabled={isBusy} />
+            <ProfileTextField form={form} name="addressLine1" label="Address line 1" required autoComplete="address-line1" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="addressLine2" label="Address line 2" autoComplete="address-line2" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="city" label="City" required autoComplete="address-level2" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="state" label="State" required autoComplete="address-level1" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="postalCode" label="Postal code" required autoComplete="postal-code" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="country" label="Country" required autoComplete="country-name" disabled={isFormBusy} />
           </TwoColumnGrid>
         </SettingsSection>
         <SettingsSection title="Contact information">
           <TwoColumnGrid>
-            <ProfileTextField form={form} name="primaryPhone" label="Primary phone" autoComplete="tel" disabled={isBusy} />
-            <ProfileTextField form={form} name="secondaryPhone" label="Secondary phone" autoComplete="tel" disabled={isBusy} />
-            <ProfileTextField form={form} name="primaryEmail" label="Primary email" autoComplete="email" disabled={isBusy} />
-            <ProfileTextField form={form} name="secondaryEmail" label="Secondary email" autoComplete="email" disabled={isBusy} />
+            <ProfileTextField form={form} name="primaryPhone" label="Primary phone" autoComplete="tel" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="secondaryPhone" label="Secondary phone" autoComplete="tel" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="primaryEmail" label="Primary email" autoComplete="email" disabled={isFormBusy} />
+            <ProfileTextField form={form} name="secondaryEmail" label="Secondary email" autoComplete="email" disabled={isFormBusy} />
           </TwoColumnGrid>
         </SettingsSection>
         <SettingsSection title="Brand colours" description="Preview only. These colours do not change the admin theme.">
           <TwoColumnGrid>
-            <ColourField control={form.control} name="primaryColour" label="Primary colour" disabled={isBusy} />
-            <ColourField control={form.control} name="secondaryColour" label="Secondary colour" disabled={isBusy} />
+            <ColourField control={form.control} name="primaryColour" label="Primary colour" disabled={isFormBusy} />
+            <ColourField control={form.control} name="secondaryColour" label="Secondary colour" disabled={isFormBusy} />
           </TwoColumnGrid>
           <Box sx={{ mt: 2, border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden', maxWidth: 520 }}>
             <Box sx={{ bgcolor: primaryColour, color: '#fff', px: 2, py: 1.5 }}>
@@ -152,17 +157,17 @@ export function BusinessSettingsPage() {
         </SettingsSection>
         <SettingsSection title="Branding assets">
           <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' }} gap={2}>
-            <BrandingAssetCard assetType="logo" title="Logo" description="Displayed in quotation branding." imageUrl={profile.logoUrl} updatedAt={profile.updatedAt} isBusy={isBusy} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'logo', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('logo').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
-            <BrandingAssetCard assetType="signature" title="Authorised signature" description="Used for signed quotation output." imageUrl={profile.signatureUrl} updatedAt={profile.updatedAt} isBusy={isBusy} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'signature', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('signature').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
-            <BrandingAssetCard assetType="stamp" title="Company stamp" description="Used for stamped quotation output." imageUrl={profile.stampUrl} updatedAt={profile.updatedAt} isBusy={isBusy} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'stamp', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('stamp').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
+            <BrandingAssetCard assetType="logo" title="Logo" description="Displayed in quotation branding." imageUrl={profile.logoUrl} updatedAt={profile.updatedAt} isBusy={activeBrandingAsset === 'logo'} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'logo', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('logo').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
+            <BrandingAssetCard assetType="signature" title="Authorised signature" description="Used for signed quotation output." imageUrl={profile.signatureUrl} updatedAt={profile.updatedAt} isBusy={activeBrandingAsset === 'signature'} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'signature', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('signature').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
+            <BrandingAssetCard assetType="stamp" title="Company stamp" description="Used for stamped quotation output." imageUrl={profile.stampUrl} updatedAt={profile.updatedAt} isBusy={activeBrandingAsset === 'stamp'} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'stamp', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('stamp').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
           </Box>
         </SettingsSection>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
-          <Button type="button" variant="outlined" disabled={isBusy || !form.formState.isDirty} onClick={() => form.reset(toBusinessProfileFormValues(profile))}>
+          <Button type="button" variant="outlined" disabled={isFormBusy || !form.formState.isDirty} onClick={() => form.reset(toBusinessProfileFormValues(profile))}>
             Reset changes
           </Button>
-          <Button type="submit" variant="contained" disabled={isBusy || !form.formState.isDirty}>
-            {updateMutation.isPending ? 'Saving' : 'Save changes'}
+          <Button type="submit" variant="contained" disabled={!form.formState.isDirty} loading={updateMutation.isPending} loadingPosition="start">
+            {updateMutation.isPending ? 'Saving...' : 'Save changes'}
           </Button>
         </Stack>
       </Stack>

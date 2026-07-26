@@ -28,7 +28,9 @@ export function DeleteCompanyDialog({ company, isDeleting, onClose, onConfirm }:
       </DialogContent>
       <DialogActions>
         <Button autoFocus onClick={onClose} disabled={isDeleting}>Cancel</Button>
-        <Button color="error" onClick={() => void onConfirm().catch(() => undefined)} disabled={isDeleting}>Delete company</Button>
+        <Button color="error" onClick={() => void onConfirm().catch(() => undefined)} loading={isDeleting} loadingPosition="start">
+          {isDeleting ? 'Deleting...' : 'Delete company'}
+        </Button>
       </DialogActions>
     </Dialog>
   );
@@ -58,8 +60,8 @@ export function CompanyStatusDialog({ company, isSubmitting, onClose, onConfirm 
       </DialogContent>
       <DialogActions>
         <Button autoFocus onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-        <Button variant="contained" onClick={() => void onConfirm().catch(() => undefined)} disabled={isSubmitting}>
-          {nextActive ? 'Activate' : 'Deactivate'}
+        <Button variant="contained" onClick={() => void onConfirm().catch(() => undefined)} loading={isSubmitting} loadingPosition="start">
+          {isSubmitting ? 'Updating...' : nextActive ? 'Activate' : 'Deactivate'}
         </Button>
       </DialogActions>
     </Dialog>

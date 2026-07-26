@@ -13,6 +13,7 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
@@ -29,6 +30,8 @@ import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
+import { toApiError } from '../../../services/apiClient';
 import {
   downloadQuotationAttachmentBlobRequest,
   getQuotationAttachmentsRequest,
@@ -69,21 +72,24 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
   const [selectedAttachment, setSelectedAttachment] = useState<QuotationAttachment | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: quotationAttachmentsQueryKeys.list(quotationId),
     queryFn: () => getQuotationAttachmentsRequest(quotationId),
     enabled: Boolean(quotationId && quotationId > 0),
+    staleTime: 30000,
   });
 
   const attachments = data?.attachments || [];
   const limits = data?.limits || { maximumAttachments: 20, remainingAttachments: 20, maximumFileSizeBytes: 20971520 };
 
   const handlePreview = (attachment: QuotationAttachment) => {
+    if (downloadingId === attachment.id) return;
     setSelectedAttachment(attachment);
     setPreviewDialogOpen(true);
   };
 
   const handleDownload = async (attachment: QuotationAttachment) => {
+    if (downloadingId === attachment.id) return;
     try {
       setDownloadingId(attachment.id);
       const { blob, filename } = await downloadQuotationAttachmentBlobRequest(
@@ -101,20 +107,22 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to download attachment';
-      onFeedback(msg, 'error');
+      const apiError = toApiError(err);
+      if (!apiError.cancelled) onFeedback(apiError.message, 'error');
     } finally {
       setDownloadingId(null);
     }
   };
 
   const handleDelete = (attachment: QuotationAttachment) => {
+    if (downloadingId === attachment.id) return;
     setSelectedAttachment(attachment);
     setDeleteDialogOpen(true);
   };
+  const showRefreshing = isFetching && !isLoading;
 
   return (
-    <Paper variant="outlined" sx={{ p: 3, mt: 3, borderRadius: 2 }}>
+    <Paper variant="outlined" sx={{ p: 3, mt: 3, borderRadius: 2 }} aria-busy={isLoading || showRefreshing}>
       {/* Header */}
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
         <Box>
@@ -145,6 +153,7 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
       </Stack>
 
       <Divider sx={{ mb: 2 }} />
+      <RefreshIndicator show={showRefreshing} label="Refreshing attachments..." />
 
       {/* Content */}
       {isLoading ? (
@@ -161,7 +170,7 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
             </Button>
           }
         >
-          {error instanceof Error ? error.message : 'Failed to load attachments'}
+          {toApiError(error).message}
         </Alert>
       ) : attachments.length === 0 ? (
         <Box sx={{ text: 'center', py: 4, px: 2, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
@@ -233,12 +242,12 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
                             disabled={downloadingId === att.id}
                             aria-label={`Download ${att.originalFilename}`}
                           >
-                            <DownloadOutlinedIcon fontSize="small" />
+                            {downloadingId === att.id ? <CircularProgress size={18} aria-label={`Downloading ${att.originalFilename}`} /> : <DownloadOutlinedIcon fontSize="small" />}
                           </IconButton>
                         </Tooltip>
 
                         <Tooltip title="Delete attachment">
-                          <IconButton size="small" color="error" onClick={() => handleDelete(att)} aria-label={`Delete ${att.originalFilename}`}>
+                          <IconButton size="small" color="error" onClick={() => handleDelete(att)} aria-label={`Delete ${att.originalFilename}`} disabled={downloadingId === att.id}>
                             <DeleteOutlineOutlinedIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -282,6 +291,7 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
                         variant="outlined"
                         startIcon={<VisibilityOutlinedIcon />}
                         onClick={() => handlePreview(att)}
+                        disabled={downloadingId === att.id}
                       >
                         Preview
                       </Button>
@@ -291,9 +301,10 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
                       variant="outlined"
                       startIcon={<DownloadOutlinedIcon />}
                       onClick={() => handleDownload(att)}
-                      disabled={downloadingId === att.id}
+                      loading={downloadingId === att.id}
+                      loadingPosition="start"
                     >
-                      Download
+                      {downloadingId === att.id ? 'Downloading...' : 'Download'}
                     </Button>
                     <Button
                       size="small"
@@ -301,6 +312,7 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
                       variant="outlined"
                       startIcon={<DeleteOutlineOutlinedIcon />}
                       onClick={() => handleDelete(att)}
+                      disabled={downloadingId === att.id}
                     >
                       Delete
                     </Button>

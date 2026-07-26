@@ -48,16 +48,16 @@ export function ChangePasswordPage() {
       </Box>
       <Card>
         <CardContent>
-          <Stack component="form" spacing={2.25} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate>
+          <Stack component="form" spacing={2.25} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isChangingPassword}>
             {authError ? <Alert severity="error">{authError.message}</Alert> : null}
             <Controller name="currentPassword" control={form.control} render={({ field, fieldState }) => (
-              <PasswordField {...field} fullWidth label="Current password" autoComplete="current-password" error={fieldState.invalid} helperText={fieldState.error?.message} />
+              <PasswordField {...field} fullWidth label="Current password" autoComplete="current-password" error={fieldState.invalid} helperText={fieldState.error?.message} disabled={isChangingPassword} />
             )} />
             <Controller name="newPassword" control={form.control} render={({ field, fieldState }) => (
-              <PasswordField {...field} fullWidth label="New password" autoComplete="new-password" error={fieldState.invalid} helperText={fieldState.error?.message} />
+              <PasswordField {...field} fullWidth label="New password" autoComplete="new-password" error={fieldState.invalid} helperText={fieldState.error?.message} disabled={isChangingPassword} />
             )} />
             <Controller name="confirmPassword" control={form.control} render={({ field, fieldState }) => (
-              <PasswordField {...field} fullWidth label="Confirm new password" autoComplete="new-password" error={fieldState.invalid} helperText={fieldState.error?.message} />
+              <PasswordField {...field} fullWidth label="Confirm new password" autoComplete="new-password" error={fieldState.invalid} helperText={fieldState.error?.message} disabled={isChangingPassword} />
             )} />
             <Box bgcolor="primary.light" borderRadius={2} p={2}>
               <Typography fontWeight={700}>Password requirements</Typography>
@@ -66,8 +66,8 @@ export function ChangePasswordPage() {
               </List>
             </Box>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <Button type="submit" variant="contained" disabled={isChangingPassword}>{isChangingPassword ? 'Changing password' : 'Change password'}</Button>
-              <Button variant="outlined" onClick={() => navigate(paths.dashboard)}>Cancel</Button>
+              <Button type="submit" variant="contained" loading={isChangingPassword} loadingPosition="start">{isChangingPassword ? 'Changing password...' : 'Change password'}</Button>
+              <Button variant="outlined" onClick={() => navigate(paths.dashboard)} disabled={isChangingPassword}>Cancel</Button>
             </Stack>
           </Stack>
         </CardContent>

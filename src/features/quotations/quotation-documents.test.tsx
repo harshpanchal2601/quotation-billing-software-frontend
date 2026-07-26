@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as attachmentsApi from './api/quotation-attachments.api';
 import * as documentsApi from './api/quotation-documents.api';
+import * as quotationsApi from './api/quotations.api';
 import { QuotationDocumentsSection } from './components/QuotationDocumentsSection';
 import type { GeneratedDocumentHistoryResponse } from './quotation-documents.types';
 import type { QuotationDetail } from './quotations.types';
@@ -118,6 +119,16 @@ describe('Generated Document History & Quotation Email Frontend', () => {
     });
   });
 
+  it('does not show the empty generated-document state before the first request completes', () => {
+    const pendingHistory = deferred<GeneratedDocumentHistoryResponse>();
+    vi.mocked(documentsApi.getGeneratedDocumentHistoryRequest).mockReturnValue(pendingHistory.promise);
+
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+
+    expect(screen.getByText(/Generated Documents/i)).toBeInTheDocument();
+    expect(screen.queryByText(/No generated PDF documents yet/i)).not.toBeInTheDocument();
+  });
+
   it('renders generated document history section and displays version history table', async () => {
     renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
 
@@ -144,4 +155,27 @@ describe('Generated Document History & Quotation Email Frontend', () => {
     expect(screen.getByDisplayValue('ramesh@mankind.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue(/Dear Dr. Ramesh Sharma/i)).toBeInTheDocument();
   });
+
+  it('shows local pending state while generating a new PDF', async () => {
+    const pendingPdf = deferred<Awaited<ReturnType<typeof quotationsApi.generateQuotationPdfRequest>>>();
+    vi.mocked(quotationsApi.generateQuotationPdfRequest).mockReturnValue(pendingPdf.promise);
+
+    const user = userEvent.setup();
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+
+    await screen.findAllByText('Quotation-BUMINEX-2026-27-000001-v1.pdf');
+    await user.click(screen.getByRole('button', { name: /generate new pdf/i }));
+
+    expect(screen.getByRole('button', { name: /generating pdf/i })).toBeDisabled();
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}

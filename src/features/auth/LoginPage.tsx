@@ -52,7 +52,7 @@ export function LoginPage() {
         </Stack>
         <Card sx={{ width: '100%', maxWidth: 420 }}>
           <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-            <Stack component="form" spacing={2.25} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate>
+            <Stack component="form" spacing={2.25} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isLoggingIn}>
               <Box>
                 <Typography component="h1" variant="h1">Welcome back</Typography>
                 <Typography color="text.secondary">Sign in to manage companies, items and quotations.</Typography>
@@ -71,6 +71,7 @@ export function LoginPage() {
                     autoComplete="username"
                     error={fieldState.invalid}
                     helperText={fieldState.error?.message}
+                    disabled={isLoggingIn}
                   />
                 )}
               />
@@ -85,11 +86,12 @@ export function LoginPage() {
                     autoComplete="current-password"
                     error={fieldState.invalid}
                     helperText={fieldState.error?.message}
+                    disabled={isLoggingIn}
                   />
                 )}
               />
-              <Button type="submit" variant="contained" size="large" disabled={isLoggingIn}>
-                {isLoggingIn ? 'Signing in' : 'Sign in'}
+              <Button type="submit" variant="contained" size="large" loading={isLoggingIn} loadingPosition="start">
+                {isLoggingIn ? 'Signing in...' : 'Sign in'}
               </Button>
               <Typography variant="body2" color="text.secondary" textAlign="center">
                 Buminex Pharmtech Solutions Pvt. Ltd.

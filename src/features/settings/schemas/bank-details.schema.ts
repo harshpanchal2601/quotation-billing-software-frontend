@@ -3,6 +3,8 @@ import { z } from 'zod';
 const optionalText = (max: number) =>
   z.string().trim().max(max).transform((value) => (value.length === 0 ? undefined : value));
 
+const ifscMessage = 'Enter a valid 11-character IFSC code, for example BARB0AHMEDA.';
+
 export const bankDetailsSchema = z.object({
   bankName: z.string().trim().min(2, 'Bank name is required').max(191),
   accountName: z.string().trim().min(2, 'Account name is required').max(191),
@@ -17,7 +19,7 @@ export const bankDetailsSchema = z.object({
     .string()
     .trim()
     .toUpperCase()
-    .refine((value) => value.length === 0 || /^[A-Z]{4}0[A-Z0-9]{6}$/.test(value), 'Enter a valid IFSC code')
+    .refine((value) => value.length === 0 || /^[A-Z]{4}0[A-Z0-9]{6}$/.test(value), ifscMessage)
     .transform((value) => (value.length === 0 ? undefined : value)),
   branchName: optionalText(191),
   swiftCode: z

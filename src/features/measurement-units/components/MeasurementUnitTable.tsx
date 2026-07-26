@@ -23,7 +23,7 @@ import { formatQuantityTypeLabel } from '../measurement-units.utils';
 
 type MeasurementUnitTableProps = {
   units: MeasurementUnitListItem[];
-  disabled?: boolean;
+  busyUnitId?: number | null;
   onView: (unit: MeasurementUnitListItem) => void;
   onEdit: (unit: MeasurementUnitListItem) => void;
   onStatusChange: (unit: MeasurementUnitListItem) => void;
@@ -32,7 +32,7 @@ type MeasurementUnitTableProps = {
 
 export function MeasurementUnitTable({
   units,
-  disabled = false,
+  busyUnitId = null,
   onView,
   onEdit,
   onStatusChange,
@@ -92,7 +92,7 @@ export function MeasurementUnitTable({
                     size="small"
                     aria-label={`Actions for ${unit.name}`}
                     onClick={(e) => handleOpenMenu(e, unit)}
-                    disabled={disabled}
+                    disabled={busyUnitId === unit.id}
                   >
                     <MoreVertIcon fontSize="small" />
                   </IconButton>
@@ -160,7 +160,7 @@ export function MeasurementUnitTable({
                     size="small"
                     aria-label={`Actions for ${unit.name}`}
                     onClick={(e) => handleOpenMenu(e, unit)}
-                    disabled={disabled}
+                    disabled={busyUnitId === unit.id}
                   >
                     <MoreVertIcon fontSize="small" />
                   </IconButton>
