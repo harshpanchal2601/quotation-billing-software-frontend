@@ -1,0 +1,53 @@
+import Button from '@mui/material/Button';
+import Skeleton from '@mui/material/Skeleton';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { ErrorState } from '../../../components/common/ErrorState';
+import { paths } from '../../../routes/routeConfig';
+import { toApiError } from '../../../services/apiClient';
+import { getCompanyRequest, updateCompanyRequest } from '../api/companies.api';
+import { companiesQueryKeys } from '../companies.query-keys';
+import { CompanyForm } from '../components/CompanyForm';
+import type { CompanyUpdateSubmitValues } from '../schemas/company.schema';
+
+export function EditCompanyPage() {
+  const companyId = Number(useParams().id);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const query = useQuery({ queryKey: companiesQueryKeys.detail(companyId), queryFn: () => getCompanyRequest(companyId), enabled: Number.isFinite(companyId) });
+  const mutation = useMutation({
+    mutationFn: (values: CompanyUpdateSubmitValues) => updateCompanyRequest(companyId, values),
+    onSuccess: async (company) => {
+      queryClient.setQueryData(companiesQueryKeys.detail(companyId), company);
+      await queryClient.invalidateQueries({ queryKey: companiesQueryKeys.lists() });
+      setSuccessMessage('Company updated.');
+      navigate(`${paths.companies}/${companyId}`);
+    },
+    onError: (error) => setErrorMessage(toApiError(error).message),
+  });
+
+  if (!Number.isFinite(companyId)) return <ErrorState message="Company not found" />;
+  if (query.isPending) return <Stack spacing={1}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack>;
+  if (query.isError) return <Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><Button onClick={() => void query.refetch()}>Retry</Button></Stack>;
+
+  return (
+    <Stack spacing={3} maxWidth={1040}>
+      <Stack>
+        <Typography component="h1" variant="h1">Edit {query.data.name}</Typography>
+        <Typography color="text.secondary">Company contacts and addresses are managed from the details page.</Typography>
+      </Stack>
+      <CompanyForm mode="edit" company={query.data} isSubmitting={mutation.isPending} errorMessage={errorMessage} onSubmit={async (values) => { setErrorMessage(null); await mutation.mutateAsync(values); }} onCancel={() => navigate(`${paths.companies}/${companyId}`)} />
+      <Snackbar open={successMessage !== null} autoHideDuration={4000} onClose={() => setSuccessMessage(null)}>
+        <Alert severity="success" variant="filled">{successMessage}</Alert>
+      </Snackbar>
+    </Stack>
+  );
+}
