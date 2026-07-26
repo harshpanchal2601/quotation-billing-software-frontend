@@ -39,6 +39,11 @@ export type QuotationListItem = {
   id: number;
   quotationNumber: string;
   revisionNumber: number;
+  rootQuotationId: number | null;
+  previousRevisionId: number | null;
+  isLatestRevision: boolean;
+  canEdit: boolean;
+  canCreateRevision: boolean;
   companyId: number;
   company: CompanySummary | null;
   companyNameSnapshot: string;
@@ -89,10 +94,27 @@ export type QuotationStatusHistoryItem = {
   changedAt: string;
 };
 
+export type QuotationRevisionSummary = {
+  id: number;
+  quotationNumber: string;
+  revisionNumber: number;
+  status: QuotationStatus;
+  isLatestRevision: boolean;
+  createdAt: string;
+};
+
 export type QuotationDetail = {
   id: number;
   quotationNumber: string;
   revisionNumber: number;
+  rootQuotationId: number | null;
+  previousRevisionId: number | null;
+  isLatestRevision: boolean;
+  canEdit: boolean;
+  canCreateRevision: boolean;
+  previousRevision: QuotationRevisionSummary | null;
+  nextRevision: QuotationRevisionSummary | null;
+  latestRevision: QuotationRevisionSummary | null;
   companyId: number;
   companyContactId: number | null;
   billingAddressId: number | null;

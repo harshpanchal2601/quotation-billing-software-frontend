@@ -38,6 +38,11 @@ export async function updateQuotationRequest(id: number, input: QuotationUpdateI
   return response.data.data.quotation;
 }
 
+export async function createQuotationRevisionRequest(id: number): Promise<QuotationDetail> {
+  const response = await apiClient.post<ApiSuccessResponse<{ quotation: QuotationDetail }>>(`/quotations/${id}/revisions`);
+  return response.data.data.quotation;
+}
+
 export async function updateQuotationStatusRequest(
   id: number,
   input: QuotationStatusUpdateInput,

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as quotationsApi from './api/quotations.api';
 import { QuotationForm } from './components/QuotationForm';
+import { EditQuotationPage } from './pages/EditQuotationPage';
 import { QuotationDetailsPage } from './pages/QuotationDetailsPage';
 import { QuotationsPage } from './pages/QuotationsPage';
 import { quotationFormSchema, type QuotationFormSubmitValues } from './quotations.schema';
@@ -47,6 +48,11 @@ const mockQuotationListItem: QuotationListItem = {
   id: 1,
   quotationNumber: 'BUMINEX/2026-27/000001',
   revisionNumber: 0,
+  rootQuotationId: 1,
+  previousRevisionId: null,
+  isLatestRevision: true,
+  canEdit: true,
+  canCreateRevision: false,
   companyId: 1,
   company: { id: 1, companyCode: 'COMP-000001', name: 'Mankind Pharma', legalName: null, gstin: null },
   companyNameSnapshot: 'Mankind Pharma',
@@ -67,6 +73,14 @@ const mockQuotationDetail: QuotationDetail = {
   id: 1,
   quotationNumber: 'BUMINEX/2026-27/000001',
   revisionNumber: 0,
+  rootQuotationId: 1,
+  previousRevisionId: null,
+  isLatestRevision: true,
+  canEdit: true,
+  canCreateRevision: false,
+  previousRevision: null,
+  nextRevision: null,
+  latestRevision: null,
   companyId: 1,
   companyContactId: null,
   billingAddressId: null,
@@ -210,8 +224,13 @@ describe('quotation frontend management', () => {
   });
 
   it('hides edit and delete controls for non-draft quotation on details page', async () => {
-    const sentQuotation = { ...mockQuotationDetail, status: 'SENT' as const };
-    vi.mocked(quotationsApi.getQuotationRequest).mockResolvedValueOnce(sentQuotation);
+    const sentQuotation = {
+      ...mockQuotationDetail,
+      status: 'SENT' as const,
+      canEdit: false,
+      canCreateRevision: true,
+    };
+    vi.mocked(quotationsApi.getQuotationRequest).mockResolvedValue(sentQuotation);
 
     renderWithProviders(
       <Routes>
@@ -223,7 +242,70 @@ describe('quotation frontend management', () => {
     expect(await screen.findByText('BUMINEX/2026-27/000001')).toBeInTheDocument();
     expect(screen.queryByText('Edit Draft')).not.toBeInTheDocument();
     expect(screen.queryByText('Delete')).not.toBeInTheDocument();
+    expect(screen.getByText('Create Revision')).toBeInTheDocument();
     expect(screen.getByText('Change Status')).toBeInTheDocument();
+  });
+
+  it('creates a draft revision from a sent quotation and opens it for editing', async () => {
+    const sentQuotation = {
+      ...mockQuotationDetail,
+      status: 'SENT' as const,
+      canEdit: false,
+      canCreateRevision: true,
+    };
+    const draftRevision = {
+      ...mockQuotationDetail,
+      id: 2,
+      revisionNumber: 1,
+      previousRevisionId: 1,
+      status: 'DRAFT' as const,
+      canEdit: true,
+      canCreateRevision: false,
+    };
+    vi.mocked(quotationsApi.getQuotationRequest).mockResolvedValueOnce(sentQuotation);
+    vi.mocked(quotationsApi.createQuotationRevisionRequest).mockResolvedValueOnce(draftRevision);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/quotations/:id" element={<QuotationDetailsPage />} />
+        <Route path="/quotations/:id/edit" element={<div>Edit revision route</div>} />
+      </Routes>,
+      { initialEntries: ['/quotations/1'] },
+    );
+
+    await userEvent.click(await screen.findByText('Create Revision'));
+
+    await waitFor(() => {
+      expect(quotationsApi.createQuotationRevisionRequest).toHaveBeenCalledWith(1);
+      expect(screen.getByText('Edit revision route')).toBeInTheDocument();
+    });
+  });
+
+  it('blocks direct editing of stale draft revisions', async () => {
+    vi.mocked(quotationsApi.getQuotationRequest).mockResolvedValueOnce({
+      ...mockQuotationDetail,
+      revisionNumber: 0,
+      isLatestRevision: false,
+      canEdit: false,
+      latestRevision: {
+        id: 2,
+        quotationNumber: mockQuotationDetail.quotationNumber,
+        revisionNumber: 1,
+        status: 'DRAFT',
+        isLatestRevision: true,
+        createdAt: '2026-04-16T10:00:00.000Z',
+      },
+    });
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/quotations/:id/edit" element={<EditQuotationPage />} />
+      </Routes>,
+      { initialEntries: ['/quotations/1/edit'] },
+    );
+
+    expect(await screen.findByText(/Only the latest Draft revision is editable/i)).toBeInTheDocument();
+    expect(screen.queryByText('Update customer details, line items or charges. A version snapshot will be saved automatically upon submission.')).not.toBeInTheDocument();
   });
 
   it('opens status dialog and sends status transition request on confirmation', async () => {

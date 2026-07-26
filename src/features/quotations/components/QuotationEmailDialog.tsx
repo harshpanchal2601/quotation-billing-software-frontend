@@ -120,9 +120,7 @@ export function QuotationEmailDialog({
       });
     },
     onSuccess: (res) => {
-      onSuccess(
-        `Quotation email sent to ${res.recipientCount} recipient${res.recipientCount === 1 ? '' : 's'} with ${res.attachmentCount} document attachment${res.attachmentCount === 1 ? '' : 's'}.`,
-      );
+      onSuccess(res.message);
       handleClose();
     },
     onError: (error) => {
@@ -303,7 +301,7 @@ export function QuotationEmailDialog({
 
         <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
           <Typography variant="caption" color="text.secondary">
-            Note: Delivery depends on recipient email server policies.
+            SMTP acceptance does not confirm recipient inbox delivery.
           </Typography>
           <Stack direction="row" spacing={1}>
             <Button onClick={handleClose} disabled={emailMutation.isPending}>

@@ -1,4 +1,5 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -29,6 +30,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ErrorState } from '../../../components/common/ErrorState';
 import { toApiError } from '../../../services/apiClient';
 import {
+  createQuotationRevisionRequest,
   deleteQuotationRequest,
   downloadQuotationPdfBlobRequest,
   generateQuotationPdfRequest,
@@ -106,6 +108,23 @@ export function QuotationDetailsPage() {
     },
   });
 
+  const createRevisionMutation = useMutation({
+    mutationFn: () => createQuotationRevisionRequest(quotationId),
+    onSuccess: (created) => {
+      setFeedback({
+        open: true,
+        message: `Revision #${created.revisionNumber} created as a draft`,
+        severity: 'success',
+      });
+      queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all });
+      navigate(`/quotations/${created.id}/edit`);
+    },
+    onError: (error) => {
+      const apiError = toApiError(error);
+      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: 'error' });
+    },
+  });
+
   const handlePreviewPdf = async () => {
     if (pdfLoading) return;
     setPdfPreviewOpen(true);
@@ -176,10 +195,26 @@ export function QuotationDetailsPage() {
     );
   }
 
-  const isDraft = quotation.status === 'DRAFT';
+  const canEdit = quotation.canEdit;
+  const canCreateRevision = quotation.canCreateRevision;
+  const canChangeStatus = quotation.isLatestRevision;
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
+      {!quotation.isLatestRevision && quotation.latestRevision ? (
+        <Alert
+          severity="info"
+          action={
+            <Button color="inherit" size="small" onClick={() => navigate(`/quotations/${quotation.latestRevision?.id}`)}>
+              View Latest
+            </Button>
+          }
+          sx={{ mb: 2 }}
+        >
+          You are viewing historical Revision #{quotation.revisionNumber}. Latest is Revision #{quotation.latestRevision.revisionNumber}.
+        </Alert>
+      ) : null}
+
       {/* Header Actions */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -227,7 +262,7 @@ export function QuotationDetailsPage() {
             {pdfDownloading ? 'Downloading...' : 'Download PDF'}
           </Button>
 
-          {isDraft ? (
+          {canEdit ? (
             <Button
               variant="outlined"
               color="primary"
@@ -238,17 +273,30 @@ export function QuotationDetailsPage() {
             </Button>
           ) : null}
 
+          {canCreateRevision ? (
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<ContentCopyOutlinedIcon />}
+              onClick={() => createRevisionMutation.mutate()}
+              loading={createRevisionMutation.isPending}
+              loadingPosition="start"
+            >
+              {createRevisionMutation.isPending ? 'Creating...' : 'Create Revision'}
+            </Button>
+          ) : null}
+
           <Button
             variant="outlined"
             color="inherit"
             startIcon={<SwapHorizOutlinedIcon />}
             onClick={() => setStatusDialogOpen(true)}
-            disabled={statusMutation.isPending}
+            disabled={statusMutation.isPending || !canChangeStatus}
           >
             Change Status
           </Button>
 
-          {isDraft ? (
+          {canEdit ? (
             <Button
               variant="outlined"
               color="error"

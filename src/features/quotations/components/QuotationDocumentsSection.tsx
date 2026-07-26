@@ -32,10 +32,14 @@ import {
   generateQuotationPdfRequest,
   getQuotationPdfPreviewBlobRequest,
 } from '../api/quotations.api';
-import { getGeneratedDocumentHistoryRequest } from '../api/quotation-documents.api';
-import type { GeneratedDocumentHistoryItem } from '../quotation-documents.types';
+import {
+  getGeneratedDocumentHistoryRequest,
+  getQuotationCommunicationHistoryRequest,
+} from '../api/quotation-documents.api';
+import type { GeneratedDocumentHistoryItem, QuotationCommunicationHistoryItem } from '../quotation-documents.types';
 import type { QuotationDetail } from '../quotations.types';
 import { quotationDocumentsQueryKeys } from '../quotation-documents.query-keys';
+import { quotationsQueryKeys } from '../quotations.query-keys';
 import { QuotationPdfPreviewDialog } from './QuotationPdfPreviewDialog';
 import { QuotationEmailDialog } from './QuotationEmailDialog';
 
@@ -67,6 +71,22 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
   });
 
   const documents = data?.documents || [];
+
+  const {
+    data: communicationData,
+    isLoading: communicationsLoading,
+    isError: communicationsIsError,
+    error: communicationsError,
+    refetch: refetchCommunications,
+    isFetching: communicationsFetching,
+  } = useQuery({
+    queryKey: quotationDocumentsQueryKeys.communications(quotation.id),
+    queryFn: () => getQuotationCommunicationHistoryRequest(quotation.id),
+    enabled: Boolean(quotation.id && quotation.id > 0),
+    staleTime: 30000,
+  });
+
+  const communications = communicationData?.communications || [];
 
   const generatePdfMutation = useMutation({
     mutationFn: () => generateQuotationPdfRequest(quotation.id),
@@ -371,8 +391,154 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           setEmailDialogOpen(false);
           setSelectedDocForEmail(null);
         }}
-        onSuccess={(msg) => onFeedback(msg, 'success')}
+        onSuccess={(msg) => {
+          onFeedback(msg, 'success');
+          queryClient.invalidateQueries({ queryKey: quotationDocumentsQueryKeys.communications(quotation.id) });
+          queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.detail(quotation.id) });
+          queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.lists() });
+        }}
+      />
+
+      <CommunicationHistorySection
+        communications={communications}
+        isLoading={communicationsLoading}
+        isRefreshing={communicationsFetching && !communicationsLoading}
+        isError={communicationsIsError}
+        error={communicationsError}
+        onRetry={refetchCommunications}
       />
     </Paper>
   );
+}
+
+function CommunicationHistorySection({
+  communications,
+  isLoading,
+  isRefreshing,
+  isError,
+  error,
+  onRetry,
+}: {
+  communications: QuotationCommunicationHistoryItem[];
+  isLoading: boolean;
+  isRefreshing: boolean;
+  isError: boolean;
+  error: unknown;
+  onRetry: () => void;
+}) {
+  return (
+    <Box sx={{ mt: 3 }}>
+      <Divider sx={{ mb: 2 }} />
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+        <Box>
+          <Typography variant="h6" component="h2" fontWeight={600}>
+            Communication History
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            SMTP acceptance history for this exact quotation revision.
+          </Typography>
+        </Box>
+        <Chip label={`${communications.length} attempt${communications.length === 1 ? '' : 's'}`} size="small" />
+      </Stack>
+      <RefreshIndicator show={isRefreshing} label="Refreshing communication history..." />
+
+      {isLoading ? (
+        <Stack spacing={1}>
+          <Skeleton variant="rectangular" height={48} />
+          <Skeleton variant="rectangular" height={48} />
+        </Stack>
+      ) : isError ? (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={onRetry}>
+              Retry
+            </Button>
+          }
+        >
+          {toApiError(error).message}
+        </Alert>
+      ) : communications.length === 0 ? (
+        <Box sx={{ py: 3, px: 2, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
+          <EmailOutlinedIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />
+          <Typography variant="subtitle2" color="text.secondary">
+            No email attempts recorded for this quotation revision.
+          </Typography>
+        </Box>
+      ) : (
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Status</TableCell>
+                <TableCell>Recipients</TableCell>
+                <TableCell>Subject</TableCell>
+                <TableCell>PDF</TableCell>
+                <TableCell>Sent By</TableCell>
+                <TableCell>Timestamp</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {communications.map((communication) => (
+                <TableRow key={communication.id} hover>
+                  <TableCell>
+                    <CommunicationStatusChip communication={communication} />
+                  </TableCell>
+                  <TableCell sx={{ maxWidth: 260 }}>
+                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                      To: {communication.to.join(', ')}
+                    </Typography>
+                    {communication.cc.length > 0 ? (
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: 'break-word' }}>
+                        CC: {communication.cc.join(', ')}
+                      </Typography>
+                    ) : null}
+                    {communication.bcc.length > 0 ? (
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: 'break-word' }}>
+                        BCC: {communication.bcc.join(', ')}
+                      </Typography>
+                    ) : null}
+                  </TableCell>
+                  <TableCell sx={{ maxWidth: 260 }}>
+                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                      {communication.subject}
+                    </Typography>
+                    {communication.failureSummary ? (
+                      <Typography variant="caption" color="error.main" display="block">
+                        {communication.failureSummary}
+                      </Typography>
+                    ) : null}
+                  </TableCell>
+                  <TableCell>{getDocumentLabel(communication)}</TableCell>
+                  <TableCell>{communication.sender?.name || 'Admin'}</TableCell>
+                  <TableCell>
+                    {new Date(communication.acceptedAt || communication.failedAt || communication.createdAt).toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </Box>
+  );
+}
+
+function CommunicationStatusChip({ communication }: { communication: QuotationCommunicationHistoryItem }) {
+  if (communication.status === 'ACCEPTED') {
+    return <Chip label="Accepted by email server" size="small" color="success" variant="outlined" />;
+  }
+  if (communication.status === 'FAILED') {
+    return <Chip label="Failed" size="small" color="error" variant="outlined" />;
+  }
+  return <Chip label="Sending" size="small" color="warning" variant="outlined" />;
+}
+
+function getDocumentLabel(communication: QuotationCommunicationHistoryItem) {
+  const snapshot = communication.document;
+  if (typeof snapshot === 'object' && snapshot !== null && 'displayFilename' in snapshot) {
+    const filename = (snapshot as { displayFilename?: unknown }).displayFilename;
+    if (typeof filename === 'string') return filename;
+  }
+  return communication.generatedDocumentId ? `Document #${communication.generatedDocumentId}` : '-';
 }

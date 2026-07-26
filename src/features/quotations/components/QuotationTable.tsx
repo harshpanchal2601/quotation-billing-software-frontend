@@ -71,6 +71,9 @@ export function QuotationTable({
                   <Typography variant="subtitle1" fontWeight={700} color="primary.main" sx={{ wordBreak: 'break-word' }}>
                     {quo.quotationNumber}
                   </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Revision #{quo.revisionNumber}
+                  </Typography>
                   <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ wordBreak: 'break-word' }}>
                     {quo.companyNameSnapshot}
                   </Typography>
@@ -134,7 +137,12 @@ export function QuotationTable({
               sx={{ cursor: 'pointer' }}
             >
               <TableCell sx={{ fontWeight: 600, color: 'primary.main', wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                {quo.quotationNumber}
+                <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ wordBreak: 'break-word' }}>
+                  {quo.quotationNumber}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Revision #{quo.revisionNumber}
+                </Typography>
               </TableCell>
               <TableCell sx={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                 <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
@@ -200,7 +208,7 @@ function ActionPopover({
   const navigate = useNavigate();
 
   if (!quotation) return null;
-  const isDraft = quotation.status === 'DRAFT';
+  const canEdit = quotation.canEdit;
 
   return (
     <Popover
@@ -221,7 +229,7 @@ function ActionPopover({
           View Details
         </MenuItem>
 
-        {isDraft ? (
+        {canEdit ? (
           <MenuItem
             onClick={() => {
               onClose();
@@ -243,7 +251,7 @@ function ActionPopover({
           Update Status
         </MenuItem>
 
-        {isDraft ? (
+        {canEdit ? (
           <MenuItem
             onClick={() => {
               onClose();

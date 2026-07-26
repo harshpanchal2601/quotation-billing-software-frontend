@@ -1,6 +1,7 @@
 import { apiClient, type ApiSuccessResponse } from '../../../services/apiClient';
 import type {
   GeneratedDocumentHistoryResponse,
+  QuotationCommunicationHistoryResponse,
   SendQuotationEmailInput,
   SendQuotationEmailResponse,
 } from '../quotation-documents.types';
@@ -23,6 +24,17 @@ export async function sendQuotationEmailRequest(
   const response = await apiClient.post<ApiSuccessResponse<SendQuotationEmailResponse>>(
     `/quotations/${quotationId}/email`,
     input,
+  );
+  return response.data.data;
+}
+
+export async function getQuotationCommunicationHistoryRequest(
+  quotationId: number,
+  page = 1,
+): Promise<QuotationCommunicationHistoryResponse> {
+  const response = await apiClient.get<ApiSuccessResponse<QuotationCommunicationHistoryResponse>>(
+    `/quotations/${quotationId}/communications`,
+    { params: { page, limit: 20 } },
   );
   return response.data.data;
 }

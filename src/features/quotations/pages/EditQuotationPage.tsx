@@ -86,15 +86,18 @@ export function EditQuotationPage() {
     );
   }
 
-  // Non-draft check
-  if (quotation.status !== 'DRAFT') {
+  if (!quotation.canEdit) {
+    const latestRevision = quotation.latestRevision;
     return (
       <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
         <Alert severity="warning" sx={{ mb: 3 }}>
-          Quotation <strong>{quotation.quotationNumber}</strong> is currently in status <strong>{formatQuotationStatusLabel(quotation.status)}</strong> and can no longer be edited. Only Draft quotations are editable.
+          Quotation <strong>{quotation.quotationNumber}</strong> Revision #{quotation.revisionNumber} is currently in status <strong>{formatQuotationStatusLabel(quotation.status)}</strong> and can no longer be edited. Only the latest Draft revision is editable.
         </Alert>
-        <Button variant="contained" onClick={() => navigate(`/quotations/${quotation.id}`)}>
-          View Quotation Details
+        <Button
+          variant="contained"
+          onClick={() => navigate(`/quotations/${latestRevision?.id ?? quotation.id}`)}
+        >
+          {latestRevision && latestRevision.id !== quotation.id ? 'View Latest Revision' : 'View Quotation Details'}
         </Button>
       </Box>
     );
@@ -143,7 +146,7 @@ export function EditQuotationPage() {
     <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight={700}>
-          Edit Draft Quotation — {quotation.quotationNumber}
+          Edit Draft Quotation — {quotation.quotationNumber} Revision #{quotation.revisionNumber}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Update customer details, line items or charges. A version snapshot will be saved automatically upon submission.

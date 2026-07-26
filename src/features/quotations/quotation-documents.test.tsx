@@ -31,6 +31,14 @@ const mockQuotationDetail: QuotationDetail = {
   id: 1,
   quotationNumber: 'BUMINEX/2026-27/000001',
   revisionNumber: 0,
+  rootQuotationId: 1,
+  previousRevisionId: null,
+  isLatestRevision: true,
+  canEdit: true,
+  canCreateRevision: false,
+  previousRevision: null,
+  nextRevision: null,
+  latestRevision: null,
   companyId: 1,
   companyContactId: null,
   billingAddressId: null,
@@ -107,12 +115,42 @@ const mockHistoryResponse: GeneratedDocumentHistoryResponse = {
   pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
 };
 
+const mockCommunicationHistoryResponse = {
+  communications: [
+    {
+      id: 100,
+      quotationId: 1,
+      generatedDocumentId: 10,
+      quotationRevisionNumber: 0,
+      communicationType: 'QUOTATION_EMAIL',
+      status: 'ACCEPTED' as const,
+      attemptNumber: 1,
+      to: ['ramesh@mankind.com'],
+      cc: ['manager@mankind.com'],
+      bcc: ['audit@buminex.test'],
+      subject: 'Quotation BUMINEX/2026-27/000001',
+      message: 'Please find attached.',
+      document: { displayFilename: 'Quotation-BUMINEX-2026-27-000001-v1.pdf' },
+      attachments: [{ id: 5, originalFilename: 'layout.pdf' }],
+      providerMessageId: 'smtp-message-123',
+      failureCategory: null,
+      failureSummary: null,
+      createdAt: '2026-07-26T10:00:00.000Z',
+      acceptedAt: '2026-07-26T10:01:00.000Z',
+      failedAt: null,
+      sender: { id: 1, name: 'Admin User', email: 'admin@example.com' },
+    },
+  ],
+  pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+};
+
 describe('Generated Document History & Quotation Email Frontend', () => {
   const mockOnFeedback = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(documentsApi.getGeneratedDocumentHistoryRequest).mockResolvedValue(mockHistoryResponse);
+    vi.mocked(documentsApi.getQuotationCommunicationHistoryRequest).mockResolvedValue(mockCommunicationHistoryResponse);
     vi.mocked(attachmentsApi.getQuotationAttachmentsRequest).mockResolvedValue({
       attachments: [],
       limits: { maximumAttachments: 20, remainingAttachments: 20, maximumFileSizeBytes: 20971520 },
@@ -154,6 +192,17 @@ describe('Generated Document History & Quotation Email Frontend', () => {
     expect(screen.getByText('Send Quotation Email')).toBeInTheDocument();
     expect(screen.getByDisplayValue('ramesh@mankind.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue(/Dear Dr. Ramesh Sharma/i)).toBeInTheDocument();
+  });
+
+  it('renders revision-specific communication history with SMTP acceptance wording', async () => {
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+
+    expect(await screen.findByText('Accepted by email server')).toBeInTheDocument();
+    expect(screen.getByText('Communication History')).toBeInTheDocument();
+    expect(screen.getByText(/To: ramesh@mankind.com/i)).toBeInTheDocument();
+    expect(screen.getByText(/CC: manager@mankind.com/i)).toBeInTheDocument();
+    expect(screen.getByText(/BCC: audit@buminex.test/i)).toBeInTheDocument();
+    expect(screen.getAllByText('Quotation-BUMINEX-2026-27-000001-v1.pdf')[0]).toBeInTheDocument();
   });
 
   it('shows local pending state while generating a new PDF', async () => {
