@@ -12,8 +12,8 @@ import { ControlledCheckbox, ControlledTextField } from '@shared/forms/controlle
 import { AppDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
-import { bankDetailsSchema, type BankDetailsFormValues, type BankDetailsSubmitValues } from '../schemas/bank-details.schema';
-import type { BankDetail } from '../settings.types';
+import { bankDetailsSchema, type BankDetailsFormValues, type BankDetailsSubmitValues } from '../model/bank-details.schema';
+import type { BankDetail } from '../model/settings.types';
 
 const accountTypeOptions = ['Current', 'Savings', 'Cash Credit', 'Overdraft'];
 

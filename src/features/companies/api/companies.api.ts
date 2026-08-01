@@ -1,13 +1,13 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
-import { omitEmptyParams } from '../companies.utils';
+import { omitEmptyParams } from '../model/companies.utils';
 import type {
   CompanyDetail,
   CompanyListParams,
   CompanyListResponse,
   CompanyQuotationHistoryResponse,
   QuotationHistoryParams,
-} from '../companies.types';
-import type { CompanyCreateSubmitValues, CompanyUpdateSubmitValues } from '../schemas/company.schema';
+} from '../model/companies.types';
+import type { CompanyCreateSubmitValues, CompanyUpdateSubmitValues } from '../model/company.schema';
 
 type CompanyResponse = {
   company: CompanyDetail;

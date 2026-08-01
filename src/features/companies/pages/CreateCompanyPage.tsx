@@ -7,9 +7,9 @@ import { toApiError } from '@shared/api/apiClient';
 import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { createCompanyRequest } from '../api/companies.api';
-import { companiesQueryKeys } from '../companies.query-keys';
+import { companiesQueryKeys } from '../model/companies.query-keys';
 import { CompanyForm } from '../components/CompanyForm';
-import type { CompanyCreateSubmitValues } from '../schemas/company.schema';
+import type { CompanyCreateSubmitValues } from '../model/company.schema';
 
 export function CreateCompanyPage() {
   const navigate = useNavigate();

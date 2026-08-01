@@ -3,7 +3,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { ConfirmDialog, DeleteConfirmDialog } from '@shared/ui/dialogs';
-import type { ItemListItem } from '../items.types';
+import type { ItemListItem } from '../model/items.types';
 
 type StatusDialogProps = {
   item: ItemListItem | null;

@@ -13,8 +13,8 @@ import { SafeImage } from '@shared/components/common/SafeImage';
 import { AppButton } from '@shared/ui/actions';
 import { DeleteConfirmDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
-import type { BrandingAssetType } from '../settings.types';
-import { resolveAssetUrl } from '../settings.utils';
+import type { BrandingAssetType } from '../model/settings.types';
+import { resolveAssetUrl } from '../model/settings.utils';
 
 const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const maxFileSize = 5 * 1024 * 1024;

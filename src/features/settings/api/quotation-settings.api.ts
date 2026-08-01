@@ -1,5 +1,5 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
-import type { QuotationSettings } from '../settings.types';
+import type { QuotationSettings } from '../model/settings.types';
 
 export const quotationSettingsQueryKey = ['settings', 'quotation'] as const;
 
@@ -21,4 +21,3 @@ export async function updateQuotationSettingsRequest(input: QuotationSettingsUpd
   const response = await apiClient.put<ApiSuccessResponse<QuotationSettingsResponse>>('/settings/quotation', input);
   return response.data.data.quotationSettings;
 }
-

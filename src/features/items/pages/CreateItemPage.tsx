@@ -9,8 +9,8 @@ import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { createItemRequest } from '../api/items.api';
 
 import { ItemForm } from '../components/ItemForm';
-import { itemsQueryKeys } from '../items.query-keys';
-import type { ItemFormValues } from '../items.schema';
+import { itemsQueryKeys } from '../model/items.query-keys';
+import type { ItemFormValues } from '../model/items.schema';
 
 export function CreateItemPage() {
   const navigate = useNavigate();

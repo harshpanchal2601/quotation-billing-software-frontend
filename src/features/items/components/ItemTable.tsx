@@ -15,14 +15,14 @@ import { useTheme } from '@mui/material/styles';
 import { SafeImage } from '@shared/components/common/SafeImage';
 import { AppStatusChip } from '@shared/ui/display';
 import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
-import type { ItemListItem } from '../items.types';
+import type { ItemListItem } from '../model/items.types';
 import {
   formatCurrencyRate,
   formatGstRateLabel,
   formatItemSourceTypeLabel,
   formatReadableDate,
   resolveAssetUrl,
-} from '../items.utils';
+} from '../model/items.utils';
 
 type ItemTableProps = {
   items: ItemListItem[];

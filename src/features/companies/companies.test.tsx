@@ -10,7 +10,7 @@ import { CompaniesPage } from './pages/CompaniesPage';
 import { CreateCompanyPage } from './pages/CreateCompanyPage';
 import { EditCompanyPage } from './pages/EditCompanyPage';
 import { CompanyDetailsPage } from './pages/CompanyDetailsPage';
-import type { CompanyDetail, CompanyListItem, CompanyQuotation } from './companies.types';
+import type { CompanyDetail, CompanyListItem, CompanyQuotation } from './model/companies.types';
 
 const companiesApi = vi.hoisted(() => ({
   listCompaniesRequest: vi.fn(),

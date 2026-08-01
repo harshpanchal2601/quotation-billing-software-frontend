@@ -25,9 +25,9 @@ import {
 import { BrandingAssetCard } from '../components/BrandingAssetCard';
 import { ColourField } from '../components/ColourField';
 import { SettingsSection } from '../components/SettingsSection';
-import { businessProfileSchema, type BusinessProfileFormValues, type BusinessProfileSubmitValues } from '../schemas/business-profile.schema';
-import type { BrandingAssetType, BusinessProfile } from '../settings.types';
-import { getSafeApiErrorMessage } from '../settings.utils';
+import { businessProfileSchema, type BusinessProfileFormValues, type BusinessProfileSubmitValues } from '../model/business-profile.schema';
+import type { BrandingAssetType, BusinessProfile } from '../model/settings.types';
+import { getSafeApiErrorMessage } from '../model/settings.utils';
 
 export function BusinessSettingsPage() {
   const queryClient = useQueryClient();

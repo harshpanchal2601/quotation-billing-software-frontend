@@ -23,8 +23,8 @@ import { getMeasurementUnitOptionsRequest, measurementUnitsQueryKeys } from '@fe
 import { deleteItemRequest, listItemsRequest, updateItemStatusRequest } from '../api/items.api';
 import { ItemDeleteDialog, ItemStatusDialog } from '../components/ItemConfirmDialogs';
 import { ItemTable } from '../components/ItemTable';
-import { itemsQueryKeys } from '../items.query-keys';
-import type { ItemListItem, ItemListParams } from '../items.types';
+import { itemsQueryKeys } from '../model/items.query-keys';
+import type { ItemListItem, ItemListParams } from '../model/items.types';
 
 const sortOptions = [
   { value: 'createdAt:desc', label: 'Newest first' },

@@ -16,8 +16,8 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { paths } from '@app/router/routeConfig';
 import { AppButton } from '@shared/ui/actions';
 import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
-import type { CompanyListItem } from '../companies.types';
-import { formatLocation, formatReadableDate, hasText, unavailable } from '../companies.utils';
+import type { CompanyListItem } from '../model/companies.types';
+import { formatLocation, formatReadableDate, hasText, unavailable } from '../model/companies.utils';
 import { CompanyStatusChip } from './CompanyStatusChip';
 
 type CompanyTableProps = {

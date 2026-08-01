@@ -1,5 +1,5 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
-import type { BankDetail } from '../settings.types';
+import type { BankDetail } from '../model/settings.types';
 
 export const bankDetailsQueryKey = ['settings', 'bank-details'] as const;
 

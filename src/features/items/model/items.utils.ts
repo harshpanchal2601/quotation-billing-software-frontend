@@ -1,4 +1,4 @@
-import { resolveAssetUrl } from '../settings/settings.utils';
+import { resolveAssetUrl } from '@shared/api/assetUrl';
 import type { ItemSourceType } from './items.types';
 
 export { resolveAssetUrl };

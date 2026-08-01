@@ -18,8 +18,8 @@ import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
 import { deleteCompanyRequest, listCompaniesRequest, updateCompanyStatusRequest } from '../api/companies.api';
-import { companiesQueryKeys } from '../companies.query-keys';
-import type { CompanyListItem, CompanyListParams } from '../companies.types';
+import { companiesQueryKeys } from '../model/companies.query-keys';
+import type { CompanyListItem, CompanyListParams } from '../model/companies.types';
 import { CompanyStatusDialog, DeleteCompanyDialog } from '../components/CompanyConfirmDialogs';
 import { CompanyTable } from '../components/CompanyTable';
 

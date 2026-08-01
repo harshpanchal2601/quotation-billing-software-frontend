@@ -1,6 +1,6 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
-import type { CompanyContact } from '../companies.types';
-import type { ContactSubmitValues } from '../schemas/contact.schema';
+import type { CompanyContact } from '../model/companies.types';
+import type { ContactSubmitValues } from '../model/contact.schema';
 
 type ContactResponse = {
   contact: CompanyContact;

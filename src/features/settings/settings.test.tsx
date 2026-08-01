@@ -6,14 +6,14 @@ import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithProviders } from '@shared/test/render';
-import { businessProfileSchema } from './schemas/business-profile.schema';
-import { bankDetailsSchema } from './schemas/bank-details.schema';
-import { quotationSettingsSchema } from './schemas/quotation-settings.schema';
+import { businessProfileSchema } from './model/business-profile.schema';
+import { bankDetailsSchema } from './model/bank-details.schema';
+import { quotationSettingsSchema } from './model/quotation-settings.schema';
 import { BusinessSettingsPage } from './pages/BusinessSettingsPage';
 import { QuotationSettingsPage } from './pages/QuotationSettingsPage';
 import { BankDetailsPage } from './pages/BankDetailsPage';
-import { maskAccountNumber, resolveAssetUrl } from './settings.utils';
-import type { BankDetail, BusinessProfile, QuotationSettings } from './settings.types';
+import { maskAccountNumber, resolveAssetUrl } from './model/settings.utils';
+import type { BankDetail, BusinessProfile, QuotationSettings } from './model/settings.types';
 
 const businessApi = vi.hoisted(() => ({
   getBusinessProfileRequest: vi.fn(),

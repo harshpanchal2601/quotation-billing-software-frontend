@@ -11,9 +11,9 @@ import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
 import { getCompanyRequest, updateCompanyRequest } from '../api/companies.api';
-import { companiesQueryKeys } from '../companies.query-keys';
+import { companiesQueryKeys } from '../model/companies.query-keys';
 import { CompanyForm } from '../components/CompanyForm';
-import type { CompanyUpdateSubmitValues } from '../schemas/company.schema';
+import type { CompanyUpdateSubmitValues } from '../model/company.schema';
 
 export function EditCompanyPage() {
   const companyId = Number(useParams().id);

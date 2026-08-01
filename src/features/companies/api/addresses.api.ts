@@ -1,6 +1,6 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
-import type { CompanyAddress } from '../companies.types';
-import type { AddressSubmitValues } from '../schemas/address.schema';
+import type { CompanyAddress } from '../model/companies.types';
+import type { AddressSubmitValues } from '../model/address.schema';
 
 type AddressResponse = {
   address: CompanyAddress;

@@ -15,8 +15,8 @@ import { EmptyState } from '@shared/components/common/EmptyState';
 import { AppButton } from '@shared/ui/actions';
 import { DeleteConfirmDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
-import type { CompanyAddress, CompanyContact, CompanyDetail } from '../companies.types';
-import { addressTypeLabel, formatAddress, formatReadableDate, unavailable } from '../companies.utils';
+import type { CompanyAddress, CompanyContact, CompanyDetail } from '../model/companies.types';
+import { addressTypeLabel, formatAddress, formatReadableDate, unavailable } from '../model/companies.utils';
 
 type OverviewProps = {
   company: CompanyDetail;

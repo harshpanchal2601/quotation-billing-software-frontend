@@ -24,9 +24,9 @@ import { AppButton } from '@shared/ui/actions';
 import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import { toApiError } from '@shared/api/apiClient';
 import { listCompanyQuotationsRequest } from '../api/companies.api';
-import { companiesQueryKeys } from '../companies.query-keys';
-import type { QuotationHistoryParams, QuotationStatus } from '../companies.types';
-import { formatCurrency, formatReadableDate } from '../companies.utils';
+import { companiesQueryKeys } from '../model/companies.query-keys';
+import type { QuotationHistoryParams, QuotationStatus } from '../model/companies.types';
+import { formatCurrency, formatReadableDate } from '../model/companies.utils';
 
 const statuses: Array<QuotationStatus | ''> = ['', 'DRAFT', 'PENDING', 'SENT', 'ACCEPTED', 'REJECTED', 'COMPLETED', 'EXPIRED', 'CANCELLED'];
 

@@ -1,28 +1,4 @@
-import { frontendEnv } from '@app/config/env';
-
-export function emptyStringToNull(value: string | null | undefined) {
-  const trimmed = value?.trim() ?? '';
-  return trimmed.length === 0 ? null : trimmed;
-}
-
-export function normaliseUppercase(value: string | null | undefined) {
-  return emptyStringToNull(value)?.toUpperCase() ?? null;
-}
-
-export function normaliseLowercase(value: string | null | undefined) {
-  return emptyStringToNull(value)?.toLowerCase() ?? null;
-}
-
-export function normaliseHexColour(value: string) {
-  const trimmed = value.trim();
-  return trimmed.startsWith('#') ? trimmed.toUpperCase() : `#${trimmed.toUpperCase()}`;
-}
-
-export function maskAccountNumber(accountNumber: string) {
-  const trimmed = accountNumber.trim();
-  const lastFour = trimmed.slice(-4);
-  return `${'•'.repeat(Math.max(trimmed.length - lastFour.length, 4))}${lastFour}`;
-}
+import { resolveApiBaseUrl } from './apiBaseUrl';
 
 export function resolveAssetUrl(assetUrl: string | null | undefined, version?: string) {
   if (assetUrl === null || assetUrl === undefined || assetUrl.trim().length === 0) return null;
@@ -36,9 +12,10 @@ export function resolveAssetUrl(assetUrl: string | null | undefined, version?: s
 }
 
 function apiOrigin() {
-  if (frontendEnv.apiBaseUrl.length === 0) return window.location.origin;
+  const apiBaseUrl = resolveApiBaseUrl(import.meta.env);
+  if (apiBaseUrl.length === 0) return window.location.origin;
   try {
-    return new URL(frontendEnv.apiBaseUrl).origin;
+    return new URL(apiBaseUrl).origin;
   } catch {
     return window.location.origin;
   }
@@ -71,12 +48,4 @@ function normaliseStoragePath(value: string) {
   const path = `/${rawPath.replace(/^\/+/, '').replace(/\/{2,}/g, '/')}`;
   const storagePath = path.replace(/^\/storage\/storage\//, '/storage/');
   return query.length > 0 ? `${storagePath}?${query}` : storagePath;
-}
-
-export function getSafeApiErrorMessage(error: { message?: string } | unknown) {
-  if (typeof error === 'object' && error !== null && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === 'string' && message.trim().length > 0) return message;
-  }
-  return 'Something went wrong. Please try again.';
 }

@@ -3,7 +3,7 @@ import Typography from '@mui/material/Typography';
 
 import { ConfirmDialog, DeleteConfirmDialog } from '@shared/ui/dialogs';
 
-import type { CompanyListItem } from '../companies.types';
+import type { CompanyListItem } from '../model/companies.types';
 
 type DeleteCompanyDialogProps = {
   company: Pick<CompanyListItem, 'name' | 'companyCode'> | null;

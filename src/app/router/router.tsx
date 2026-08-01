@@ -15,25 +15,25 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { navigationItems, paths } from './routeConfig';
 
 const BusinessSettingsPage = lazy(() =>
-  import('@features/settings/pages/BusinessSettingsPage').then((module) => ({ default: module.BusinessSettingsPage })),
+  import('@features/settings').then((module) => ({ default: module.BusinessSettingsPage })),
 );
 const QuotationSettingsPage = lazy(() =>
-  import('@features/settings/pages/QuotationSettingsPage').then((module) => ({ default: module.QuotationSettingsPage })),
+  import('@features/settings').then((module) => ({ default: module.QuotationSettingsPage })),
 );
 const BankDetailsPage = lazy(() =>
-  import('@features/settings/pages/BankDetailsPage').then((module) => ({ default: module.BankDetailsPage })),
+  import('@features/settings').then((module) => ({ default: module.BankDetailsPage })),
 );
 const CompaniesPage = lazy(() =>
-  import('@features/companies/pages/CompaniesPage').then((module) => ({ default: module.CompaniesPage })),
+  import('@features/companies').then((module) => ({ default: module.CompaniesPage })),
 );
 const CreateCompanyPage = lazy(() =>
-  import('@features/companies/pages/CreateCompanyPage').then((module) => ({ default: module.CreateCompanyPage })),
+  import('@features/companies').then((module) => ({ default: module.CreateCompanyPage })),
 );
 const CompanyDetailsPage = lazy(() =>
-  import('@features/companies/pages/CompanyDetailsPage').then((module) => ({ default: module.CompanyDetailsPage })),
+  import('@features/companies').then((module) => ({ default: module.CompanyDetailsPage })),
 );
 const EditCompanyPage = lazy(() =>
-  import('@features/companies/pages/EditCompanyPage').then((module) => ({ default: module.EditCompanyPage })),
+  import('@features/companies').then((module) => ({ default: module.EditCompanyPage })),
 );
 const CategoriesPage = lazy(() =>
   import('@features/categories').then((module) => ({ default: module.CategoriesPage })),
@@ -42,16 +42,16 @@ const MeasurementUnitsPage = lazy(() =>
   import('@features/measurement-units').then((module) => ({ default: module.MeasurementUnitsPage })),
 );
 const ItemsPage = lazy(() =>
-  import('@features/items/pages/ItemsPage').then((module) => ({ default: module.ItemsPage })),
+  import('@features/items').then((module) => ({ default: module.ItemsPage })),
 );
 const CreateItemPage = lazy(() =>
-  import('@features/items/pages/CreateItemPage').then((module) => ({ default: module.CreateItemPage })),
+  import('@features/items').then((module) => ({ default: module.CreateItemPage })),
 );
 const ItemDetailsPage = lazy(() =>
-  import('@features/items/pages/ItemDetailsPage').then((module) => ({ default: module.ItemDetailsPage })),
+  import('@features/items').then((module) => ({ default: module.ItemDetailsPage })),
 );
 const EditItemPage = lazy(() =>
-  import('@features/items/pages/EditItemPage').then((module) => ({ default: module.EditItemPage })),
+  import('@features/items').then((module) => ({ default: module.EditItemPage })),
 );
 const QuotationsPage = lazy(() =>
   import('@features/quotations/pages/QuotationsPage').then((module) => ({ default: module.QuotationsPage })),

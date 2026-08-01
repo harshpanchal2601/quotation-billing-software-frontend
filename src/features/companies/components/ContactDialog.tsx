@@ -9,8 +9,8 @@ import { ControlledCheckbox, ControlledTextField } from '@shared/forms/controlle
 import { AppDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 
-import type { CompanyContact } from '../companies.types';
-import { contactSchema, toContactSubmitValues, type ContactFormValues, type ContactSubmitValues } from '../schemas/contact.schema';
+import type { CompanyContact } from '../model/companies.types';
+import { contactSchema, toContactSubmitValues, type ContactFormValues, type ContactSubmitValues } from '../model/contact.schema';
 
 const emptyContactValues: ContactFormValues = {
   name: '',

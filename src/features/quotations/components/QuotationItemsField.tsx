@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { AppButton } from '@shared/ui/actions';
-import type { ItemOption } from '../../items/items.types';
+import type { ItemOption } from '@features/items';
 import type { CalculatedQuotationTotals } from '../quotations.types';
 import type { QuotationFormSubmitValues } from '../quotations.schema';
 import { QuotationItemRow } from './QuotationItemRow';

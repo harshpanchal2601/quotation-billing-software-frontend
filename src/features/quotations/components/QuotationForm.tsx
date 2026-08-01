@@ -14,8 +14,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Controller, FormProvider, type Path, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { getItemOptionsRequest } from '../../items/api/items.api';
-import { listBankDetailsRequest } from '../../settings/api/bank-details.api';
+import { getItemOptionsRequest } from '@features/items';
+import { listBankDetailsRequest } from '@features/settings';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { FormActions } from '@shared/forms';
 import { ControlledTextField } from '@shared/forms/controlled';

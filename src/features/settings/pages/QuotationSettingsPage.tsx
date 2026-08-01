@@ -28,8 +28,8 @@ import {
   taxModeOptions,
   type QuotationSettingsFormValues,
   type QuotationSettingsSubmitValues,
-} from '../schemas/quotation-settings.schema';
-import type { QuotationSettings } from '../settings.types';
+} from '../model/quotation-settings.schema';
+import type { QuotationSettings } from '../model/settings.types';
 
 export function QuotationSettingsPage() {
   const queryClient = useQueryClient();

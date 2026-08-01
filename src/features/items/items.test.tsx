@@ -6,7 +6,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithProviders } from '@shared/test/render';
-import type { ItemDetail, ItemListItem } from './items.types';
+import type { ItemDetail, ItemListItem } from './model/items.types';
 import { CreateItemPage } from './pages/CreateItemPage';
 import { ItemDetailsPage } from './pages/ItemDetailsPage';
 import { ItemsPage } from './pages/ItemsPage';

@@ -44,4 +44,3 @@ export const quotationSettingsSchema = z.object({
 
 export type QuotationSettingsFormValues = z.input<typeof quotationSettingsSchema>;
 export type QuotationSettingsSubmitValues = z.output<typeof quotationSettingsSchema>;
-

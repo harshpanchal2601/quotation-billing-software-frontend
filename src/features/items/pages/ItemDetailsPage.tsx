@@ -31,14 +31,14 @@ import { getSafeListReturnPath } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
 import { deleteItemRequest, getItemRequest, updateItemStatusRequest } from '../api/items.api';
 import { ItemDeleteDialog, ItemStatusDialog } from '../components/ItemConfirmDialogs';
-import { itemsQueryKeys } from '../items.query-keys';
+import { itemsQueryKeys } from '../model/items.query-keys';
 import {
   formatCurrencyRate,
   formatGstRateLabel,
   formatItemSourceTypeLabel,
   formatReadableDate,
   resolveAssetUrl,
-} from '../items.utils';
+} from '../model/items.utils';
 
 export function ItemDetailsPage() {
   const { id } = useParams<{ id: string }>();

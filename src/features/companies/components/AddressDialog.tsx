@@ -11,9 +11,9 @@ import { ControlledCheckbox, ControlledTextField } from '@shared/forms/controlle
 import { AppDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 
-import type { CompanyAddress } from '../companies.types';
-import { addressTypeLabel } from '../companies.utils';
-import { addressSchema, addressTypes, toAddressSubmitValues, type AddressFormValues, type AddressSubmitValues } from '../schemas/address.schema';
+import type { CompanyAddress } from '../model/companies.types';
+import { addressTypeLabel } from '../model/companies.utils';
+import { addressSchema, addressTypes, toAddressSubmitValues, type AddressFormValues, type AddressSubmitValues } from '../model/address.schema';
 
 const emptyAddressValues: AddressFormValues = {
   addressType: 'BILLING',

@@ -15,9 +15,9 @@ import { AppButton } from '@shared/ui/actions';
 import { DeleteConfirmDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { deleteItemImageRequest, uploadItemImageRequest } from '../api/items.api';
-import { itemsQueryKeys } from '../items.query-keys';
-import type { ItemDetail } from '../items.types';
-import { resolveAssetUrl } from '../items.utils';
+import { itemsQueryKeys } from '../model/items.query-keys';
+import type { ItemDetail } from '../model/items.types';
+import { resolveAssetUrl } from '../model/items.utils';
 
 type ItemImageSectionProps = {
   item: ItemDetail;

@@ -5,7 +5,7 @@ import TextField from '@mui/material/TextField';
 import type { Control, FieldValues, Path } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 
-import { normaliseHexColour } from '../settings.utils';
+import { normaliseHexColour } from '../model/settings.utils';
 
 type ColourFieldProps<TValues extends FieldValues, TSubmitValues extends FieldValues = TValues> = {
   control: Control<TValues, unknown, TSubmitValues>;

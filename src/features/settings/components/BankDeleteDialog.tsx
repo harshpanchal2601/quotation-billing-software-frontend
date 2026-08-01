@@ -2,8 +2,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { DeleteConfirmDialog } from '@shared/ui/dialogs';
-import type { BankDetail } from '../settings.types';
-import { maskAccountNumber } from '../settings.utils';
+import type { BankDetail } from '../model/settings.types';
+import { maskAccountNumber } from '../model/settings.utils';
 
 type BankDeleteDialogProps = {
   bankDetail: BankDetail | null;

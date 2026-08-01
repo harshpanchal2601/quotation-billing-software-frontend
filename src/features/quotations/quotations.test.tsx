@@ -14,17 +14,15 @@ import { quotationFormSchema, type QuotationFormSubmitValues } from './quotation
 import type { CalculatedQuotationTotals, QuotationDetail, QuotationListItem } from './quotations.types';
 
 vi.mock('./api/quotations.api');
-vi.mock('../companies/api/companies.api', () => ({
+vi.mock('@features/companies', () => ({
   listCompaniesRequest: vi.fn().mockResolvedValue({ companies: [{ id: 1, name: 'Mankind Pharma' }] }),
   getCompanyRequest: vi.fn().mockResolvedValue({ id: 1, name: 'Mankind Pharma', contacts: [], addresses: [] }),
 }));
-vi.mock('../items/api/items.api', () => ({
+vi.mock('@features/items', () => ({
   getItemOptionsRequest: vi.fn().mockResolvedValue([]),
 }));
-vi.mock('../settings/api/quotation-settings.api', () => ({
+vi.mock('@features/settings', () => ({
   getQuotationSettingsRequest: vi.fn().mockResolvedValue({ defaultTaxMode: 'CGST_SGST' }),
-}));
-vi.mock('../settings/api/bank-details.api', () => ({
   listBankDetailsRequest: vi.fn().mockResolvedValue([]),
 }));
 

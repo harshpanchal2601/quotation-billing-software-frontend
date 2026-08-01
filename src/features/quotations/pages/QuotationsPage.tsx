@@ -15,7 +15,7 @@ import { AppTablePagination, DataTableShell } from '@shared/ui/tables';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
-import { listCompaniesRequest } from '../../companies/api/companies.api';
+import { listCompaniesRequest } from '@features/companies';
 import {
   deleteQuotationRequest,
   listQuotationsRequest,

@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Typography, { type TypographyProps } from '@mui/material/Typography';
+import Typography, { type TypographyOwnProps, type TypographyProps } from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
@@ -11,7 +11,7 @@ export type PageHeaderProps = {
   descriptionTypographyProps?: Omit<TypographyProps, 'children'>;
   headingLevel?: HeadingLevel;
   title: ReactNode;
-  titleTypographyProps?: Omit<TypographyProps, 'children' | 'component'>;
+  titleTypographyProps?: Omit<TypographyOwnProps, 'children'>;
 };
 
 export function PageHeader({

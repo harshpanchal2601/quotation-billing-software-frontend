@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { getQuotationSettingsRequest } from '../../settings/api/quotation-settings.api';
+import { getQuotationSettingsRequest } from '@features/settings';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';

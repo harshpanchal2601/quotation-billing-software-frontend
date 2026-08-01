@@ -15,9 +15,9 @@ import { getMeasurementUnitOptionsRequest, measurementUnitsQueryKeys } from '@fe
 import { FormActions } from '@shared/forms';
 import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
 import { ServerErrorAlert } from '@shared/ui/feedback';
-import { itemFormSchema, type ItemFormValues } from '../items.schema';
-import type { ItemDetail } from '../items.types';
-import { formatItemSourceTypeLabel } from '../items.utils';
+import { itemFormSchema, type ItemFormValues } from '../model/items.schema';
+import type { ItemDetail } from '../model/items.types';
+import { formatItemSourceTypeLabel } from '../model/items.utils';
 import { ItemSpecificationsField } from './ItemSpecificationsField';
 
 type ItemFormProps = {

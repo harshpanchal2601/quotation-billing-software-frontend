@@ -15,8 +15,8 @@ import Typography from '@mui/material/Typography';
 
 import { AppButton, AppIconButton } from '@shared/ui/actions';
 import { DataTableShell } from '@shared/ui/tables';
-import type { BankDetail } from '../settings.types';
-import { maskAccountNumber } from '../settings.utils';
+import type { BankDetail } from '../model/settings.types';
+import { maskAccountNumber } from '../model/settings.utils';
 
 type BankDetailsTableProps = {
   bankDetails: BankDetail[];

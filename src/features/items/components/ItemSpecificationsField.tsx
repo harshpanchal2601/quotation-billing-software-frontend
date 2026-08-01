@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useFieldArray, type Control, type FieldErrors } from 'react-hook-form';
 
 import { AppButton, AppIconButton } from '@shared/ui/actions';
-import type { ItemFormValues } from '../items.schema';
+import type { ItemFormValues } from '../model/items.schema';
 
 type ItemSpecificationsFieldProps = {
   control: Control<ItemFormValues>;

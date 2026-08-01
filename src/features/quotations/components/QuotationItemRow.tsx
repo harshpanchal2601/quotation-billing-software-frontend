@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography';
 import { Controller, useFormContext } from 'react-hook-form';
 
 import { AppIconButton } from '@shared/ui/actions';
-import type { ItemOption } from '../../items/items.types';
+import type { ItemOption } from '@features/items';
 import type { CalculatedLineItem } from '../quotations.types';
 import { formatCurrency } from '../quotations.utils';
 import type { QuotationFormSubmitValues } from '../quotations.schema';

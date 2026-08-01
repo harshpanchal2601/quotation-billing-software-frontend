@@ -24,8 +24,8 @@ import {
 import { BankDeleteDialog } from '../components/BankDeleteDialog';
 import { BankDetailsDialog } from '../components/BankDetailsDialog';
 import { BankDetailsTable } from '../components/BankDetailsTable';
-import type { BankDetailsSubmitValues } from '../schemas/bank-details.schema';
-import type { BankDetail } from '../settings.types';
+import type { BankDetailsSubmitValues } from '../model/bank-details.schema';
+import type { BankDetail } from '../model/settings.types';
 
 export function BankDetailsPage() {
   const queryClient = useQueryClient();

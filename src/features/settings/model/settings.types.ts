@@ -68,4 +68,3 @@ export type BankDetail = {
 };
 
 export type BrandingAssetType = 'logo' | 'signature' | 'stamp';
-

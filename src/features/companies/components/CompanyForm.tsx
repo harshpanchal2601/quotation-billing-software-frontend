@@ -21,8 +21,8 @@ import {
   type CompanyCreateSubmitValues,
   type CompanyUpdateFormValues,
   type CompanyUpdateSubmitValues,
-} from '../schemas/company.schema';
-import type { CompanyDetail } from '../companies.types';
+} from '../model/company.schema';
+import type { CompanyDetail } from '../model/companies.types';
 
 const emptyCompanyCreateValues: CompanyCreateFormValues = {
   name: '',

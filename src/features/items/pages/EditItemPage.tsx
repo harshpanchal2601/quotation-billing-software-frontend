@@ -13,8 +13,8 @@ import { toApiError } from '@shared/api/apiClient';
 import { getItemRequest, updateItemRequest } from '../api/items.api';
 import { ItemForm } from '../components/ItemForm';
 import { ItemImageSection } from '../components/ItemImageSection';
-import { itemsQueryKeys } from '../items.query-keys';
-import type { ItemFormValues } from '../items.schema';
+import { itemsQueryKeys } from '../model/items.query-keys';
+import type { ItemFormValues } from '../model/items.schema';
 
 export function EditItemPage() {
   const { id } = useParams<{ id: string }>();
