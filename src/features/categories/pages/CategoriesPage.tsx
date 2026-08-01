@@ -1,5 +1,4 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -181,9 +180,9 @@ export function CategoriesPage() {
         errorContent={
           <Stack spacing={1}>
             <ErrorState message={toApiError(query.error).message} />
-            <Button variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
+            <AppButton variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
               Retry
-            </Button>
+            </AppButton>
           </Stack>
         }
         emptyContent={

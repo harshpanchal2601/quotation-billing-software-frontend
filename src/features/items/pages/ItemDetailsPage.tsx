@@ -3,7 +3,6 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
@@ -25,6 +24,7 @@ import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-r
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { SafeImage } from '@shared/components/common/SafeImage';
+import { AppButton } from '@shared/ui/actions';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -96,9 +96,9 @@ export function ItemDetailsPage() {
     return (
       <Stack spacing={2} py={4}>
         <ErrorState message={query.error ? toApiError(query.error).message : 'Item not found'} />
-        <Button variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
+        <AppButton variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
           Retry
-        </Button>
+        </AppButton>
       </Stack>
     );
   }
@@ -122,32 +122,32 @@ export function ItemDetailsPage() {
         </Stack>
 
         <Stack direction="row" spacing={1.5}>
-          <Button component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
+          <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
             Back to Items
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             variant="outlined"
             onClick={() => setStatusTarget(!item.isActive)}
             disabled={isMutating}
           >
             {item.isActive ? 'Deactivate' : 'Activate'}
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             variant="contained"
             startIcon={<EditOutlinedIcon />}
             onClick={() => navigate(`${paths.items}/${itemId}/edit`, { state: { from: returnPath } })}
             disabled={isMutating}
           >
             Edit Item
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             variant="outlined"
             color="error"
             onClick={() => setDeleteDialogOpen(true)}
             disabled={isMutating}
           >
             Delete
-          </Button>
+          </AppButton>
         </Stack>
       </Stack>
 

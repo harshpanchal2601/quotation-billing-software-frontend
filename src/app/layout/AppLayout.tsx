@@ -5,7 +5,6 @@ import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -23,6 +22,7 @@ import { Link as RouterLink, NavLink, Outlet, useLocation, useNavigate } from 'r
 import { useAuth } from '@features/auth';
 import { AppBrand } from '@shared/components/brand/AppBrand';
 import { UserAvatar } from '@shared/components/common/UserAvatar';
+import { AppIconButton } from '@shared/ui/actions';
 
 import { navigationItems, paths } from '../router/routeConfig';
 import { designTokens } from '../theme/tokens';
@@ -130,16 +130,16 @@ export function AppLayout() {
       <AppBar color="inherit" position="fixed" sx={{ width: { lg: `calc(100% - ${designTokens.layout.drawerWidth}px)` }, ml: { lg: `${designTokens.layout.drawerWidth}px` } }}>
         <Toolbar sx={{ minHeight: designTokens.layout.headerHeight, px: { xs: 1.5, sm: 3 } }}>
           {!isDesktop ? (
-            <IconButton aria-label="Open navigation menu" onClick={() => setMobileOpen(true)} edge="start" sx={{ mr: 1 }}>
+            <AppIconButton label="Open navigation menu" onClick={() => setMobileOpen(true)} edge="start" sx={{ mr: 1 }}>
               <MenuOutlinedIcon />
-            </IconButton>
+            </AppIconButton>
           ) : null}
           <Box flex={1} minWidth={0}>
             <AppBreadcrumbs />
           </Box>
-          <IconButton aria-label="Open profile menu" onClick={openProfileMenu}>
+          <AppIconButton label="Open profile menu" onClick={openProfileMenu}>
             <UserAvatar name={user?.name ?? 'User'} />
-          </IconButton>
+          </AppIconButton>
           <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
             <Box px={2} py={1}>
               <Typography fontWeight={700}>{user?.name}</Typography>

@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
@@ -13,6 +12,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { AppBrand } from '@shared/components/brand/AppBrand';
 import { PasswordField } from '@shared/components/common/PasswordField';
+import { AppButton } from '@shared/ui/actions';
 import { paths } from '@app/router/routeConfig';
 import { useAuth } from '../hooks/useAuth';
 import { loginSchema, type LoginFormValues } from '../model/auth.schema';
@@ -90,9 +90,9 @@ export function LoginPage() {
                   />
                 )}
               />
-              <Button type="submit" variant="contained" size="large" loading={isLoggingIn} loadingPosition="start">
+              <AppButton type="submit" variant="contained" size="large" isLoading={isLoggingIn} loadingPosition="start">
                 {isLoggingIn ? 'Signing in...' : 'Sign in'}
-              </Button>
+              </AppButton>
               <Typography variant="body2" color="text.secondary" textAlign="center">
                 Buminex Pharmtech Solutions Pvt. Ltd.
               </Typography>

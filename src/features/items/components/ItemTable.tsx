@@ -3,7 +3,6 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
@@ -19,6 +18,7 @@ import { useTheme } from '@mui/material/styles';
 import { useState, type MouseEvent } from 'react';
 
 import { SafeImage } from '@shared/components/common/SafeImage';
+import { AppIconButton } from '@shared/ui/actions';
 import type { ItemListItem } from '../items.types';
 import {
   formatCurrencyRate,
@@ -131,14 +131,14 @@ export function ItemTable({
                     <Typography variant="body2" color="text.secondary">
                       Quotations: <strong>{item.quotationUsageCount}</strong>
                     </Typography>
-                    <IconButton
+                    <AppIconButton
                       size="small"
-                      aria-label={`Actions for ${item.name}`}
+                      label={`Actions for ${item.name}`}
                       onClick={(e) => handleOpenMenu(e, item)}
                       disabled={busyItemId === item.id}
                     >
                       <MoreVertIcon fontSize="small" />
-                    </IconButton>
+                    </AppIconButton>
                   </Stack>
                 </Stack>
               </CardContent>
@@ -247,14 +247,14 @@ export function ItemTable({
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton
+                    <AppIconButton
                       size="small"
-                      aria-label={`Actions for ${item.name}`}
+                      label={`Actions for ${item.name}`}
                       onClick={(e) => handleOpenMenu(e, item)}
                       disabled={busyItemId === item.id}
                     >
                       <MoreVertIcon fontSize="small" />
-                    </IconButton>
+                    </AppIconButton>
                   </TableCell>
                 </TableRow>
               );

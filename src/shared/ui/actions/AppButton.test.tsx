@@ -1,6 +1,7 @@
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Link as RouterLink } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppButton } from './AppButton';
@@ -28,6 +29,18 @@ describe('AppButton', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+  });
+
+  it('supports router-link rendering for navigation actions', () => {
+    render(
+      <MemoryRouter>
+        <AppButton component={RouterLink} to="/dashboard" state={{ from: '/quotations' }}>
+          Dashboard
+        </AppButton>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/dashboard');
   });
 
   it('disables interaction and exposes busy state while loading', async () => {

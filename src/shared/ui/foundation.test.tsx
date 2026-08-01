@@ -5,6 +5,7 @@ import Button from '@mui/material/Button';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useForm } from 'react-hook-form';
+import { MemoryRouter, Link as RouterLink } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -89,6 +90,21 @@ describe('shared UI foundation primitives', () => {
     await userEvent.hover(screen.getByRole('button', { name: 'Download invoice' }));
 
     expect(await screen.findByText('Download file')).toBeInTheDocument();
+  });
+
+  it('supports AppIconButton router-link rendering for icon navigation actions', () => {
+    render(
+      <MemoryRouter>
+        <AppIconButton component={RouterLink} to="/quotations/1" label="View quotation">
+          <DeleteOutlineOutlinedIcon />
+        </AppIconButton>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link', { name: 'View quotation' })).toHaveAttribute(
+      'href',
+      '/quotations/1',
+    );
   });
 
   it('prevents AppIconButton interaction while loading', () => {

@@ -1,10 +1,10 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
+import { AppButton } from '@shared/ui/actions';
 import type { ItemOption } from '../../items/items.types';
 import type { CalculatedQuotationTotals } from '../quotations.types';
 import type { QuotationFormSubmitValues } from '../quotations.schema';
@@ -65,14 +65,14 @@ export function QuotationItemsField({
         <Typography variant="h6" fontWeight={700}>
           Line Items ({fields.length})
         </Typography>
-        <Button
+        <AppButton
           variant="outlined"
           startIcon={<AddOutlinedIcon />}
           onClick={handleAddItem}
           disabled={fields.length >= 100}
         >
           Add Line Item
-        </Button>
+        </AppButton>
       </Box>
 
       {errors.items?.root ? (

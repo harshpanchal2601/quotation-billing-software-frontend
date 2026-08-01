@@ -1,5 +1,4 @@
 import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -9,6 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import { deleteQuotationAttachmentRequest } from '../api/quotation-attachments.api';
 import type { QuotationAttachment } from '../quotation-attachments.types';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
@@ -81,18 +81,18 @@ export function QuotationAttachmentDeleteDialog({
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} autoFocus disabled={deleteMutation.isPending}>
+        <AppButton onClick={handleClose} autoFocus disabled={deleteMutation.isPending}>
           Cancel
-        </Button>
-        <Button
+        </AppButton>
+        <AppButton
           onClick={handleConfirm}
           color="error"
           variant="contained"
-          loading={deleteMutation.isPending}
+          isLoading={deleteMutation.isPending}
           loadingPosition="start"
         >
           {deleteMutation.isPending ? 'Deleting...' : 'Delete Attachment'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

@@ -4,7 +4,6 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -15,6 +14,7 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { AppIconButton } from '@shared/ui/actions';
 import { QuotationStatusChip } from '../../quotations/components/QuotationStatusChip';
 import { formatCurrency } from '../../quotations/quotations.utils';
 import type { ExpiringQuotationDto } from '../model/dashboard.types';
@@ -100,9 +100,9 @@ export function ExpiringQuotationsSection({ expiringQuotations, currency = 'INR'
                         {formatCurrency(q.grandTotal, q.currency || currency)}
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton component={RouterLink} to={`/quotations/${q.id}`} size="small" color="primary" aria-label={`View ${q.quotationNumber}`}>
+                        <AppIconButton component={RouterLink} to={`/quotations/${q.id}`} size="small" color="primary" label={`View ${q.quotationNumber}`}>
                           <VisibilityOutlinedIcon fontSize="small" />
-                        </IconButton>
+                        </AppIconButton>
                       </TableCell>
                     </TableRow>
                   );

@@ -3,7 +3,6 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -19,6 +18,7 @@ import { useTheme } from '@mui/material/styles';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
+import { AppButton } from '@shared/ui/actions';
 import { getQuotationAttachmentsRequest } from '../api/quotation-attachments.api';
 import { sendQuotationEmailRequest } from '../api/quotation-documents.api';
 import { toApiError } from '@shared/api/apiClient';
@@ -304,19 +304,19 @@ export function QuotationEmailDialog({
             SMTP acceptance does not confirm recipient inbox delivery.
           </Typography>
           <Stack direction="row" spacing={1}>
-            <Button onClick={handleClose} disabled={emailMutation.isPending}>
+            <AppButton onClick={handleClose} disabled={emailMutation.isPending}>
               Cancel
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               type="submit"
               variant="contained"
               disabled={!toInput.trim() || !subject.trim() || !message.trim() || isSizeOverLimit}
-              loading={emailMutation.isPending}
+              isLoading={emailMutation.isPending}
               loadingPosition="start"
               startIcon={<EmailOutlinedIcon />}
             >
               {emailMutation.isPending ? 'Sending email...' : 'Send Email'}
-            </Button>
+            </AppButton>
           </Stack>
         </DialogActions>
       </form>

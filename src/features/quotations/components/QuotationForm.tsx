@@ -1,6 +1,5 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import FormControl from '@mui/material/FormControl';
@@ -19,6 +18,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { getItemOptionsRequest } from '../../items/api/items.api';
 import { listBankDetailsRequest } from '../../settings/api/bank-details.api';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { calculatePreviewRequest } from '../api/quotations.api';
 import type { CalculatedQuotationTotals, CalculationPreviewInput, QuotationDetail } from '../quotations.types';
@@ -537,12 +537,12 @@ export function QuotationForm({
 
           {/* Form Action Buttons */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1 }}>
-            <Button color="inherit" onClick={onCancel} disabled={isSubmitting}>
+            <AppButton color="inherit" onClick={onCancel} disabled={isSubmitting}>
               Cancel
-            </Button>
-            <Button type="submit" variant="contained" color="primary" loading={isSubmitting} loadingPosition="start">
+            </AppButton>
+            <AppButton type="submit" variant="contained" color="primary" isLoading={isSubmitting} loadingPosition="start">
               {isSubmitting ? 'Saving quotation...' : editingQuotation ? 'Update Draft Quotation' : 'Save Quotation Draft'}
-            </Button>
+            </AppButton>
           </Box>
         </Stack>
       </form>

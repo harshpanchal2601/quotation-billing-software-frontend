@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -17,6 +16,7 @@ import { useForm } from 'react-hook-form';
 
 import { categoriesQueryKeys, getCategoryOptionsRequest } from '@features/categories';
 import { getMeasurementUnitOptionsRequest, measurementUnitsQueryKeys } from '@features/measurement-units';
+import { AppButton } from '@shared/ui/actions';
 import { itemFormSchema, type ItemFormValues } from '../items.schema';
 import type { ItemDetail } from '../items.types';
 import { formatItemSourceTypeLabel } from '../items.utils';
@@ -299,17 +299,17 @@ export function ItemForm({
         </Card>
 
         <Stack direction="row" spacing={2} justifyContent="flex-end">
-          <Button variant="outlined" onClick={onCancel} disabled={isSubmitting}>
+          <AppButton variant="outlined" onClick={onCancel} disabled={isSubmitting}>
             Cancel
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             type="submit"
             variant="contained"
-            loading={isSubmitting}
+            isLoading={isSubmitting}
             disabled={isSubmitting || (isEditing && !isDirty)}
           >
             {isEditing ? 'Save Changes' : 'Create Item'}
-          </Button>
+          </AppButton>
         </Stack>
       </Stack>
     </Box>

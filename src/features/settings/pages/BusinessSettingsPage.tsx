@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
@@ -13,6 +12,7 @@ import { Controller, useWatch, useForm } from 'react-hook-form';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import {
   businessProfileQueryKey,
   deleteBrandingAssetRequest,
@@ -89,7 +89,7 @@ export function BusinessSettingsPage() {
     return (
       <SettingsPageHeader title="Business Settings" description="Manage company identity, contact details and branding assets.">
         <ErrorState message={toApiError(query.error).message} />
-        <Button onClick={() => void query.refetch()} variant="outlined">Retry</Button>
+        <AppButton onClick={() => void query.refetch()} variant="outlined">Retry</AppButton>
       </SettingsPageHeader>
     );
   }
@@ -162,12 +162,12 @@ export function BusinessSettingsPage() {
           </Box>
         </SettingsSection>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
-          <Button type="button" variant="outlined" disabled={isFormBusy || !form.formState.isDirty} onClick={() => form.reset(toBusinessProfileFormValues(profile))}>
+          <AppButton type="button" variant="outlined" disabled={isFormBusy || !form.formState.isDirty} onClick={() => form.reset(toBusinessProfileFormValues(profile))}>
             Reset changes
-          </Button>
-          <Button type="submit" variant="contained" disabled={!form.formState.isDirty} loading={updateMutation.isPending} loadingPosition="start">
+          </AppButton>
+          <AppButton type="submit" variant="contained" disabled={!form.formState.isDirty} isLoading={updateMutation.isPending} loadingPosition="start">
             {updateMutation.isPending ? 'Saving...' : 'Save changes'}
-          </Button>
+          </AppButton>
         </Stack>
       </Stack>
       <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>

@@ -1,10 +1,10 @@
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
+import { AppButton } from '@shared/ui/actions';
 import type { BankDetail } from '../settings.types';
 import { maskAccountNumber } from '../settings.utils';
 
@@ -32,10 +32,10 @@ export function BankDeleteDialog({ bankDetail, isDeleting, onClose, onConfirm }:
         ) : null}
       </DialogContent>
       <DialogActions>
-        <Button autoFocus onClick={onClose} disabled={isDeleting}>Cancel</Button>
-        <Button color="error" onClick={() => void onConfirm()} loading={isDeleting} loadingPosition="start">
+        <AppButton autoFocus onClick={onClose} disabled={isDeleting}>Cancel</AppButton>
+        <AppButton color="error" onClick={() => void onConfirm()} isLoading={isDeleting} loadingPosition="start">
           {isDeleting ? 'Deleting...' : 'Delete account'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

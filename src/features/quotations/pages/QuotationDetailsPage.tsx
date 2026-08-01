@@ -7,7 +7,6 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
@@ -30,6 +29,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton } from '@shared/ui/actions';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -213,9 +213,9 @@ export function QuotationDetailsPage() {
         <Alert
           severity="info"
           action={
-            <Button color="inherit" size="small" onClick={() => navigate(`/quotations/${quotation.latestRevision?.id}`, { state: { from: returnPath } })}>
+            <AppButton color="inherit" size="small" onClick={() => navigate(`/quotations/${quotation.latestRevision?.id}`, { state: { from: returnPath } })}>
               View Latest
-            </Button>
+            </AppButton>
           }
           sx={{ mb: 2 }}
         >
@@ -226,14 +226,14 @@ export function QuotationDetailsPage() {
       {/* Header Actions */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' }, mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: { xs: 1, sm: 2 }, minWidth: 0 }}>
-          <Button
+          <AppButton
             size="small"
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate(returnPath)}
             color="inherit"
           >
             Back to Quotations
-          </Button>
+          </AppButton>
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
               <Typography component="h1" variant="h1" sx={{ wordBreak: 'break-word' }}>
@@ -248,53 +248,53 @@ export function QuotationDetailsPage() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' }, '& .MuiButton-root': { flex: { xs: '1 1 150px', md: '0 0 auto' } } }}>
-          <Button
+          <AppButton
             variant="contained"
             color="primary"
             startIcon={<PictureAsPdfOutlinedIcon />}
             onClick={handlePreviewPdf}
-            loading={pdfLoading}
+            isLoading={pdfLoading}
             loadingPosition="start"
           >
             {pdfLoading ? 'Generating...' : 'Preview PDF'}
-          </Button>
+          </AppButton>
 
-          <Button
+          <AppButton
             variant="outlined"
             color="primary"
             startIcon={<DownloadOutlinedIcon />}
             onClick={handleDownloadPdf}
-            loading={pdfDownloading}
+            isLoading={pdfDownloading}
             loadingPosition="start"
           >
             {pdfDownloading ? 'Downloading...' : 'Download PDF'}
-          </Button>
+          </AppButton>
 
           {canEdit ? (
-            <Button
+            <AppButton
               variant="outlined"
               color="primary"
               startIcon={<EditOutlinedIcon />}
               onClick={() => navigate(`/quotations/${quotation.id}/edit`, { state: { from: returnPath } })}
             >
               Edit Draft
-            </Button>
+            </AppButton>
           ) : null}
 
           {canCreateRevision ? (
-            <Button
+            <AppButton
               variant="contained"
               color="secondary"
               startIcon={<ContentCopyOutlinedIcon />}
               onClick={() => createRevisionMutation.mutate()}
-              loading={createRevisionMutation.isPending}
+              isLoading={createRevisionMutation.isPending}
               loadingPosition="start"
             >
               {createRevisionMutation.isPending ? 'Creating...' : 'Create Revision'}
-            </Button>
+            </AppButton>
           ) : null}
 
-          <Button
+          <AppButton
             variant="outlined"
             color="inherit"
             startIcon={<SwapHorizOutlinedIcon />}
@@ -302,10 +302,10 @@ export function QuotationDetailsPage() {
             disabled={statusMutation.isPending || !canChangeStatus}
           >
             Change Status
-          </Button>
+          </AppButton>
 
           {canEdit ? (
-            <Button
+            <AppButton
               variant="outlined"
               color="error"
               startIcon={<DeleteOutlineOutlinedIcon />}
@@ -313,7 +313,7 @@ export function QuotationDetailsPage() {
               disabled={deleteMutation.isPending}
             >
               Delete
-            </Button>
+            </AppButton>
           ) : null}
         </Box>
       </Box>

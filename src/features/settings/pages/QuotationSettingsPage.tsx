@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
@@ -16,6 +15,7 @@ import { Controller, useForm } from 'react-hook-form';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import {
   getQuotationSettingsRequest,
   quotationSettingsQueryKey,
@@ -73,7 +73,7 @@ export function QuotationSettingsPage() {
     return (
       <SettingsPageShell title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences.">
         <ErrorState message={toApiError(query.error).message} />
-        <Button onClick={() => void query.refetch()} variant="outlined">Retry</Button>
+        <AppButton onClick={() => void query.refetch()} variant="outlined">Retry</AppButton>
       </SettingsPageShell>
     );
   }
@@ -140,8 +140,8 @@ export function QuotationSettingsPage() {
           </Stack>
         </SettingsSection>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
-          <Button type="button" variant="outlined" disabled={isBusy || !form.formState.isDirty} onClick={() => form.reset(toQuotationFormValues(query.data))}>Reset changes</Button>
-          <Button type="submit" variant="contained" disabled={isBusy || !form.formState.isDirty}>{isBusy ? 'Saving' : 'Save changes'}</Button>
+          <AppButton type="button" variant="outlined" disabled={isBusy || !form.formState.isDirty} onClick={() => form.reset(toQuotationFormValues(query.data))}>Reset changes</AppButton>
+          <AppButton type="submit" variant="contained" disabled={isBusy || !form.formState.isDirty}>{isBusy ? 'Saving' : 'Save changes'}</AppButton>
         </Stack>
       </Stack>
       <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>

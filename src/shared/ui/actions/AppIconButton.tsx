@@ -1,7 +1,7 @@
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton, { type IconButtonProps } from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
-import { forwardRef, type ReactNode } from 'react';
+import { forwardRef, type ElementType, type ReactNode } from 'react';
 
 export type AppIconButtonProps = Omit<IconButtonProps, 'aria-label' | 'children'> & {
   label: string;
@@ -9,6 +9,10 @@ export type AppIconButtonProps = Omit<IconButtonProps, 'aria-label' | 'children'
   tooltip?: ReactNode;
   isLoading?: boolean;
   loadingLabel?: string;
+  component?: ElementType;
+  to?: string;
+  state?: unknown;
+  replace?: boolean;
 };
 
 export const AppIconButton = forwardRef<HTMLButtonElement, AppIconButtonProps>(

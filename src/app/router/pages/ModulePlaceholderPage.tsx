@@ -1,10 +1,10 @@
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
+import { AppButton } from '@shared/ui/actions';
 import { getRouteTitle, paths } from '../routeConfig';
 
 export function ModulePlaceholderPage() {
@@ -24,9 +24,9 @@ export function ModulePlaceholderPage() {
         description="No business data is shown here until the backend module is implemented."
       />
       <Box>
-        <Button component={RouterLink} to={paths.dashboard} variant="outlined">
+        <AppButton component={RouterLink} to={paths.dashboard} variant="outlined">
           Back to Dashboard
-        </Button>
+        </AppButton>
       </Box>
     </Stack>
   );

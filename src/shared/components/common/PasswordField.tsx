@@ -1,9 +1,10 @@
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import TextField, { type TextFieldProps } from '@mui/material/TextField';
 import { forwardRef, useState } from 'react';
+
+import { AppIconButton } from '../../ui/actions/AppIconButton';
 
 type PasswordFieldProps = Omit<TextFieldProps, 'type'>;
 
@@ -22,13 +23,13 @@ export const PasswordField = forwardRef<HTMLDivElement, PasswordFieldProps>(func
         ...props.InputProps,
         endAdornment: (
           <InputAdornment position="end">
-            <IconButton
-              aria-label={visible ? 'Hide password' : 'Show password'}
+            <AppIconButton
+              label={visible ? 'Hide password' : 'Show password'}
               edge="end"
               onClick={() => setVisible((current) => !current)}
             >
               {visible ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
-            </IconButton>
+            </AppIconButton>
           </InputAdornment>
         ),
       }}

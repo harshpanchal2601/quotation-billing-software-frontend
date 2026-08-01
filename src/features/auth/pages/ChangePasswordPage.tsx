@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import List from '@mui/material/List';
@@ -13,6 +12,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import { PasswordField } from '@shared/components/common/PasswordField';
+import { AppButton } from '@shared/ui/actions';
 import { paths } from '@app/router/routeConfig';
 import { useAuth } from '../hooks/useAuth';
 import { changePasswordSchema, type ChangePasswordFormValues } from '../model/auth.schema';
@@ -66,8 +66,8 @@ export function ChangePasswordPage() {
               </List>
             </Box>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <Button type="submit" variant="contained" loading={isChangingPassword} loadingPosition="start">{isChangingPassword ? 'Changing password...' : 'Change password'}</Button>
-              <Button variant="outlined" onClick={() => navigate(paths.dashboard)} disabled={isChangingPassword}>Cancel</Button>
+              <AppButton type="submit" variant="contained" isLoading={isChangingPassword} loadingPosition="start">{isChangingPassword ? 'Changing password...' : 'Change password'}</AppButton>
+              <AppButton variant="outlined" onClick={() => navigate(paths.dashboard)} disabled={isChangingPassword}>Cancel</AppButton>
             </Stack>
           </Stack>
         </CardContent>

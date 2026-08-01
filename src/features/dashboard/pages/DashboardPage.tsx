@@ -7,7 +7,6 @@ import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlin
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
@@ -16,6 +15,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton } from '@shared/ui/actions';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@app/router/routeConfig';
 import { useAuth } from '@features/auth';
@@ -127,9 +127,9 @@ export function DashboardPage() {
           </Typography>
         </Box>
 
-        <Button component={RouterLink} to={paths.newQuotation} variant="contained" startIcon={<AddOutlinedIcon />}>
+        <AppButton component={RouterLink} to={paths.newQuotation} variant="contained" startIcon={<AddOutlinedIcon />}>
           Create Quotation
-        </Button>
+        </AppButton>
       </Stack>
 
       {/* Period Filter */}

@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -11,6 +10,8 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useEffect, type PropsWithChildren } from 'react';
 import { Controller, useForm, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
+
+import { AppButton } from '@shared/ui/actions';
 
 import {
   companyCreateFormSchema,
@@ -125,11 +126,11 @@ function CompanyEditForm({ company, isSubmitting, errorMessage, onSubmit, onCanc
         </Box>
         <CompanyFields control={form.control} disabled={isSubmitting} />
         <Stack direction="row" spacing={1} justifyContent="flex-end">
-          <Button onClick={() => form.reset(companyToUpdateValues(company))} disabled={isSubmitting || !form.formState.isDirty}>Reset</Button>
-          <Button onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting || !form.formState.isValid || !form.formState.isDirty}>
+          <AppButton onClick={() => form.reset(companyToUpdateValues(company))} disabled={isSubmitting || !form.formState.isDirty}>Reset</AppButton>
+          <AppButton onClick={onCancel} disabled={isSubmitting}>Cancel</AppButton>
+          <AppButton type="submit" variant="contained" disabled={isSubmitting || !form.formState.isValid || !form.formState.isDirty}>
             {isSubmitting ? 'Saving' : 'Save changes'}
-          </Button>
+          </AppButton>
         </Stack>
       </Stack>
     </Paper>
@@ -199,8 +200,8 @@ function FormSection({ title, children }: PropsWithChildren<{ title: string }>) 
 function FormActions({ isSubmitting, isSaveDisabled, onCancel, submitLabel }: { isSubmitting: boolean; isSaveDisabled: boolean; onCancel: () => void; submitLabel: string }) {
   return (
     <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1} justifyContent="flex-end">
-      <Button onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-      <Button type="submit" variant="contained" disabled={isSaveDisabled}>{isSubmitting ? 'Saving' : submitLabel}</Button>
+      <AppButton onClick={onCancel} disabled={isSubmitting}>Cancel</AppButton>
+      <AppButton type="submit" variant="contained" disabled={isSaveDisabled}>{isSubmitting ? 'Saving' : submitLabel}</AppButton>
     </Stack>
   );
 }

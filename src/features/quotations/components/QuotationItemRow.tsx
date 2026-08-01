@@ -6,7 +6,6 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import FormControl from '@mui/material/FormControl';
-import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
@@ -15,6 +14,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { Controller, useFormContext } from 'react-hook-form';
 
+import { AppIconButton } from '@shared/ui/actions';
 import type { ItemOption } from '../../items/items.types';
 import type { CalculatedLineItem } from '../quotations.types';
 import { formatCurrency } from '../quotations.utils';
@@ -72,15 +72,15 @@ export function QuotationItemRow({
           </Stack>
 
           <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
-            <IconButton size="small" onClick={onMoveUp} disabled={!canMoveUp} title="Move Up" aria-label={`Move line ${index + 1} up`}>
+            <AppIconButton size="small" onClick={onMoveUp} disabled={!canMoveUp} title="Move Up" label={`Move line ${index + 1} up`}>
               <ArrowUpwardOutlinedIcon fontSize="small" />
-            </IconButton>
-            <IconButton size="small" onClick={onMoveDown} disabled={!canMoveDown} title="Move Down" aria-label={`Move line ${index + 1} down`}>
+            </AppIconButton>
+            <AppIconButton size="small" onClick={onMoveDown} disabled={!canMoveDown} title="Move Down" label={`Move line ${index + 1} down`}>
               <ArrowDownwardOutlinedIcon fontSize="small" />
-            </IconButton>
-            <IconButton size="small" color="error" onClick={onRemove} disabled={!canRemove} title="Remove Item" aria-label={`Remove line ${index + 1}`}>
+            </AppIconButton>
+            <AppIconButton size="small" color="error" onClick={onRemove} disabled={!canRemove} title="Remove Item" label={`Remove line ${index + 1}`}>
               <DeleteOutlineOutlinedIcon fontSize="small" />
-            </IconButton>
+            </AppIconButton>
           </Stack>
         </Box>
 

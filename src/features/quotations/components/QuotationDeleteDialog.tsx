@@ -1,4 +1,3 @@
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -6,6 +5,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 
+import { AppButton } from '@shared/ui/actions';
 import { formatCurrency } from '../quotations.utils';
 
 type QuotationDeleteDialogProps = {
@@ -43,12 +43,12 @@ export function QuotationDeleteDialog({
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} color="inherit" disabled={isSubmitting}>
+        <AppButton onClick={onClose} color="inherit" disabled={isSubmitting}>
           Cancel
-        </Button>
-        <Button onClick={onConfirm} variant="contained" color="error" loading={isSubmitting} loadingPosition="start">
+        </AppButton>
+        <AppButton onClick={onConfirm} variant="contained" color="error" isLoading={isSubmitting} loadingPosition="start">
           {isSubmitting ? 'Deleting...' : 'Delete Quotation'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

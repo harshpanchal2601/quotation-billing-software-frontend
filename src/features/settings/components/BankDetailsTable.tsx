@@ -3,9 +3,7 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -16,6 +14,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
+import { AppButton, AppIconButton } from '@shared/ui/actions';
 import type { BankDetail } from '../settings.types';
 import { maskAccountNumber } from '../settings.utils';
 
@@ -62,19 +61,19 @@ export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, 
                 </TableCell>
                 <TableCell align="right">
                   <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                    <IconButton aria-label={`Edit ${bankDetail.bankName}`} onClick={() => onEdit(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>
+                    <AppIconButton label={`Edit ${bankDetail.bankName}`} onClick={() => onEdit(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>
                       <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      aria-label={`Set ${bankDetail.bankName} as default`}
+                    </AppIconButton>
+                    <AppIconButton
+                      label={`Set ${bankDetail.bankName} as default`}
                       onClick={() => onSetDefault(bankDetail)}
                       disabled={busyBankDetailId === bankDetail.id || bankDetail.isDefault}
                     >
                       <StarBorderOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton aria-label={`Delete ${bankDetail.bankName}`} color="error" onClick={() => onDelete(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>
+                    </AppIconButton>
+                    <AppIconButton label={`Delete ${bankDetail.bankName}`} color="error" onClick={() => onDelete(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>
                       <DeleteOutlineOutlinedIcon fontSize="small" />
-                    </IconButton>
+                    </AppIconButton>
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -96,11 +95,11 @@ export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, 
               <Typography>Account: {maskAccountNumber(bankDetail.accountNumber)}</Typography>
               <Typography color="text.secondary">IFSC: {bankDetail.ifscCode ?? '-'} · Branch: {bankDetail.branchName ?? '-'}</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>Edit</Button>
-                <Button size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => onSetDefault(bankDetail)} disabled={bankDetail.isDefault} loading={busyBankDetailId === bankDetail.id}>
+                <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>Edit</AppButton>
+                <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => onSetDefault(bankDetail)} disabled={bankDetail.isDefault} isLoading={busyBankDetailId === bankDetail.id}>
                   {busyBankDetailId === bankDetail.id ? 'Updating...' : 'Set default'}
-                </Button>
-                <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>Delete</Button>
+                </AppButton>
+                <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>Delete</AppButton>
               </Stack>
             </Stack>
           </Paper>

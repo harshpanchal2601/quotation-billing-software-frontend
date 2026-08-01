@@ -5,7 +5,6 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -19,6 +18,7 @@ import Typography from '@mui/material/Typography';
 import { useState, type PropsWithChildren } from 'react';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
+import { AppButton } from '@shared/ui/actions';
 import type { CompanyAddress, CompanyContact, CompanyDetail } from '../companies.types';
 import { addressTypeLabel, formatAddress, formatReadableDate, unavailable } from '../companies.utils';
 
@@ -101,9 +101,9 @@ export function ContactsSection({
                   <Typography color="text.secondary">Phone: {contact.phone ?? unavailable} · Alternate: {contact.alternatePhone ?? unavailable}</Typography>
                 </Box>
                 <Stack direction="row" spacing={1} flexWrap="wrap">
-                  <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(contact)} disabled={disabled}>Edit</Button>
-                  {!contact.isPrimary ? <Button size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(contact)} disabled={disabled}>Set primary</Button> : null}
-                  <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(contact)} disabled={disabled}>Delete</Button>
+                  <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(contact)} disabled={disabled}>Edit</AppButton>
+                  {!contact.isPrimary ? <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(contact)} disabled={disabled}>Set primary</AppButton> : null}
+                  <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(contact)} disabled={disabled}>Delete</AppButton>
                 </Stack>
               </Stack>
             </Paper>
@@ -160,9 +160,9 @@ export function AddressesSection({
                   <Typography color="text.secondary">{formatAddress(address)}</Typography>
                 </Box>
                 <Stack direction="row" spacing={1} flexWrap="wrap">
-                  <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(address)} disabled={disabled}>Edit</Button>
-                  {!address.isPrimary ? <Button size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(address)} disabled={disabled}>Set primary</Button> : null}
-                  <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(address)} disabled={disabled}>Delete</Button>
+                  <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(address)} disabled={disabled}>Edit</AppButton>
+                  {!address.isPrimary ? <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(address)} disabled={disabled}>Set primary</AppButton> : null}
+                  <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(address)} disabled={disabled}>Delete</AppButton>
                 </Stack>
               </Stack>
             </Paper>
@@ -209,7 +209,7 @@ function SectionHeader({ title, actionLabel, onAction }: { title: string; action
   return (
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
       <Typography component="h2" variant="h2">{title}</Typography>
-      <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={onAction}>{actionLabel}</Button>
+      <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={onAction}>{actionLabel}</AppButton>
     </Stack>
   );
 }
@@ -220,8 +220,8 @@ function DeleteChildDialog({ open, title, description, isSubmitting, onClose, on
       <DialogTitle>{title}</DialogTitle>
       <DialogContent><DialogContentText>{description}</DialogContentText></DialogContent>
       <DialogActions>
-        <Button autoFocus onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-        <Button color="error" onClick={() => void onConfirm().catch(() => undefined)} disabled={isSubmitting}>Delete</Button>
+        <AppButton autoFocus onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
+        <AppButton color="error" onClick={() => void onConfirm().catch(() => undefined)} disabled={isSubmitting}>Delete</AppButton>
       </DialogActions>
     </Dialog>
   );

@@ -1,4 +1,3 @@
-import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
@@ -9,6 +8,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton } from '@shared/ui/actions';
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
 import { getCompanyRequest, updateCompanyRequest } from '../api/companies.api';
@@ -36,7 +36,7 @@ export function EditCompanyPage() {
 
   if (!Number.isFinite(companyId)) return <ErrorState message="Company not found" />;
   if (query.isPending) return <Stack spacing={1}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack>;
-  if (query.isError) return <Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><Button onClick={() => void query.refetch()}>Retry</Button></Stack>;
+  if (query.isError) return <Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><AppButton onClick={() => void query.refetch()}>Retry</AppButton></Stack>;
 
   return (
     <Stack spacing={3} maxWidth={1040}>

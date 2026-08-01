@@ -3,15 +3,14 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
 import KeyboardArrowUpOutlinedIcon from '@mui/icons-material/KeyboardArrowUpOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import FormHelperText from '@mui/material/FormHelperText';
-import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useFieldArray, type Control, type FieldErrors } from 'react-hook-form';
 
+import { AppButton, AppIconButton } from '@shared/ui/actions';
 import type { ItemFormValues } from '../items.schema';
 
 type ItemSpecificationsFieldProps = {
@@ -39,7 +38,7 @@ export function ItemSpecificationsField({ control, errors, disabled = false }: I
             Add key technical attributes (e.g. Label: &quot;Heater Thread Size&quot;, Value: &quot;1.5 inch BSP&quot;).
           </Typography>
         </Box>
-        <Button
+        <AppButton
           variant="outlined"
           size="small"
           startIcon={<AddOutlinedIcon />}
@@ -47,7 +46,7 @@ export function ItemSpecificationsField({ control, errors, disabled = false }: I
           disabled={disabled || fields.length >= 50}
         >
           Add Attribute
-        </Button>
+        </AppButton>
       </Stack>
 
       {specError ? (
@@ -101,31 +100,31 @@ export function ItemSpecificationsField({ control, errors, disabled = false }: I
                   />
 
                   <Stack direction="row" spacing={0.5} alignItems="center" alignSelf={{ xs: 'flex-end', sm: 'center' }}>
-                    <IconButton
+                    <AppIconButton
                       size="small"
-                      aria-label={`Move specification ${index + 1} up`}
+                      label={`Move specification ${index + 1} up`}
                       onClick={() => move(index, index - 1)}
                       disabled={disabled || index === 0}
                     >
                       <KeyboardArrowUpOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
+                    </AppIconButton>
+                    <AppIconButton
                       size="small"
-                      aria-label={`Move specification ${index + 1} down`}
+                      label={`Move specification ${index + 1} down`}
                       onClick={() => move(index, index + 1)}
                       disabled={disabled || index === fields.length - 1}
                     >
                       <KeyboardArrowDownOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
+                    </AppIconButton>
+                    <AppIconButton
                       size="small"
                       color="error"
-                      aria-label={`Remove specification ${index + 1}`}
+                      label={`Remove specification ${index + 1}`}
                       onClick={() => remove(index)}
                       disabled={disabled}
                     >
                       <DeleteOutlineOutlinedIcon fontSize="small" />
-                    </IconButton>
+                    </AppIconButton>
                   </Stack>
                 </Stack>
               </Paper>

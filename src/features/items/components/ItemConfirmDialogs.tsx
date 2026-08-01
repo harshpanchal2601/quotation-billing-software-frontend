@@ -1,5 +1,4 @@
 import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -8,6 +7,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
+import { AppButton } from '@shared/ui/actions';
 import type { ItemListItem } from '../items.types';
 
 type StatusDialogProps = {
@@ -46,17 +46,17 @@ export function ItemStatusDialog({ item, isSubmitting, onClose, onConfirm }: Sta
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} disabled={isSubmitting}>
+        <AppButton onClick={onClose} disabled={isSubmitting}>
           Cancel
-        </Button>
-        <Button
+        </AppButton>
+        <AppButton
           onClick={onConfirm}
           variant="contained"
           color={isDeactivating ? 'warning' : 'primary'}
-          loading={isSubmitting}
+          isLoading={isSubmitting}
         >
           {isDeactivating ? 'Deactivate' : 'Activate'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );
@@ -95,17 +95,17 @@ export function ItemDeleteDialog({ item, isDeleting, onClose, onConfirm }: Delet
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} disabled={isDeleting}>
+        <AppButton onClick={onClose} disabled={isDeleting}>
           Cancel
-        </Button>
-        <Button
+        </AppButton>
+        <AppButton
           onClick={onConfirm}
           variant="contained"
           color="error"
-          loading={isDeleting}
+          isLoading={isDeleting}
         >
           Delete Item
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

@@ -1,8 +1,9 @@
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import IconButton, { type IconButtonProps } from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useState, type ReactNode, type MouseEvent } from 'react';
+
+import { AppIconButton, type AppIconButtonProps } from '../actions/AppIconButton';
 
 export type RowAction = {
   key: string;
@@ -16,7 +17,7 @@ export type RowActionsMenuProps = {
   triggerLabel: string;
   actions: RowAction[];
   disabled?: boolean;
-  triggerSize?: IconButtonProps['size'];
+  triggerSize?: AppIconButtonProps['size'];
 };
 
 export function RowActionsMenu({
@@ -37,14 +38,14 @@ export function RowActionsMenu({
 
   return (
     <>
-      <IconButton
+      <AppIconButton
         size={triggerSize}
-        aria-label={triggerLabel}
+        label={triggerLabel}
         onClick={handleOpenMenu}
         disabled={disabled}
       >
         <MoreVertIcon fontSize="small" />
-      </IconButton>
+      </AppIconButton>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}

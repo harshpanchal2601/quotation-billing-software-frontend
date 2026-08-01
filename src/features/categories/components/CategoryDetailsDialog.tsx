@@ -1,5 +1,4 @@
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
@@ -10,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import { AppDialog } from '@shared/ui/dialogs';
 import { getCategoryRequest } from '../api/categories.api';
 import { categoriesQueryKeys } from '../model/categories.query-keys';
@@ -48,9 +48,9 @@ export function CategoryDetailsDialog({ categoryId, onClose, onEdit }: CategoryD
       contentDividers
       actions={
         <>
-          <Button onClick={onClose}>Close</Button>
+          <AppButton onClick={onClose}>Close</AppButton>
           {category && onEdit ? (
-            <Button
+            <AppButton
               variant="contained"
               onClick={() => {
                 onClose();
@@ -58,7 +58,7 @@ export function CategoryDetailsDialog({ categoryId, onClose, onEdit }: CategoryD
               }}
             >
               Edit Category
-            </Button>
+            </AppButton>
           ) : null}
         </>
       }
@@ -75,9 +75,9 @@ export function CategoryDetailsDialog({ categoryId, onClose, onEdit }: CategoryD
       {query.isError ? (
         <Stack spacing={2} py={2}>
           <ErrorState message={toApiError(query.error).message} />
-          <Button variant="outlined" size="small" onClick={() => void query.refetch()}>
+          <AppButton variant="outlined" size="small" onClick={() => void query.refetch()}>
             Retry
-          </Button>
+          </AppButton>
         </Stack>
       ) : null}
 

@@ -1,5 +1,6 @@
 import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
+
+import { AppButton } from '../../ui/actions/AppButton';
 
 type ErrorStateProps = {
   message: string;
@@ -12,9 +13,9 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
       severity="error"
       action={
         onRetry ? (
-          <Button color="inherit" size="small" onClick={onRetry}>
+          <AppButton color="inherit" size="small" onClick={onRetry}>
             Retry
-          </Button>
+          </AppButton>
         ) : undefined
       }
     >

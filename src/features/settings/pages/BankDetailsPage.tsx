@@ -1,7 +1,6 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
@@ -13,6 +12,7 @@ import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import {
   bankDetailsQueryKey,
   createBankDetailRequest,
@@ -127,7 +127,7 @@ export function BankDetailsPage() {
     return (
       <SettingsPageShell title="Bank Details" description="Manage bank accounts shown on quotation documents.">
         <ErrorState message={toApiError(query.error).message} />
-        <Button onClick={() => void query.refetch()} variant="outlined">Retry</Button>
+        <AppButton onClick={() => void query.refetch()} variant="outlined">Retry</AppButton>
       </SettingsPageShell>
     );
   }
@@ -148,7 +148,7 @@ export function BankDetailsPage() {
             <Typography component="h2" variant="h3">Accounts</Typography>
             <Typography color="text.secondary">Only one active account can be marked as the default.</Typography>
           </Box>
-          <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={openAddDialog}>Add Bank Account</Button>
+          <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={openAddDialog}>Add Bank Account</AppButton>
         </Stack>
         {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
         <RefreshIndicator show={showRefreshing} />

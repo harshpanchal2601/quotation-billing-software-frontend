@@ -1,4 +1,3 @@
-import Button, { type ButtonProps } from '@mui/material/Button';
 import Stack, { type StackProps } from '@mui/material/Stack';
 import type { ReactNode } from 'react';
 
@@ -12,7 +11,7 @@ export type FormActionsProps = Omit<StackProps, 'children'> & {
   isCancelDisabled?: boolean;
   onCancel: () => void;
   submitButtonProps?: Omit<AppButtonProps, 'children' | 'disabled' | 'isLoading' | 'type'>;
-  cancelButtonProps?: Omit<ButtonProps, 'children' | 'disabled' | 'onClick'>;
+  cancelButtonProps?: Omit<AppButtonProps, 'children' | 'disabled' | 'onClick'>;
   secondaryAction?: ReactNode;
 };
 
@@ -42,9 +41,9 @@ export function FormActions({
       {...stackProps}
     >
       {secondaryAction}
-      <Button onClick={onCancel} disabled={isCancelDisabled || isSubmitting} {...cancelButtonProps}>
+      <AppButton onClick={onCancel} disabled={isCancelDisabled || isSubmitting} {...cancelButtonProps}>
         {cancelLabel}
-      </Button>
+      </AppButton>
       <AppButton
         type="submit"
         variant="contained"

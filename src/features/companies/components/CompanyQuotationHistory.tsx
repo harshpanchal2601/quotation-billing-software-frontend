@@ -1,6 +1,5 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
@@ -24,6 +23,7 @@ import { useMemo, useState } from 'react';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton } from '@shared/ui/actions';
 import { toApiError } from '@shared/api/apiClient';
 import { listCompanyQuotationsRequest } from '../api/companies.api';
 import { companiesQueryKeys } from '../companies.query-keys';
@@ -72,7 +72,7 @@ export function CompanyQuotationHistory({ companyId }: { companyId: number }) {
       {query.isError ? (
         <Stack spacing={1}>
           <ErrorState message={toApiError(query.error).message} />
-          <Button variant="outlined" onClick={() => void query.refetch()}>Retry</Button>
+          <AppButton variant="outlined" onClick={() => void query.refetch()}>Retry</AppButton>
         </Stack>
       ) : null}
       {query.data && query.data.quotations.length === 0 ? <EmptyState title="No quotation history" description="Quotations linked to this company will appear here." /> : null}

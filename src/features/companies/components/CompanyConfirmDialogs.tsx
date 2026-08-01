@@ -1,9 +1,10 @@
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+
+import { AppButton } from '@shared/ui/actions';
 
 import type { CompanyListItem } from '../companies.types';
 
@@ -27,10 +28,10 @@ export function DeleteCompanyDialog({ company, isDeleting, onClose, onConfirm }:
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button autoFocus onClick={onClose} disabled={isDeleting}>Cancel</Button>
-        <Button color="error" onClick={() => void onConfirm().catch(() => undefined)} loading={isDeleting} loadingPosition="start">
+        <AppButton autoFocus onClick={onClose} disabled={isDeleting}>Cancel</AppButton>
+        <AppButton color="error" onClick={() => void onConfirm().catch(() => undefined)} isLoading={isDeleting} loadingPosition="start">
           {isDeleting ? 'Deleting...' : 'Delete company'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );
@@ -59,10 +60,10 @@ export function CompanyStatusDialog({ company, isSubmitting, onClose, onConfirm 
         ) : null}
       </DialogContent>
       <DialogActions>
-        <Button autoFocus onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-        <Button variant="contained" onClick={() => void onConfirm().catch(() => undefined)} loading={isSubmitting} loadingPosition="start">
+        <AppButton autoFocus onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
+        <AppButton variant="contained" onClick={() => void onConfirm().catch(() => undefined)} isLoading={isSubmitting} loadingPosition="start">
           {isSubmitting ? 'Updating...' : nextActive ? 'Activate' : 'Deactivate'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

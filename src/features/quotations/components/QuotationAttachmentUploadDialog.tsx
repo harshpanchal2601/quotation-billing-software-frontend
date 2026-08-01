@@ -1,7 +1,6 @@
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -14,6 +13,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useRef, useState } from 'react';
 
 import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import { uploadQuotationAttachmentRequest } from '../api/quotation-attachments.api';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
 import { formatFileSize } from '../quotation-attachments.utils';
@@ -212,7 +212,7 @@ export function QuotationAttachmentUploadDialog({
                       Size: {formatFileSize(selectedFile.size)}
                     </Typography>
                   </Box>
-                  <Button
+                  <AppButton
                     size="small"
                     color="error"
                     disabled={uploadMutation.isPending}
@@ -223,7 +223,7 @@ export function QuotationAttachmentUploadDialog({
                     }}
                   >
                     Remove
-                  </Button>
+                  </AppButton>
                 </Stack>
               </Paper>
             )}
@@ -240,18 +240,18 @@ export function QuotationAttachmentUploadDialog({
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleClose} disabled={uploadMutation.isPending}>
+          <AppButton onClick={handleClose} disabled={uploadMutation.isPending}>
             Cancel
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             type="submit"
             variant="contained"
             disabled={!selectedFile || remainingCapacity <= 0}
-            loading={uploadMutation.isPending}
+            isLoading={uploadMutation.isPending}
             loadingPosition="start"
           >
             {uploadMutation.isPending ? 'Uploading...' : 'Upload Attachment'}
-          </Button>
+          </AppButton>
         </DialogActions>
       </form>
     </Dialog>

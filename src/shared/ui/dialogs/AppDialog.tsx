@@ -5,8 +5,9 @@ import DialogActions, { type DialogActionsProps } from '@mui/material/DialogActi
 import DialogContent, { type DialogContentProps } from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle, { type DialogTitleProps } from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
 import { forwardRef, type ReactNode, useId } from 'react';
+
+import { AppIconButton } from '../actions/AppIconButton';
 
 export type AppDialogProps = Omit<DialogProps, 'children' | 'onClose' | 'title'> & {
   title: ReactNode;
@@ -62,14 +63,14 @@ export const AppDialog = forwardRef<HTMLDivElement, AppDialogProps>(function App
         <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
           <Box component="span">{title}</Box>
           {showCloseButton ? (
-            <IconButton
-              aria-label={closeButtonLabel}
+            <AppIconButton
+              label={closeButtonLabel}
               edge="end"
               onClick={onClose}
               disabled={preventClose}
             >
               <CloseOutlinedIcon />
-            </IconButton>
+            </AppIconButton>
           ) : null}
         </Box>
       </DialogTitle>

@@ -1,7 +1,6 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
@@ -16,6 +15,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { AppButton } from '@shared/ui/actions';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -133,13 +133,13 @@ export function ItemsPage() {
             Manage equipment, products and services for quotation line items.
           </Typography>
         </Box>
-        <Button
+        <AppButton
           variant="contained"
           startIcon={<AddOutlinedIcon />}
           onClick={() => navigate(paths.newCompany ? `${paths.items}/new` : `${paths.items}/new`)}
         >
           Add Item
-        </Button>
+        </AppButton>
       </Stack>
 
       {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
@@ -294,9 +294,9 @@ export function ItemsPage() {
       {query.isError ? (
         <Stack spacing={1}>
           <ErrorState message={toApiError(query.error).message} />
-          <Button variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
+          <AppButton variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
             Retry
-          </Button>
+          </AppButton>
         </Stack>
       ) : null}
 

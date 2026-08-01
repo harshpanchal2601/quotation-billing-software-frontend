@@ -2,17 +2,17 @@ import CloseIcon from '@mui/icons-material/Close';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
+
+import { AppButton, AppIconButton } from '@shared/ui/actions';
 
 type QuotationPdfPreviewDialogProps = {
   open: boolean;
@@ -56,9 +56,9 @@ export function QuotationPdfPreviewDialog({
         <Typography variant="h6" fontWeight={700}>
           Quotation PDF Preview — {quotationNumber}
         </Typography>
-        <IconButton aria-label="close" onClick={onClose} size="small" disabled={isLoading}>
+        <AppIconButton label="close" onClick={onClose} size="small" disabled={isLoading}>
           <CloseIcon />
-        </IconButton>
+        </AppIconButton>
       </DialogTitle>
 
       <DialogContent dividers sx={{ p: 0, height: { xs: 'calc(100vh - 120px)', md: '75vh' }, display: 'flex', flexDirection: 'column' }}>
@@ -91,10 +91,10 @@ export function QuotationPdfPreviewDialog({
       </DialogContent>
 
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} color="inherit" disabled={isLoading}>
+        <AppButton onClick={onClose} color="inherit" disabled={isLoading}>
           Close
-        </Button>
-        <Button
+        </AppButton>
+        <AppButton
           onClick={onDownload}
           variant="contained"
           color="primary"
@@ -102,7 +102,7 @@ export function QuotationPdfPreviewDialog({
           disabled={isLoading || !pdfBlob}
         >
           Download PDF
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

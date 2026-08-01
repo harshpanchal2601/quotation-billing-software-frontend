@@ -6,14 +6,12 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Collapse from '@mui/material/Collapse';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
@@ -32,6 +30,7 @@ import { Fragment, useState } from 'react';
 
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError } from '@shared/api/apiClient';
+import { AppButton, AppIconButton } from '@shared/ui/actions';
 import {
   downloadQuotationPdfBlobRequest,
   generateQuotationPdfRequest,
@@ -176,16 +175,16 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           </Typography>
         </Box>
 
-        <Button
+        <AppButton
           variant="contained"
           size="small"
           startIcon={<PictureAsPdfOutlinedIcon />}
           onClick={() => generatePdfMutation.mutate()}
-          loading={generatePdfMutation.isPending}
+          isLoading={generatePdfMutation.isPending}
           loadingPosition="start"
         >
           {generatePdfMutation.isPending ? 'Generating PDF...' : 'Generate New PDF'}
-        </Button>
+        </AppButton>
       </Stack>
 
       <Divider sx={{ mb: 2 }} />
@@ -201,9 +200,9 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
         <Alert
           severity="error"
           action={
-            <Button color="inherit" size="small" onClick={() => refetch()}>
+            <AppButton color="inherit" size="small" onClick={() => refetch()}>
               Retry
-            </Button>
+            </AppButton>
           }
         >
           {toApiError(error).message}
@@ -214,16 +213,16 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           <Typography variant="subtitle2" color="text.secondary">
             No generated PDF documents yet.
           </Typography>
-          <Button
+          <AppButton
             size="small"
             variant="outlined"
             sx={{ mt: 1.5 }}
             onClick={() => generatePdfMutation.mutate()}
-            loading={generatePdfMutation.isPending}
+            isLoading={generatePdfMutation.isPending}
             loadingPosition="start"
           >
             {generatePdfMutation.isPending ? 'Generating...' : 'Generate Initial Quotation PDF'}
-          </Button>
+          </AppButton>
         </Box>
       ) : (
         <>
@@ -262,35 +261,35 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                       <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                         <Tooltip title={doc.isAvailable ? 'Preview PDF' : 'File missing from storage'}>
                           <span>
-                            <IconButton
+                            <AppIconButton
                               size="small"
                               color="primary"
                               disabled={!doc.isAvailable || (pdfLoading && activeDocId === doc.id)}
                               onClick={() => handlePreviewPdf(doc)}
-                              aria-label={`Preview ${doc.displayFilename}`}
+                              label={`Preview ${doc.displayFilename}`}
                             >
                               {pdfLoading && activeDocId === doc.id ? <CircularProgress size={18} aria-label={`Loading preview for ${doc.displayFilename}`} /> : <VisibilityOutlinedIcon fontSize="small" />}
-                            </IconButton>
+                            </AppIconButton>
                           </span>
                         </Tooltip>
 
                         <Tooltip title={doc.isAvailable ? 'Download PDF' : 'File missing from storage'}>
                           <span>
-                            <IconButton
+                            <AppIconButton
                               size="small"
                               color="info"
                               disabled={!doc.isAvailable || downloadingId === doc.id}
                               onClick={() => handleDownloadPdf(doc)}
-                              aria-label={`Download ${doc.displayFilename}`}
+                              label={`Download ${doc.displayFilename}`}
                             >
                               {downloadingId === doc.id ? <CircularProgress size={18} aria-label={`Downloading ${doc.displayFilename}`} /> : <DownloadOutlinedIcon fontSize="small" />}
-                            </IconButton>
+                            </AppIconButton>
                           </span>
                         </Tooltip>
 
                         <Tooltip title={doc.isAvailable ? 'Send via Email' : 'File missing from storage'}>
                           <span>
-                            <Button
+                            <AppButton
                               size="small"
                               variant="outlined"
                               color="primary"
@@ -300,7 +299,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                               sx={{ py: 0.25, px: 1, minWidth: 0, fontSize: '0.75rem' }}
                             >
                               Send Email
-                            </Button>
+                            </AppButton>
                           </span>
                         </Tooltip>
                       </Stack>
@@ -335,29 +334,29 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                   <Divider sx={{ my: 1.5 }} />
 
                   <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1}>
-                    <Button
+                    <AppButton
                       size="small"
                       variant="outlined"
                       disabled={!doc.isAvailable || (pdfLoading && activeDocId === doc.id)}
-                      loading={pdfLoading && activeDocId === doc.id}
+                      isLoading={pdfLoading && activeDocId === doc.id}
                       loadingPosition="start"
                       startIcon={<VisibilityOutlinedIcon />}
                       onClick={() => handlePreviewPdf(doc)}
                     >
                       {pdfLoading && activeDocId === doc.id ? 'Loading...' : 'Preview'}
-                    </Button>
-                    <Button
+                    </AppButton>
+                    <AppButton
                       size="small"
                       variant="outlined"
                       disabled={!doc.isAvailable}
-                      loading={downloadingId === doc.id}
+                      isLoading={downloadingId === doc.id}
                       loadingPosition="start"
                       startIcon={<DownloadOutlinedIcon />}
                       onClick={() => handleDownloadPdf(doc)}
                     >
                       {downloadingId === doc.id ? 'Downloading...' : 'Download'}
-                    </Button>
-                    <Button
+                    </AppButton>
+                    <AppButton
                       size="small"
                       variant="contained"
                       disabled={!doc.isAvailable || generatePdfMutation.isPending || downloadingId === doc.id || (pdfLoading && activeDocId === doc.id)}
@@ -365,7 +364,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                       onClick={() => handleOpenEmailDialog(doc)}
                     >
                       Email
-                    </Button>
+                    </AppButton>
                   </Stack>
                 </CardContent>
               </Card>
@@ -462,9 +461,9 @@ function CommunicationHistorySection({
         <Alert
           severity="error"
           action={
-            <Button color="inherit" size="small" onClick={onRetry}>
+            <AppButton color="inherit" size="small" onClick={onRetry}>
               Retry
-            </Button>
+            </AppButton>
           }
         >
           {toApiError(error).message}
@@ -498,9 +497,9 @@ function CommunicationHistorySection({
                           </Typography>
                         ) : null}
                       </Box>
-                      <IconButton
+                      <AppIconButton
                         size="small"
-                        aria-label={isExpanded ? 'Collapse communication details' : 'Expand communication details'}
+                        label={isExpanded ? 'Collapse communication details' : 'Expand communication details'}
                         aria-expanded={isExpanded}
                         aria-controls={detailId}
                         onClick={() => setExpandedCommunicationId(isExpanded ? null : communication.id)}
@@ -510,7 +509,7 @@ function CommunicationHistorySection({
                         ) : (
                           <KeyboardArrowRightOutlinedIcon fontSize="small" />
                         )}
-                      </IconButton>
+                      </AppIconButton>
                     </Stack>
 
                     <Divider sx={{ my: 1.5 }} />
@@ -561,9 +560,9 @@ function CommunicationHistorySection({
                   <Fragment key={communication.id}>
                     <TableRow key={communication.id} hover>
                       <TableCell>
-                        <IconButton
+                        <AppIconButton
                           size="small"
-                          aria-label={isExpanded ? 'Collapse communication details' : 'Expand communication details'}
+                          label={isExpanded ? 'Collapse communication details' : 'Expand communication details'}
                           aria-expanded={isExpanded}
                           aria-controls={detailId}
                           onClick={() => setExpandedCommunicationId(isExpanded ? null : communication.id)}
@@ -573,7 +572,7 @@ function CommunicationHistorySection({
                           ) : (
                             <KeyboardArrowRightOutlinedIcon fontSize="small" />
                           )}
-                        </IconButton>
+                        </AppIconButton>
                       </TableCell>
                       <TableCell>
                         <CommunicationStatusChip communication={communication} />

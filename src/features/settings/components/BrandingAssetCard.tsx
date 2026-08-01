@@ -3,7 +3,6 @@ import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import UploadOutlinedIcon from '@mui/icons-material/UploadOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Dialog from '@mui/material/Dialog';
@@ -17,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
 
 import { SafeImage } from '@shared/components/common/SafeImage';
+import { AppButton } from '@shared/ui/actions';
 import type { BrandingAssetType } from '../settings.types';
 import { resolveAssetUrl } from '../settings.utils';
 
@@ -154,7 +154,7 @@ export function BrandingAssetCard({
           ) : null}
           {error ? <Alert severity="error">{error}</Alert> : null}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            <Button component="label" variant="outlined" startIcon={<UploadOutlinedIcon />} disabled={isBusy} loading={isBusy && fileName !== null}>
+            <AppButton component="label" variant="outlined" startIcon={<UploadOutlinedIcon />} disabled={isBusy} isLoading={isBusy && fileName !== null}>
               {isBusy && fileName !== null ? 'Uploading...' : imageUrl ? 'Replace image' : 'Select image'}
               <input
                 ref={inputRef}
@@ -163,17 +163,17 @@ export function BrandingAssetCard({
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(event) => void handleFileChange(event)}
               />
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               variant="text"
               color="error"
               startIcon={<DeleteOutlineOutlinedIcon />}
               disabled={isBusy || imageUrl === null}
-              loading={isBusy && fileName === null}
+              isLoading={isBusy && fileName === null}
               onClick={() => setConfirmOpen(true)}
             >
               {isBusy && fileName === null ? 'Removing...' : 'Remove image'}
-            </Button>
+            </AppButton>
           </Stack>
         </Stack>
       </CardContent>
@@ -183,8 +183,8 @@ export function BrandingAssetCard({
           <DialogContentText>This removes the current branding image. You can upload a replacement later.</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button autoFocus onClick={() => setConfirmOpen(false)} disabled={isBusy}>Cancel</Button>
-          <Button color="error" onClick={() => void handleDelete()} loading={isBusy}>Remove</Button>
+          <AppButton autoFocus onClick={() => setConfirmOpen(false)} disabled={isBusy}>Cancel</AppButton>
+          <AppButton color="error" onClick={() => void handleDelete()} isLoading={isBusy}>Remove</AppButton>
         </DialogActions>
       </Dialog>
     </Card>

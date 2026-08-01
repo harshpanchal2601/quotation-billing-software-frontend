@@ -2,13 +2,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -16,6 +14,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 
+import { AppButton, AppIconButton } from '@shared/ui/actions';
 import {
   downloadQuotationAttachmentBlobRequest,
   getQuotationAttachmentPreviewBlobRequest,
@@ -144,13 +143,13 @@ export function QuotationAttachmentPreviewDialog({
         <Typography variant="caption" color="text.secondary">
           {attachment.fileCategory} • {formatFileSize(attachment.fileSize)}
         </Typography>
-        <IconButton
-          aria-label="Close attachment preview"
+        <AppIconButton
+          label="Close attachment preview"
           onClick={handleClose}
           sx={{ position: 'absolute', right: 8, top: 8, color: 'grey.500' }}
         >
           <CloseIcon />
-        </IconButton>
+        </AppIconButton>
       </DialogTitle>
 
       <DialogContent dividers sx={{ p: 2, bgcolor: 'grey.50', display: 'flex', flexDirection: 'column', minHeight: 400 }}>
@@ -162,7 +161,7 @@ export function QuotationAttachmentPreviewDialog({
             <Typography variant="body2" color="text.secondary" gutterBottom>
               Download the file to view it on your device.
             </Typography>
-            <Button
+            <AppButton
               variant="contained"
               startIcon={<DownloadOutlinedIcon />}
               onClick={handleDownload}
@@ -170,7 +169,7 @@ export function QuotationAttachmentPreviewDialog({
               sx={{ mt: 1 }}
             >
               {downloading ? 'Downloading...' : 'Download File'}
-            </Button>
+            </AppButton>
           </Box>
         ) : loading ? (
           <Box sx={{ my: 'auto', textAlign: 'center', p: 4 }}>
@@ -244,15 +243,15 @@ export function QuotationAttachmentPreviewDialog({
           Uploaded: {new Date(attachment.uploadedAt).toLocaleDateString()}
         </Typography>
         <Stack direction="row" spacing={1}>
-          <Button onClick={handleClose}>Close</Button>
-          <Button
+          <AppButton onClick={handleClose}>Close</AppButton>
+          <AppButton
             variant="contained"
             startIcon={<DownloadOutlinedIcon />}
             onClick={handleDownload}
             disabled={downloading}
           >
             {downloading ? 'Downloading...' : 'Download'}
-          </Button>
+          </AppButton>
         </Stack>
       </DialogActions>
     </Dialog>

@@ -5,8 +5,6 @@ import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
@@ -20,6 +18,7 @@ import { useState, type MouseEvent } from 'react';
 import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton, AppIconButton } from '@shared/ui/actions';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -126,7 +125,7 @@ export function CompanyDetailsPage() {
 
   if (!Number.isFinite(companyId)) return <ErrorState message="Company not found" />;
   if (query.isPending) return <Stack spacing={1}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack>;
-  if (query.isError) return <Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><Button onClick={() => void query.refetch()}>Retry</Button></Stack>;
+  if (query.isError) return <Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><AppButton onClick={() => void query.refetch()}>Retry</AppButton></Stack>;
 
   const company = query.data;
   const isMutating = statusMutation.isPending || deleteMutation.isPending || contactActionMutation.isPending || addressActionMutation.isPending;
@@ -159,11 +158,11 @@ export function CompanyDetailsPage() {
           <Typography color="text.secondary">{company.companyCode}</Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
+          <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
             Back to Companies
-          </Button>
-          <Button component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</Button>
-          <IconButton aria-label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></IconButton>
+          </AppButton>
+          <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
+          <AppIconButton label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></AppIconButton>
           <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
             <MenuItem onClick={() => { setMenuAnchor(null); setStatusOpen(true); }}><PowerSettingsNewOutlinedIcon fontSize="small" sx={{ mr: 1 }} />{company.isActive ? 'Deactivate' : 'Activate'}</MenuItem>
             <MenuItem onClick={() => { setMenuAnchor(null); setDeleteOpen(true); }} sx={{ color: 'error.main' }}><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Delete</MenuItem>

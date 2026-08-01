@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
-import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -15,6 +14,7 @@ import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import type { ApiFieldErrors } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { bankDetailsSchema, type BankDetailsFormValues, type BankDetailsSubmitValues } from '../schemas/bank-details.schema';
 import type { BankDetail } from '../settings.types';
@@ -169,10 +169,10 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-        <Button type="submit" form="bank-details-form" variant="contained" disabled={!form.formState.isValid} loading={isSubmitting} loadingPosition="start">
+        <AppButton onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
+        <AppButton type="submit" form="bank-details-form" variant="contained" disabled={!form.formState.isValid} isLoading={isSubmitting} loadingPosition="start">
           {isSubmitting ? 'Saving...' : 'Save account'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

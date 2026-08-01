@@ -1,4 +1,3 @@
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
@@ -8,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import { AppDialog } from '@shared/ui/dialogs';
 import { getMeasurementUnitRequest } from '../api/measurement-units.api';
 import { measurementUnitsQueryKeys } from '../model/measurement-units.query-keys';
@@ -45,9 +45,9 @@ export function MeasurementUnitDetailsDialog({ unitId, onClose, onEdit }: Detail
       contentDividers
       actions={
         <>
-          <Button onClick={onClose}>Close</Button>
+          <AppButton onClick={onClose}>Close</AppButton>
           {unit && onEdit ? (
-            <Button
+            <AppButton
               variant="contained"
               onClick={() => {
                 onClose();
@@ -55,7 +55,7 @@ export function MeasurementUnitDetailsDialog({ unitId, onClose, onEdit }: Detail
               }}
             >
               Edit Unit
-            </Button>
+            </AppButton>
           ) : null}
         </>
       }
@@ -72,9 +72,9 @@ export function MeasurementUnitDetailsDialog({ unitId, onClose, onEdit }: Detail
       {query.isError ? (
         <Stack spacing={2} py={2}>
           <ErrorState message={toApiError(query.error).message} />
-          <Button variant="outlined" size="small" onClick={() => void query.refetch()}>
+          <AppButton variant="outlined" size="small" onClick={() => void query.refetch()}>
             Retry
-          </Button>
+          </AppButton>
         </Stack>
       ) : null}
 

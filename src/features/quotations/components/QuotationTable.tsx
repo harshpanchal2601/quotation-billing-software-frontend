@@ -6,7 +6,6 @@ import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
 import Popover from '@mui/material/Popover';
@@ -22,6 +21,7 @@ import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { AppIconButton } from '@shared/ui/actions';
 import type { QuotationListItem } from '../quotations.types';
 import { formatCurrency } from '../quotations.utils';
 import { QuotationStatusChip } from './QuotationStatusChip';
@@ -82,13 +82,13 @@ export function QuotationTable({
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
                   <QuotationStatusChip status={quo.status} />
-                  <IconButton
+                  <AppIconButton
                     size="small"
                     onClick={(e) => handleOpenMenu(e, quo)}
-                    aria-label={`Actions for ${quo.quotationNumber}`}
+                    label={`Actions for ${quo.quotationNumber}`}
                   >
                     <MoreVertIcon fontSize="small" />
-                  </IconButton>
+                  </AppIconButton>
                 </Box>
               </Box>
 
@@ -169,13 +169,13 @@ export function QuotationTable({
                 {formatCurrency(quo.grandTotal, quo.currency)}
               </TableCell>
               <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                <IconButton
+                <AppIconButton
                   size="small"
                   onClick={(e) => handleOpenMenu(e, quo)}
-                  aria-label={`Actions for ${quo.quotationNumber}`}
+                  label={`Actions for ${quo.quotationNumber}`}
                 >
                   <MoreVertIcon fontSize="small" />
-                </IconButton>
+                </AppIconButton>
               </TableCell>
             </TableRow>
           ))}

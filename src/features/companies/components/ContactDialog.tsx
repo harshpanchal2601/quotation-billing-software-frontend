@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -12,6 +11,8 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+
+import { AppButton } from '@shared/ui/actions';
 
 import type { CompanyContact } from '../companies.types';
 import { contactSchema, toContactSubmitValues, type ContactFormValues, type ContactSubmitValues } from '../schemas/contact.schema';
@@ -64,8 +65,8 @@ export function ContactDialog({ open, contact, isSubmitting, errorMessage, onClo
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-        <Button type="submit" form="contact-form" variant="contained" disabled={isSubmitting || !form.formState.isValid}>{isSubmitting ? 'Saving' : 'Save contact'}</Button>
+        <AppButton onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
+        <AppButton type="submit" form="contact-form" variant="contained" disabled={isSubmitting || !form.formState.isValid}>{isSubmitting ? 'Saving' : 'Save contact'}</AppButton>
       </DialogActions>
     </Dialog>
   );

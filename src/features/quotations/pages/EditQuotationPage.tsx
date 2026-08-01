@@ -1,6 +1,5 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
@@ -10,6 +9,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import { getQuotationRequest, updateQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
 import { quotationsQueryKeys } from '../quotations.query-keys';
@@ -93,12 +93,12 @@ export function EditQuotationPage() {
         <Alert severity="warning" sx={{ mb: 3 }}>
           Quotation <strong>{quotation.quotationNumber}</strong> Revision #{quotation.revisionNumber} is currently in status <strong>{formatQuotationStatusLabel(quotation.status)}</strong> and can no longer be edited. Only the latest Draft revision is editable.
         </Alert>
-        <Button
+        <AppButton
           variant="contained"
           onClick={() => navigate(`/quotations/${latestRevision?.id ?? quotation.id}`)}
         >
           {latestRevision && latestRevision.id !== quotation.id ? 'View Latest Revision' : 'View Quotation Details'}
-        </Button>
+        </AppButton>
       </Box>
     );
   }

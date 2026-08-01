@@ -4,8 +4,6 @@ import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
@@ -21,6 +19,7 @@ import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { paths } from '@app/router/routeConfig';
+import { AppButton, AppIconButton } from '@shared/ui/actions';
 import type { CompanyListItem } from '../companies.types';
 import { formatLocation, formatReadableDate, hasText, unavailable } from '../companies.utils';
 import { CompanyStatusChip } from './CompanyStatusChip';
@@ -87,10 +86,10 @@ export function CompanyTable({ companies, busyCompanyId, returnState, onStatusCh
               <PrimaryContactSummary company={company} />
               <Typography color="text.secondary">Quotations: {company.quotationCount}</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Button component={RouterLink} to={`${paths.companies}/${company.id}`} state={returnState} size="small" startIcon={<VisibilityOutlinedIcon />}>View</Button>
-                <Button component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={returnState} size="small" startIcon={<EditOutlinedIcon />}>Edit</Button>
-                <Button size="small" startIcon={<PowerSettingsNewOutlinedIcon />} onClick={() => onStatusChange(company)} loading={busyCompanyId === company.id}>{company.isActive ? 'Deactivate' : 'Activate'}</Button>
-                <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(company)} loading={busyCompanyId === company.id}>Delete</Button>
+                <AppButton component={RouterLink} to={`${paths.companies}/${company.id}`} state={returnState} size="small" startIcon={<VisibilityOutlinedIcon />}>View</AppButton>
+                <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={returnState} size="small" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
+                <AppButton size="small" startIcon={<PowerSettingsNewOutlinedIcon />} onClick={() => onStatusChange(company)} isLoading={busyCompanyId === company.id}>{company.isActive ? 'Deactivate' : 'Activate'}</AppButton>
+                <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(company)} isLoading={busyCompanyId === company.id}>Delete</AppButton>
               </Stack>
             </Stack>
           </Paper>
@@ -127,9 +126,9 @@ function CompanyActions({
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   return (
     <>
-      <IconButton aria-label={`Open actions for ${company.name}`} onClick={(event) => setAnchor(event.currentTarget)} disabled={disabled}>
+      <AppIconButton label={`Open actions for ${company.name}`} onClick={(event) => setAnchor(event.currentTarget)} disabled={disabled}>
         <MoreVertOutlinedIcon />
-      </IconButton>
+      </AppIconButton>
       <Menu anchorEl={anchor} open={anchor !== null} onClose={() => setAnchor(null)}>
         <MenuItem component={RouterLink} to={`${paths.companies}/${company.id}`} state={returnState} onClick={() => setAnchor(null)}>
           <VisibilityOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> View

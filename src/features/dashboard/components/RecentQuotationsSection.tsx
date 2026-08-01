@@ -1,9 +1,7 @@
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -15,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
+import { AppButton, AppIconButton } from '@shared/ui/actions';
 import { QuotationStatusChip } from '../../quotations/components/QuotationStatusChip';
 import { formatCurrency } from '../../quotations/quotations.utils';
 import type { RecentQuotationDto } from '../model/dashboard.types';
@@ -48,9 +47,9 @@ export function RecentQuotationsSection({ recentQuotations, currency = 'INR' }: 
           <Typography variant="h6" fontWeight={700}>
             Recent Quotations
           </Typography>
-          <Button component={RouterLink} to="/quotations" size="small" color="primary">
+          <AppButton component={RouterLink} to="/quotations" size="small" color="primary">
             View All
-          </Button>
+          </AppButton>
         </Box>
 
         {/* Desktop Table View */}
@@ -84,9 +83,9 @@ export function RecentQuotationsSection({ recentQuotations, currency = 'INR' }: 
                       {formatCurrency(q.grandTotal, q.currency || currency)}
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton component={RouterLink} to={`/quotations/${q.id}`} size="small" color="primary" aria-label={`View ${q.quotationNumber}`}>
+                      <AppIconButton component={RouterLink} to={`/quotations/${q.id}`} size="small" color="primary" label={`View ${q.quotationNumber}`}>
                         <VisibilityOutlinedIcon fontSize="small" />
-                      </IconButton>
+                      </AppIconButton>
                     </TableCell>
                   </TableRow>
                 ))}

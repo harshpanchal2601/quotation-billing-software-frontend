@@ -3,7 +3,6 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Dialog from '@mui/material/Dialog';
@@ -18,6 +17,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 
 import { SafeImage } from '@shared/components/common/SafeImage';
 import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
 import { deleteItemImageRequest, uploadItemImageRequest } from '../api/items.api';
 import { itemsQueryKeys } from '../items.query-keys';
 import type { ItemDetail } from '../items.types';
@@ -175,30 +175,30 @@ export function ItemImageSection({ item, onSuccess }: ItemImageSectionProps) {
               <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
                 {selectedFile ? (
                   <>
-                    <Button
+                    <AppButton
                       variant="contained"
                       startIcon={<CloudUploadOutlinedIcon />}
                       onClick={() => void handleConfirmUpload()}
-                      loading={uploadMutation.isPending}
+                      isLoading={uploadMutation.isPending}
                     >
                       Save Image
-                    </Button>
-                    <Button variant="outlined" onClick={clearSelectedFile} disabled={isBusy}>
+                    </AppButton>
+                    <AppButton variant="outlined" onClick={clearSelectedFile} disabled={isBusy}>
                       Cancel Selection
-                    </Button>
+                    </AppButton>
                   </>
                 ) : (
                   <>
-                    <Button
+                    <AppButton
                       variant="outlined"
                       startIcon={<CloudUploadOutlinedIcon />}
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isBusy}
                     >
                       {item.imageUrl ? 'Replace Image' : 'Select Image'}
-                    </Button>
+                    </AppButton>
                     {item.imageUrl ? (
-                      <Button
+                      <AppButton
                         variant="outlined"
                         color="error"
                         startIcon={<DeleteOutlineOutlinedIcon />}
@@ -206,7 +206,7 @@ export function ItemImageSection({ item, onSuccess }: ItemImageSectionProps) {
                         disabled={isBusy}
                       >
                         Remove Image
-                      </Button>
+                      </AppButton>
                     ) : null}
                   </>
                 )}
@@ -230,17 +230,17 @@ export function ItemImageSection({ item, onSuccess }: ItemImageSectionProps) {
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setDeleteConfirmOpen(false)} disabled={isBusy}>
+          <AppButton onClick={() => setDeleteConfirmOpen(false)} disabled={isBusy}>
             Cancel
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             variant="contained"
             color="error"
             onClick={() => void deleteMutation.mutateAsync().catch(() => undefined)}
-            loading={deleteMutation.isPending}
+            isLoading={deleteMutation.isPending}
           >
             Remove Image
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
     </Card>

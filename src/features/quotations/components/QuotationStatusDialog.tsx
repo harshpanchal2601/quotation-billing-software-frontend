@@ -1,4 +1,3 @@
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -11,6 +10,7 @@ import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import { useState } from 'react';
 
+import { AppButton } from '@shared/ui/actions';
 import type { QuotationStatus } from '../quotations.types';
 import { formatQuotationStatusLabel, getValidNextStatuses } from '../quotations.utils';
 
@@ -86,19 +86,19 @@ export function QuotationStatusDialog({
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} color="inherit" disabled={isSubmitting}>
+        <AppButton onClick={onClose} color="inherit" disabled={isSubmitting}>
           Cancel
-        </Button>
-        <Button
+        </AppButton>
+        <AppButton
           onClick={handleConfirm}
           variant="contained"
           color="primary"
           disabled={!targetStatus || allowedNext.length === 0}
-          loading={isSubmitting}
+          isLoading={isSubmitting}
           loadingPosition="start"
         >
           {isSubmitting ? 'Updating...' : 'Update Status'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

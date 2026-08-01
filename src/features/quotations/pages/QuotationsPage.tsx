@@ -1,7 +1,6 @@
 import NoteAddOutlinedIcon from '@mui/icons-material/NoteAddOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import TablePagination from '@mui/material/TablePagination';
@@ -12,6 +11,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { AppButton } from '@shared/ui/actions';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
@@ -164,14 +164,14 @@ export function QuotationsPage() {
             Manage quotation generation, calculation preview, draft updates, and status transitions.
           </Typography>
         </Box>
-        <Button
+        <AppButton
           variant="contained"
           color="primary"
           startIcon={<NoteAddOutlinedIcon />}
           onClick={() => navigate(paths.newQuotation)}
         >
           Create Quotation
-        </Button>
+        </AppButton>
       </Box>
 
       {/* Filters */}
@@ -203,13 +203,13 @@ export function QuotationsPage() {
               : 'You have not created any quotations yet.'}
           </Typography>
           {params.search || params.status || params.companyId ? (
-            <Button variant="outlined" size="small" onClick={handleClearFilters}>
+            <AppButton variant="outlined" size="small" onClick={handleClearFilters}>
               Clear Filters
-            </Button>
+            </AppButton>
           ) : (
-            <Button variant="contained" size="small" startIcon={<NoteAddOutlinedIcon />} onClick={() => navigate(paths.newQuotation)}>
+            <AppButton variant="contained" size="small" startIcon={<NoteAddOutlinedIcon />} onClick={() => navigate(paths.newQuotation)}>
               Create First Quotation
-            </Button>
+            </AppButton>
           )}
         </Box>
       ) : (

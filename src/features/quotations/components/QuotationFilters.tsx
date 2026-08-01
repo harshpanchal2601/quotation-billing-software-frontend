@@ -1,7 +1,6 @@
 import FilterListOutlinedIcon from '@mui/icons-material/FilterListOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
@@ -10,6 +9,7 @@ import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import { useEffect, useState } from 'react';
 
+import { AppButton } from '@shared/ui/actions';
 import type { QuotationListParams, QuotationStatus } from '../quotations.types';
 import { formatQuotationStatusLabel } from '../quotations.utils';
 
@@ -178,9 +178,9 @@ export function QuotationFilters({
         </FormControl>
 
         {hasActiveFilters ? (
-          <Button size="small" color="inherit" onClick={onClearFilters} startIcon={<FilterListOutlinedIcon />} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <AppButton size="small" color="inherit" onClick={onClearFilters} startIcon={<FilterListOutlinedIcon />} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Clear Filters
-          </Button>
+          </AppButton>
         ) : null}
       </Box>
 

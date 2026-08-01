@@ -1,7 +1,6 @@
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import FormControl from '@mui/material/FormControl';
 import MenuItem from '@mui/material/MenuItem';
@@ -9,6 +8,8 @@ import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { useState } from 'react';
+
+import { AppButton } from '@shared/ui/actions';
 
 import type { DashboardPeriod } from '../model/dashboard.types';
 
@@ -105,9 +106,9 @@ export function DashboardPeriodFilter({
             error={Boolean(dateError)}
             sx={{ width: { xs: '100%', sm: 'auto' } }}
           />
-          <Button variant="outlined" size="small" onClick={handleCustomApply} sx={{ height: 40, width: { xs: '100%', sm: 'auto' } }}>
+          <AppButton variant="outlined" size="small" onClick={handleCustomApply} sx={{ height: 40, width: { xs: '100%', sm: 'auto' } }}>
             Apply
-          </Button>
+          </AppButton>
         </Stack>
       ) : null}
 
@@ -115,7 +116,7 @@ export function DashboardPeriodFilter({
         <Box sx={{ color: 'error.main', fontSize: '0.75rem', width: '100%' }}>{dateError}</Box>
       ) : null}
 
-      <Button
+      <AppButton
         variant="outlined"
         color="inherit"
         size="small"
@@ -125,7 +126,7 @@ export function DashboardPeriodFilter({
         sx={{ height: 40, ml: { xs: 0, sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}
       >
         {isFetching ? 'Refreshing...' : 'Refresh'}
-      </Button>
+      </AppButton>
     </Stack>
   );
 }

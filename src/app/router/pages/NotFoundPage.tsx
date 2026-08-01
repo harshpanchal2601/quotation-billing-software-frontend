@@ -1,9 +1,9 @@
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { AppButton } from '@shared/ui/actions';
 import { paths } from '../routeConfig';
 
 export function NotFoundPage() {
@@ -23,9 +23,9 @@ export function NotFoundPage() {
           Page not found
         </Typography>
         <Typography color="text.secondary">The requested page does not exist.</Typography>
-        <Button component={RouterLink} to={paths.dashboard} variant="contained">
+        <AppButton component={RouterLink} to={paths.dashboard} variant="contained">
           Go to Dashboard
-        </Button>
+        </AppButton>
       </Stack>
     </Box>
   );
