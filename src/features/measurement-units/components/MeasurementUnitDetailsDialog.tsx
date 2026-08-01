@@ -10,12 +10,12 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { toApiError } from '@shared/api/apiClient';
 import { getMeasurementUnitRequest } from '../api/measurement-units.api';
-import { measurementUnitsQueryKeys } from '../measurement-units.query-keys';
-import type { MeasurementUnitListItem } from '../measurement-units.types';
-import { formatQuantityTypeLabel } from '../measurement-units.utils';
+import { measurementUnitsQueryKeys } from '../model/measurement-units.query-keys';
+import type { MeasurementUnitListItem } from '../model/measurement-units.types';
+import { formatQuantityTypeLabel } from '../model/measurement-units.utils';
 
 type DetailsDialogProps = {
   unitId: number | null;

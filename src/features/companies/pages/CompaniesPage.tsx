@@ -11,13 +11,14 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useSearchParams } from 'react-router-dom';
 
-import { EmptyState } from '../../../components/common/EmptyState';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { paths } from '@app/router/routeConfig';
+import { getCurrentListReturnState } from '@app/router/returnNavigation';
+import { toApiError } from '@shared/api/apiClient';
 import { deleteCompanyRequest, listCompaniesRequest, updateCompanyStatusRequest } from '../api/companies.api';
 import { companiesQueryKeys } from '../companies.query-keys';
 import type { CompanyListItem, CompanyListParams } from '../companies.types';
@@ -36,6 +37,7 @@ const sortOptions = [
 
 export function CompaniesPage() {
   const queryClient = useQueryClient();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get('search') ?? '');
   const [deleteTarget, setDeleteTarget] = useState<CompanyListItem | null>(null);
@@ -48,10 +50,12 @@ export function CompaniesPage() {
   useEffect(() => setSearchInput(searchParams.get('search') ?? ''), [searchParams]);
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      updateSearchParams(setSearchParams, { search: searchInput.trim() || undefined, page: 1 });
+      const nextSearch = searchInput.trim();
+      if (nextSearch === (searchParams.get('search') ?? '')) return;
+      updateSearchParams(setSearchParams, { search: nextSearch || undefined, page: 1 });
     }, 350);
     return () => window.clearTimeout(timeout);
-  }, [searchInput, setSearchParams]);
+  }, [searchInput, searchParams, setSearchParams]);
 
   const query = useQuery({
     queryKey: companiesQueryKeys.list(params),
@@ -87,6 +91,7 @@ export function CompaniesPage() {
       ? deleteMutation.variables?.id
       : null;
   const showRefreshing = query.isFetching && !query.isPending;
+  const listReturnState = getCurrentListReturnState(location.pathname, location.search);
 
   return (
     <Stack spacing={3}>
@@ -100,7 +105,7 @@ export function CompaniesPage() {
       {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
         <TextField label="Search companies" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} fullWidth />
-        <TextField select label="Status" value={params.isActive === undefined ? 'all' : String(params.isActive)} onChange={(event) => updateSearchParams(setSearchParams, { isActive: event.target.value === 'all' ? undefined : event.target.value === 'true', page: 1 })} sx={{ minWidth: 160 }}>
+        <TextField select label="Status" value={params.isActive === undefined ? 'all' : String(params.isActive)} onChange={(event) => updateSearchParams(setSearchParams, { isActive: event.target.value === 'all' ? undefined : event.target.value === 'true', page: 1 })} sx={{ minWidth: { xs: 0, md: 160 }, width: { xs: '100%', md: 'auto' } }}>
           <MenuItem value="all">All</MenuItem>
           <MenuItem value="true">Active</MenuItem>
           <MenuItem value="false">Inactive</MenuItem>
@@ -108,7 +113,7 @@ export function CompaniesPage() {
         <TextField select label="Sort" value={sortValue} onChange={(event) => {
           const [sortBy, sortOrder] = event.target.value.split(':') as [CompanyListParams['sortBy'], CompanyListParams['sortOrder']];
           updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
-        }} sx={{ minWidth: 220 }}>
+        }} sx={{ minWidth: { xs: 0, md: 220 }, width: { xs: '100%', md: 'auto' } }}>
           {sortOptions.map((option) => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
         </TextField>
       </Stack>
@@ -127,7 +132,13 @@ export function CompaniesPage() {
       {query.data && query.data.companies.length > 0 ? (
         <>
           <Typography color="text.secondary">{query.data.pagination.total} companies found</Typography>
-          <CompanyTable companies={query.data.companies} busyCompanyId={busyCompanyId} onStatusChange={setStatusTarget} onDelete={setDeleteTarget} />
+          <CompanyTable
+            companies={query.data.companies}
+            busyCompanyId={busyCompanyId}
+            returnState={listReturnState}
+            onStatusChange={setStatusTarget}
+            onDelete={setDeleteTarget}
+          />
           <TablePagination
             component="div"
             count={query.data.pagination.total}

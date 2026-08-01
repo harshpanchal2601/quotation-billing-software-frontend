@@ -1,4 +1,4 @@
-import type { QuotationStatus } from '../quotations/quotations.types';
+import type { QuotationStatus } from '../../quotations/quotations.types';
 
 export type DashboardPeriod =
   | 'CURRENT_FINANCIAL_YEAR'

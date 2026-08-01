@@ -21,7 +21,7 @@ import { useEffect, useState } from 'react';
 
 import { getQuotationAttachmentsRequest } from '../api/quotation-attachments.api';
 import { sendQuotationEmailRequest } from '../api/quotation-documents.api';
-import { toApiError } from '../../../services/apiClient';
+import { toApiError } from '@shared/api/apiClient';
 import type { GeneratedDocumentHistoryItem } from '../quotation-documents.types';
 import type { QuotationDetail } from '../quotations.types';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';

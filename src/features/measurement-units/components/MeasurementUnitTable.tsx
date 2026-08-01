@@ -18,8 +18,8 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useState, type MouseEvent } from 'react';
 
-import type { MeasurementUnitListItem } from '../measurement-units.types';
-import { formatQuantityTypeLabel } from '../measurement-units.utils';
+import type { MeasurementUnitListItem } from '../model/measurement-units.types';
+import { formatQuantityTypeLabel } from '../model/measurement-units.utils';
 
 type MeasurementUnitTableProps = {
   units: MeasurementUnitListItem[];

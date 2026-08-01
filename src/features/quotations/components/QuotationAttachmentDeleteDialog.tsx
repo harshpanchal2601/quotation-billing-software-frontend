@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { toApiError } from '../../../services/apiClient';
+import { toApiError } from '@shared/api/apiClient';
 import { deleteQuotationAttachmentRequest } from '../api/quotation-attachments.api';
 import type { QuotationAttachment } from '../quotation-attachments.types';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';

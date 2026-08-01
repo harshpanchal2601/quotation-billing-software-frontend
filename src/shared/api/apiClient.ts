@@ -5,7 +5,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 
-import { frontendEnv } from '../config/env';
+import { resolveApiBaseUrl } from './apiBaseUrl';
 
 export type ApiSuccessResponse<TData> = {
   success: true;
@@ -47,7 +47,7 @@ export function setAuthenticationFailureHandler(handler: (() => void) | null) {
 }
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: frontendEnv.apiBaseUrl,
+  baseURL: resolveApiBaseUrl(import.meta.env),
   withCredentials: true,
   timeout: 15_000,
   headers: {

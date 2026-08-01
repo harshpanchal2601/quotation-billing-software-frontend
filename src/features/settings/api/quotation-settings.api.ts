@@ -1,4 +1,4 @@
-import { apiClient, type ApiSuccessResponse } from '../../../services/apiClient';
+import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import type { QuotationSettings } from '../settings.types';
 
 export const quotationSettingsQueryKey = ['settings', 'quotation'] as const;

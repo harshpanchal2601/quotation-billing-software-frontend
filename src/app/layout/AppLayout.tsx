@@ -20,11 +20,12 @@ import { useTheme } from '@mui/material/styles';
 import { useState, type MouseEvent } from 'react';
 import { Link as RouterLink, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-import { AppBrand } from '../brand/AppBrand';
-import { UserAvatar } from '../common/UserAvatar';
-import { useAuth } from '../../features/auth/auth.hooks';
-import { designTokens } from '../../theme/tokens';
-import { getRouteTitle, navigationItems, paths } from '../../routes/routeConfig';
+import { useAuth } from '@features/auth';
+import { AppBrand } from '@shared/components/brand/AppBrand';
+import { UserAvatar } from '@shared/components/common/UserAvatar';
+
+import { navigationItems, paths } from '../router/routeConfig';
+import { designTokens } from '../theme/tokens';
 import { AppBreadcrumbs } from './AppBreadcrumbs';
 
 const sections = ['Main', 'Quotation Management', 'Master Management', 'Configuration', 'System'] as const;
@@ -37,7 +38,6 @@ export function AppLayout() {
   const { user, logout, isLoggingOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
-  const title = getRouteTitle(location.pathname);
 
   async function handleLogout() {
     setMenuAnchor(null);
@@ -108,7 +108,7 @@ export function AppLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', maxWidth: '100vw', overflowX: 'hidden' }}>
       <Box
         component="a"
         href="#main-content"
@@ -128,14 +128,13 @@ export function AppLayout() {
         Skip to content
       </Box>
       <AppBar color="inherit" position="fixed" sx={{ width: { lg: `calc(100% - ${designTokens.layout.drawerWidth}px)` }, ml: { lg: `${designTokens.layout.drawerWidth}px` } }}>
-        <Toolbar sx={{ minHeight: designTokens.layout.headerHeight }}>
+        <Toolbar sx={{ minHeight: designTokens.layout.headerHeight, px: { xs: 1.5, sm: 3 } }}>
           {!isDesktop ? (
             <IconButton aria-label="Open navigation menu" onClick={() => setMobileOpen(true)} edge="start" sx={{ mr: 1 }}>
               <MenuOutlinedIcon />
             </IconButton>
           ) : null}
           <Box flex={1} minWidth={0}>
-            <Typography variant="h3" noWrap>{title}</Typography>
             <AppBreadcrumbs />
           </Box>
           <IconButton aria-label="Open profile menu" onClick={openProfileMenu}>
@@ -159,14 +158,38 @@ export function AppLayout() {
         </Toolbar>
       </AppBar>
       <Box component="aside" sx={{ width: { lg: designTokens.layout.drawerWidth }, flexShrink: 0 }}>
-        <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)} ModalProps={{ keepMounted: true }} sx={{ display: { xs: 'block', lg: 'none' }, '& .MuiDrawer-paper': { width: designTokens.layout.drawerWidth } }}>
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: 'block', lg: 'none' },
+            '& .MuiDrawer-paper': {
+              width: designTokens.layout.drawerWidth,
+              maxWidth: 'calc(100vw - 32px)',
+            },
+          }}
+        >
           {drawer}
         </Drawer>
         <Drawer variant="permanent" open sx={{ display: { xs: 'none', lg: 'block' }, '& .MuiDrawer-paper': { width: designTokens.layout.drawerWidth } }}>
           {drawer}
         </Drawer>
       </Box>
-      <Box component="main" id="main-content" sx={{ flex: 1, minWidth: 0, pt: `${designTokens.layout.headerHeight + 24}px`, px: { xs: 2, sm: 3 }, pb: 4 }}>
+      <Box
+        component="main"
+        id="main-content"
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          maxWidth: '100%',
+          overflowX: 'hidden',
+          pt: `${designTokens.layout.headerHeight + 24}px`,
+          px: { xs: 1.5, sm: 3 },
+          pb: 4,
+        }}
+      >
         <Outlet />
       </Box>
     </Box>

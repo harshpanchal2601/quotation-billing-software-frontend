@@ -3,7 +3,8 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
-import { paths } from './routeConfig';
+
+import { paths } from '../routeConfig';
 
 export function NotFoundPage() {
   return (

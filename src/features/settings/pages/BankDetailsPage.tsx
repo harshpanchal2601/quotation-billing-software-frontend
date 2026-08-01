@@ -9,10 +9,10 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type PropsWithChildren } from 'react';
 
-import { EmptyState } from '../../../components/common/EmptyState';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import {
   bankDetailsQueryKey,
   createBankDetailRequest,
@@ -24,7 +24,6 @@ import {
 import { BankDeleteDialog } from '../components/BankDeleteDialog';
 import { BankDetailsDialog } from '../components/BankDetailsDialog';
 import { BankDetailsTable } from '../components/BankDetailsTable';
-import { SettingsNavigation } from '../components/SettingsNavigation';
 import type { BankDetailsSubmitValues } from '../schemas/bank-details.schema';
 import type { BankDetail } from '../settings.types';
 
@@ -198,7 +197,6 @@ function SettingsPageShell({ title, description, children }: PropsWithChildren<{
         <Typography component="h1" variant="h1">{title}</Typography>
         <Typography color="text.secondary">{description}</Typography>
       </Box>
-      <SettingsNavigation />
       {children}
     </Stack>
   );

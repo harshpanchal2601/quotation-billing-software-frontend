@@ -1,3 +1,4 @@
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import Alert from '@mui/material/Alert';
@@ -20,12 +21,13 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { SafeImage } from '../../../components/common/SafeImage';
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { SafeImage } from '@shared/components/common/SafeImage';
+import { paths } from '@app/router/routeConfig';
+import { getSafeListReturnPath } from '@app/router/returnNavigation';
+import { toApiError } from '@shared/api/apiClient';
 import { deleteItemRequest, getItemRequest, updateItemStatusRequest } from '../api/items.api';
 import { ItemDeleteDialog, ItemStatusDialog } from '../components/ItemConfirmDialogs';
 import { itemsQueryKeys } from '../items.query-keys';
@@ -41,6 +43,7 @@ export function ItemDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const itemId = Number(id);
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
   const [statusTarget, setStatusTarget] = useState<boolean | null>(null);
@@ -72,7 +75,7 @@ export function ItemDetailsPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: itemsQueryKeys.all });
       setDeleteDialogOpen(false);
-      navigate(paths.items, { replace: true });
+      navigate(returnPath, { replace: true });
     },
     onError: (error) => {
       setDeleteDialogOpen(false);
@@ -103,6 +106,7 @@ export function ItemDetailsPage() {
   const item = query.data;
   const imageUrl = resolveAssetUrl(item.imageUrl);
   const isMutating = statusMutation.isPending || deleteMutation.isPending;
+  const returnPath = getSafeListReturnPath(location, paths.items);
 
   return (
     <Stack spacing={3}>
@@ -118,6 +122,9 @@ export function ItemDetailsPage() {
         </Stack>
 
         <Stack direction="row" spacing={1.5}>
+          <Button component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
+            Back to Items
+          </Button>
           <Button
             variant="outlined"
             onClick={() => setStatusTarget(!item.isActive)}
@@ -128,7 +135,7 @@ export function ItemDetailsPage() {
           <Button
             variant="contained"
             startIcon={<EditOutlinedIcon />}
-            onClick={() => navigate(`${paths.items}/${itemId}/edit`)}
+            onClick={() => navigate(`${paths.items}/${itemId}/edit`, { state: { from: returnPath } })}
             disabled={isMutating}
           >
             Edit Item

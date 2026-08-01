@@ -12,10 +12,10 @@ import Typography from '@mui/material/Typography';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
-import { PasswordField } from '../../components/common/PasswordField';
-import { paths } from '../../routes/routeConfig';
-import { useAuth } from './auth.hooks';
-import { changePasswordSchema, type ChangePasswordFormValues } from './auth.schemas';
+import { PasswordField } from '@shared/components/common/PasswordField';
+import { paths } from '@app/router/routeConfig';
+import { useAuth } from '../hooks/useAuth';
+import { changePasswordSchema, type ChangePasswordFormValues } from '../model/auth.schema';
 
 const requirements = [
   '10 to 72 characters',

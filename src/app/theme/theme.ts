@@ -62,8 +62,27 @@ const baseTheme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        html: {
+          maxWidth: '100%',
+          overflowX: 'hidden',
+        },
         body: {
           backgroundColor: colours.pageBackground,
+          maxWidth: '100%',
+          overflowX: 'hidden',
+        },
+        '#root': {
+          maxWidth: '100%',
+          overflowX: 'hidden',
+        },
+        'input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill': {
+          WebkitBoxShadow: `0 0 0 100px ${colours.cardBackground} inset`,
+          WebkitTextFillColor: colours.darkText,
+          caretColor: colours.darkText,
+          transition: 'background-color 9999s ease-out 0s',
+        },
+        'input:-webkit-autofill:focus, textarea:-webkit-autofill:focus, select:-webkit-autofill:focus': {
+          WebkitBoxShadow: `0 0 0 100px ${alpha(colours.lightGreen, 0.38)} inset`,
         },
         '*:focus-visible': {
           outline: `3px solid ${alpha(colours.info, 0.38)}`,
@@ -90,15 +109,47 @@ const baseTheme = createTheme({
         },
       },
     },
-    MuiTextField: { defaultProps: { size: 'small' } },
+    MuiTextField: { defaultProps: { size: 'small', variant: 'outlined' } },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          maxWidth: 'calc(100% - 24px)',
+          '&.MuiInputLabel-shrink': {
+            backgroundColor: colours.cardBackground,
+            paddingInline: 4,
+            maxWidth: 'calc(133% - 32px)',
+          },
+        },
+      },
+    },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
           borderRadius: radii.medium,
           backgroundColor: colours.cardBackground,
+          '&.MuiInputBase-multiline': {
+            alignItems: 'flex-start',
+            paddingTop: 8,
+            paddingBottom: 8,
+          },
+        },
+        input: {
+          minWidth: 0,
         },
         notchedOutline: {
           borderColor: colours.border,
+        },
+      },
+    },
+    MuiFormHelperText: {
+      styleOverrides: {
+        root: {
+          marginTop: 4,
+          marginLeft: 0,
+          marginRight: 0,
+          lineHeight: 1.45,
+          whiteSpace: 'normal',
+          overflowWrap: 'anywhere',
         },
       },
     },
@@ -123,6 +174,29 @@ const baseTheme = createTheme({
       styleOverrides: {
         paper: {
           borderRadius: radii.large,
+          maxWidth: 'calc(100% - 16px)',
+          maxHeight: 'calc(100% - 16px)',
+          margin: 8,
+        },
+      },
+    },
+    MuiDialogActions: {
+      styleOverrides: {
+        root: {
+          flexWrap: 'wrap',
+          gap: 8,
+          padding: 16,
+          '& > :not(style) ~ :not(style)': {
+            marginLeft: 0,
+          },
+        },
+      },
+    },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          maxWidth: '100%',
+          overflowX: 'auto',
         },
       },
     },
@@ -143,6 +217,8 @@ const baseTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: radii.medium,
+          minHeight: 40,
+          minWidth: 40,
         },
       },
     },

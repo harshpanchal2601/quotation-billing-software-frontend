@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { changePasswordSchema, loginSchema } from './auth.schemas';
+import { changePasswordSchema, loginSchema } from './auth.schema';
 
 describe('auth schemas', () => {
   it('rejects empty login fields', () => {

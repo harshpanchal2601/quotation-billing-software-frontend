@@ -18,7 +18,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useState, type PropsWithChildren } from 'react';
 
-import { EmptyState } from '../../../components/common/EmptyState';
+import { EmptyState } from '@shared/components/common/EmptyState';
 import type { CompanyAddress, CompanyContact, CompanyDetail } from '../companies.types';
 import { addressTypeLabel, formatAddress, formatReadableDate, unavailable } from '../companies.utils';
 

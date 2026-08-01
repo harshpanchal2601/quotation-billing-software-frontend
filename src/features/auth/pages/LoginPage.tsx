@@ -11,11 +11,11 @@ import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { AppBrand } from '../../components/brand/AppBrand';
-import { PasswordField } from '../../components/common/PasswordField';
-import { paths } from '../../routes/routeConfig';
-import { useAuth } from './auth.hooks';
-import { loginSchema, type LoginFormValues } from './auth.schemas';
+import { AppBrand } from '@shared/components/brand/AppBrand';
+import { PasswordField } from '@shared/components/common/PasswordField';
+import { paths } from '@app/router/routeConfig';
+import { useAuth } from '../hooks/useAuth';
+import { loginSchema, type LoginFormValues } from '../model/auth.schema';
 
 type LocationState = {
   from?: { pathname?: string };

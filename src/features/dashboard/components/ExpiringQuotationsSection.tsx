@@ -17,7 +17,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { QuotationStatusChip } from '../../quotations/components/QuotationStatusChip';
 import { formatCurrency } from '../../quotations/quotations.utils';
-import type { ExpiringQuotationDto } from '../dashboard.types';
+import type { ExpiringQuotationDto } from '../model/dashboard.types';
 
 type ExpiringQuotationsSectionProps = {
   expiringQuotations: ExpiringQuotationDto[];

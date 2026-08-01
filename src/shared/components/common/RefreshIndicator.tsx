@@ -2,7 +2,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import { useStableLoadingIndicator } from '../../hooks/useStableLoadingIndicator';
+import { useStableLoadingIndicator } from '@shared/hooks/useStableLoadingIndicator';
 
 type RefreshIndicatorProps = {
   show: boolean;

@@ -20,7 +20,7 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { paths } from '../../../routes/routeConfig';
+import { paths } from '@app/router/routeConfig';
 import type { CompanyListItem } from '../companies.types';
 import { formatLocation, formatReadableDate, hasText, unavailable } from '../companies.utils';
 import { CompanyStatusChip } from './CompanyStatusChip';
@@ -28,11 +28,12 @@ import { CompanyStatusChip } from './CompanyStatusChip';
 type CompanyTableProps = {
   companies: CompanyListItem[];
   busyCompanyId?: number | null;
+  returnState?: { from: string };
   onStatusChange: (company: CompanyListItem) => void;
   onDelete: (company: CompanyListItem) => void;
 };
 
-export function CompanyTable({ companies, busyCompanyId, onStatusChange, onDelete }: CompanyTableProps) {
+export function CompanyTable({ companies, busyCompanyId, returnState, onStatusChange, onDelete }: CompanyTableProps) {
   return (
     <>
       <TableContainer component={Paper} variant="outlined" sx={{ display: { xs: 'none', lg: 'block' } }}>
@@ -66,7 +67,7 @@ export function CompanyTable({ companies, busyCompanyId, onStatusChange, onDelet
                 <TableCell>{company.quotationCount}</TableCell>
                 <TableCell><CompanyStatusChip isActive={company.isActive} /></TableCell>
                 <TableCell>{formatReadableDate(company.updatedAt)}</TableCell>
-                <TableCell align="right"><CompanyActions company={company} disabled={busyCompanyId === company.id} onStatusChange={onStatusChange} onDelete={onDelete} /></TableCell>
+                <TableCell align="right"><CompanyActions company={company} disabled={busyCompanyId === company.id} returnState={returnState} onStatusChange={onStatusChange} onDelete={onDelete} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -86,8 +87,8 @@ export function CompanyTable({ companies, busyCompanyId, onStatusChange, onDelet
               <PrimaryContactSummary company={company} />
               <Typography color="text.secondary">Quotations: {company.quotationCount}</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Button component={RouterLink} to={`${paths.companies}/${company.id}`} size="small" startIcon={<VisibilityOutlinedIcon />}>View</Button>
-                <Button component={RouterLink} to={`${paths.companies}/${company.id}/edit`} size="small" startIcon={<EditOutlinedIcon />}>Edit</Button>
+                <Button component={RouterLink} to={`${paths.companies}/${company.id}`} state={returnState} size="small" startIcon={<VisibilityOutlinedIcon />}>View</Button>
+                <Button component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={returnState} size="small" startIcon={<EditOutlinedIcon />}>Edit</Button>
                 <Button size="small" startIcon={<PowerSettingsNewOutlinedIcon />} onClick={() => onStatusChange(company)} loading={busyCompanyId === company.id}>{company.isActive ? 'Deactivate' : 'Activate'}</Button>
                 <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(company)} loading={busyCompanyId === company.id}>Delete</Button>
               </Stack>
@@ -113,11 +114,13 @@ function PrimaryContactSummary({ company }: { company: CompanyListItem }) {
 function CompanyActions({
   company,
   disabled,
+  returnState,
   onStatusChange,
   onDelete,
 }: {
   company: CompanyListItem;
   disabled?: boolean;
+  returnState?: { from: string };
   onStatusChange: (company: CompanyListItem) => void;
   onDelete: (company: CompanyListItem) => void;
 }) {
@@ -128,10 +131,10 @@ function CompanyActions({
         <MoreVertOutlinedIcon />
       </IconButton>
       <Menu anchorEl={anchor} open={anchor !== null} onClose={() => setAnchor(null)}>
-        <MenuItem component={RouterLink} to={`${paths.companies}/${company.id}`} onClick={() => setAnchor(null)}>
+        <MenuItem component={RouterLink} to={`${paths.companies}/${company.id}`} state={returnState} onClick={() => setAnchor(null)}>
           <VisibilityOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> View
         </MenuItem>
-        <MenuItem component={RouterLink} to={`${paths.companies}/${company.id}/edit`} onClick={() => setAnchor(null)}>
+        <MenuItem component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={returnState} onClick={() => setAnchor(null)}>
           <EditOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> Edit
         </MenuItem>
         <MenuItem onClick={() => { setAnchor(null); onStatusChange(company); }}>

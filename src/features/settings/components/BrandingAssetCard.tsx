@@ -16,7 +16,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
 
-import { SafeImage } from '../../../components/common/SafeImage';
+import { SafeImage } from '@shared/components/common/SafeImage';
 import type { BrandingAssetType } from '../settings.types';
 import { resolveAssetUrl } from '../settings.utils';
 

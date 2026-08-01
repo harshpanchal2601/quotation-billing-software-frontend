@@ -48,6 +48,26 @@ export interface SendQuotationEmailResponse {
   message: string;
 }
 
+export interface QuotationCommunicationDocumentSnapshot {
+  id?: number;
+  versionNumber?: number;
+  documentType?: string;
+  displayFilename?: string;
+  generatedAt?: string;
+  quotationRevisionNumber?: number;
+  generatedBy?: {
+    id: number;
+    name: string;
+  } | null;
+}
+
+export interface QuotationCommunicationAttachmentSnapshot {
+  id: number;
+  originalFilename: string;
+  mimeType?: string;
+  fileSize?: number;
+}
+
 export interface QuotationCommunicationHistoryItem {
   id: number;
   quotationId: number;
@@ -61,8 +81,8 @@ export interface QuotationCommunicationHistoryItem {
   bcc: string[];
   subject: string;
   message: string;
-  document: unknown;
-  attachments: unknown;
+  document: QuotationCommunicationDocumentSnapshot | null;
+  attachments: QuotationCommunicationAttachmentSnapshot[] | null;
   providerMessageId: string | null;
   failureCategory: string | null;
   failureSummary: string | null;

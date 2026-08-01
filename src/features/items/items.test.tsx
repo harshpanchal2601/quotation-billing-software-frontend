@@ -2,10 +2,10 @@ import { QueryClient } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
+import { renderWithProviders } from '@shared/test/render';
 import type { ItemDetail, ItemListItem } from './items.types';
 import { CreateItemPage } from './pages/CreateItemPage';
 import { ItemDetailsPage } from './pages/ItemDetailsPage';
@@ -32,8 +32,14 @@ const unitsApi = vi.hoisted(() => ({
 }));
 
 vi.mock('./api/items.api', () => itemsApi);
-vi.mock('../categories/api/categories.api', () => categoriesApi);
-vi.mock('../measurement-units/api/measurement-units.api', () => unitsApi);
+vi.mock('@features/categories', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@features/categories')>()),
+  ...categoriesApi,
+}));
+vi.mock('@features/measurement-units', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@features/measurement-units')>()),
+  ...unitsApi,
+}));
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -45,7 +51,9 @@ describe('item management frontend', () => {
       items: [mockItemListItem()],
       pagination: { page: 1, limit: 20, total: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
     });
-    categoriesApi.getCategoryOptionsRequest.mockResolvedValue([]);
+    categoriesApi.getCategoryOptionsRequest.mockResolvedValue([
+      { id: 10, name: 'Vessels', slug: 'vessels' },
+    ]);
     unitsApi.getMeasurementUnitOptionsRequest.mockResolvedValue([]);
 
     renderItem(<ItemsPage />, '/items?search=reactor&isActive=true&sort=name:asc');
@@ -66,7 +74,9 @@ describe('item management frontend', () => {
       items: [mockItemListItem({ imageUrl: '/storage/items/missing.png' })],
       pagination: { page: 1, limit: 20, total: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
     });
-    categoriesApi.getCategoryOptionsRequest.mockResolvedValue([]);
+    categoriesApi.getCategoryOptionsRequest.mockResolvedValue([
+      { id: 10, name: 'Vessels', slug: 'vessels' },
+    ]);
     unitsApi.getMeasurementUnitOptionsRequest.mockResolvedValue([]);
 
     renderItem(<ItemsPage />, '/items');
@@ -136,6 +146,39 @@ describe('item management frontend', () => {
     expect(await screen.findByText(/cannot activate item because category/i)).toBeInTheDocument();
   });
 
+  it('shows Back to Items on detail pages with a direct-route fallback', async () => {
+    itemsApi.getItemRequest.mockResolvedValue(mockItemDetail());
+
+    renderItemRoute(<ItemDetailsPage />, '/items/:id', '/items/1');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Reactor Tank 500L' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /back to items/i })).toHaveAttribute('href', '/items');
+  });
+
+  it('opens detail pages with the current item list URL in navigation state', async () => {
+    itemsApi.listItemsRequest.mockResolvedValue({
+      items: [mockItemListItem()],
+      pagination: { page: 2, limit: 10, total: 12, totalPages: 2, hasNextPage: false, hasPreviousPage: true },
+    });
+    categoriesApi.getCategoryOptionsRequest.mockResolvedValue([
+      { id: 10, name: 'Vessels', slug: 'vessels' },
+    ]);
+    unitsApi.getMeasurementUnitOptionsRequest.mockResolvedValue([]);
+
+    renderItem(
+      <Routes>
+        <Route path="/items" element={<ItemsPage />} />
+        <Route path="/items/:id" element={<ItemReturnStateProbe />} />
+      </Routes>,
+      '/items?search=reactor&isActive=true&page=2&limit=10&sort=name:asc',
+    );
+
+    await userEvent.click((await screen.findAllByRole('button', { name: /actions for reactor tank/i }))[0]);
+    await userEvent.click(await screen.findByRole('menuitem', { name: /view details/i }));
+
+    expect(await screen.findByText('/items?search=reactor&isActive=true&page=2&limit=10&sort=name:asc')).toBeInTheDocument();
+  });
+
   it('soft deletes item showing quotation usage count alert in confirmation dialog', async () => {
     itemsApi.getItemRequest.mockResolvedValue(mockItemDetail({ quotationUsageCount: 3 }));
     itemsApi.deleteItemRequest.mockResolvedValue(undefined);
@@ -163,6 +206,12 @@ function renderItem(ui: ReactElement, route: string) {
 
 function renderItemRoute(ui: ReactElement, path: string, route: string) {
   return renderItem(<Routes><Route path={path} element={ui} /></Routes>, route);
+}
+
+function ItemReturnStateProbe() {
+  const location = useLocation();
+  const state = location.state as { from?: string } | null;
+  return <div>{state?.from ?? 'missing return state'}</div>;
 }
 
 function mockItemListItem(overrides: Partial<ItemListItem> = {}): ItemListItem {

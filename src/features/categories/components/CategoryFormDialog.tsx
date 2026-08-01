@@ -16,13 +16,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { toApiError } from '../../../services/apiClient';
-import { applyApiFieldErrors } from '../../../services/formErrors';
+import { toApiError } from '@shared/api/apiClient';
+import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { createCategoryRequest, updateCategoryRequest } from '../api/categories.api';
-import { categoriesQueryKeys } from '../categories.query-keys';
-import { categoryFormSchema, type CategoryFormValues } from '../categories.schema';
-import type { CategoryListItem } from '../categories.types';
-import { isProtectedCategory } from '../categories.utils';
+import { categoriesQueryKeys } from '../model/categories.query-keys';
+import { categoryFormSchema, type CategoryFormValues } from '../model/categories.schema';
+import type { CategoryListItem } from '../model/categories.types';
+import { isProtectedCategory } from '../model/categories.utils';
 
 type CategoryFormDialogProps = {
   open: boolean;

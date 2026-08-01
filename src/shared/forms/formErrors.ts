@@ -1,6 +1,6 @@
 import type { FieldValues, Path, UseFormReturn } from 'react-hook-form';
 
-import type { ApiFieldErrors } from './apiClient';
+import type { ApiFieldErrors } from '@shared/api/apiClient';
 
 export function applyApiFieldErrors<
   TFieldValues extends FieldValues,

@@ -11,17 +11,16 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { EmptyState } from '../../../components/common/EmptyState';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
-import { getCategoryOptionsRequest } from '../../categories/api/categories.api';
-import { categoriesQueryKeys } from '../../categories/categories.query-keys';
-import { getMeasurementUnitOptionsRequest } from '../../measurement-units/api/measurement-units.api';
-import { measurementUnitsQueryKeys } from '../../measurement-units/measurement-units.query-keys';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { paths } from '@app/router/routeConfig';
+import { getCurrentListReturnState } from '@app/router/returnNavigation';
+import { toApiError } from '@shared/api/apiClient';
+import { categoriesQueryKeys, getCategoryOptionsRequest } from '@features/categories';
+import { getMeasurementUnitOptionsRequest, measurementUnitsQueryKeys } from '@features/measurement-units';
 
 import { deleteItemRequest, listItemsRequest, updateItemStatusRequest } from '../api/items.api';
 import { ItemDeleteDialog, ItemStatusDialog } from '../components/ItemConfirmDialogs';
@@ -45,6 +44,7 @@ const sortOptions = [
 
 export function ItemsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get('search') ?? '');
@@ -61,10 +61,12 @@ export function ItemsPage() {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      updateSearchParams(setSearchParams, { search: searchInput.trim() || undefined, page: 1 });
+      const nextSearch = searchInput.trim();
+      if (nextSearch === (searchParams.get('search') ?? '')) return;
+      updateSearchParams(setSearchParams, { search: nextSearch || undefined, page: 1 });
     }, 350);
     return () => window.clearTimeout(timeout);
-  }, [searchInput, setSearchParams]);
+  }, [searchInput, searchParams, setSearchParams]);
 
   const categoriesQuery = useQuery({
     queryKey: categoriesQueryKeys.options(),
@@ -118,6 +120,7 @@ export function ItemsPage() {
       ? deleteMutation.variables?.id
       : null;
   const showRefreshing = query.isFetching && !query.isPending;
+  const listReturnState = getCurrentListReturnState(location.pathname, location.search);
 
   return (
     <Stack spacing={3}>
@@ -161,7 +164,7 @@ export function ItemsPage() {
                 page: 1,
               })
             }
-            sx={{ minWidth: 180 }}
+            sx={{ minWidth: { xs: 0, md: 180 }, width: { xs: '100%', md: 'auto' } }}
           >
             <MenuItem value="all">All Categories</MenuItem>
             {categoriesQuery.data?.map((cat) => (
@@ -181,7 +184,7 @@ export function ItemsPage() {
                 page: 1,
               })
             }
-            sx={{ minWidth: 180 }}
+            sx={{ minWidth: { xs: 0, md: 180 }, width: { xs: '100%', md: 'auto' } }}
           >
             <MenuItem value="all">All Units</MenuItem>
             {unitsQuery.data?.map((unit) => (
@@ -203,7 +206,7 @@ export function ItemsPage() {
                 page: 1,
               })
             }
-            sx={{ minWidth: 140 }}
+            sx={{ minWidth: { xs: 0, md: 140 }, width: { xs: '100%', md: 'auto' } }}
           >
             <MenuItem value="all">All Statuses</MenuItem>
             <MenuItem value="true">Active</MenuItem>
@@ -220,7 +223,7 @@ export function ItemsPage() {
                 page: 1,
               })
             }
-            sx={{ minWidth: 160 }}
+            sx={{ minWidth: { xs: 0, md: 160 }, width: { xs: '100%', md: 'auto' } }}
           >
             <MenuItem value="all">All Sources</MenuItem>
             <MenuItem value="MANUAL">Manual</MenuItem>
@@ -267,7 +270,7 @@ export function ItemsPage() {
               ];
               updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
             }}
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: { xs: 0, md: 200 }, width: { xs: '100%', md: 'auto' } }}
           >
             {sortOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -317,8 +320,8 @@ export function ItemsPage() {
           <ItemTable
             items={query.data.items}
             busyItemId={busyItemId}
-            onView={(itm) => navigate(`${paths.items}/${itm.id}`)}
-            onEdit={(itm) => navigate(`${paths.items}/${itm.id}/edit`)}
+            onView={(itm) => navigate(`${paths.items}/${itm.id}`, { state: listReturnState })}
+            onEdit={(itm) => navigate(`${paths.items}/${itm.id}/edit`, { state: listReturnState })}
             onStatusChange={(itm) => setStatusTarget(itm)}
             onDelete={(itm) => setDeleteTarget(itm)}
           />

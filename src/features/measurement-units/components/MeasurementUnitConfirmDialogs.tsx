@@ -8,7 +8,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import type { MeasurementUnitListItem } from '../measurement-units.types';
+import type { MeasurementUnitListItem } from '../model/measurement-units.types';
 
 type StatusDialogProps = {
   unit: MeasurementUnitListItem | null;

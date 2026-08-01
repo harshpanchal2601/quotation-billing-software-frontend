@@ -1,5 +1,5 @@
-import { apiClient, createSkipAuthRefreshConfig, type ApiSuccessResponse } from '../../services/apiClient';
-import type { AuthUserResponse, ChangePasswordInput, LoginInput } from './auth.types';
+import { apiClient, createSkipAuthRefreshConfig, type ApiSuccessResponse } from '@shared/api/apiClient';
+import type { AuthUserResponse, ChangePasswordInput, LoginInput } from '../model/auth.types';
 
 export const authQueryKey = ['auth', 'me'] as const;
 

@@ -1,7 +1,7 @@
 import { createContext } from 'react';
 
-import type { ApiError } from '../../services/apiClient';
-import type { AuthUser, ChangePasswordInput, LoginInput } from './auth.types';
+import type { ApiError } from '@shared/api/apiClient';
+import type { AuthUser, ChangePasswordInput, LoginInput } from '../model/auth.types';
 
 export type AuthContextValue = {
   user: AuthUser | null;

@@ -5,7 +5,7 @@ import axios from 'axios';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
+import { renderWithProviders } from '@shared/test/render';
 import { businessProfileSchema } from './schemas/business-profile.schema';
 import { bankDetailsSchema } from './schemas/bank-details.schema';
 import { quotationSettingsSchema } from './schemas/quotation-settings.schema';
@@ -99,6 +99,15 @@ describe('settings validation and utilities', () => {
 });
 
 describe('BusinessSettingsPage', () => {
+  it('renders one page H1 without duplicated internal settings tabs', async () => {
+    businessApi.getBusinessProfileRequest.mockResolvedValue(businessProfile());
+    renderSettings(<BusinessSettingsPage />);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Business Settings' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.queryByRole('tablist', { name: /settings sections/i })).not.toBeInTheDocument();
+  });
+
   it('loads server values, disables unchanged save and resets edits', async () => {
     businessApi.getBusinessProfileRequest.mockResolvedValue(businessProfile());
     renderSettings(<BusinessSettingsPage />);
@@ -162,6 +171,15 @@ describe('BusinessSettingsPage', () => {
 });
 
 describe('QuotationSettingsPage', () => {
+  it('renders one page H1 without duplicated internal settings tabs', async () => {
+    quotationApi.getQuotationSettingsRequest.mockResolvedValue(quotationSettings());
+    renderSettings(<QuotationSettingsPage />);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Quotation Settings' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.queryByRole('tablist', { name: /settings sections/i })).not.toBeInTheDocument();
+  });
+
   it('loads enum labels, submits decimal strings and preserves line breaks', async () => {
     quotationApi.getQuotationSettingsRequest.mockResolvedValue(quotationSettings());
     quotationApi.updateQuotationSettingsRequest.mockImplementation(async (values) => ({ ...quotationSettings(), ...values }));
@@ -184,6 +202,15 @@ describe('QuotationSettingsPage', () => {
 });
 
 describe('BankDetailsPage', () => {
+  it('renders one page H1 without duplicated internal settings tabs', async () => {
+    bankApi.listBankDetailsRequest.mockResolvedValue([]);
+    renderSettings(<BankDetailsPage />);
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Bank Details' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.queryByRole('tablist', { name: /settings sections/i })).not.toBeInTheDocument();
+  });
+
   it('shows empty state, creates accounts and preserves leading zeros', async () => {
     bankApi.listBankDetailsRequest.mockResolvedValue([]);
     bankApi.createBankDetailRequest.mockImplementation(async (values) => ({ id: 2, createdAt: '', updatedAt: '', ...values }));

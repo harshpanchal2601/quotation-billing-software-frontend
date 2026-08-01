@@ -8,8 +8,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import type { CategoryListItem } from '../categories.types';
-import { isProtectedCategory } from '../categories.utils';
+import type { CategoryListItem } from '../model/categories.types';
+import { isProtectedCategory } from '../model/categories.utils';
 
 type StatusDialogProps = {
   category: CategoryListItem | null;

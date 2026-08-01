@@ -2,10 +2,10 @@ import { QueryClient } from '@tanstack/react-query';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
+import { renderWithProviders } from '@shared/test/render';
 import { CompaniesPage } from './pages/CompaniesPage';
 import { CreateCompanyPage } from './pages/CreateCompanyPage';
 import { EditCompanyPage } from './pages/EditCompanyPage';
@@ -42,6 +42,7 @@ vi.mock('./api/addresses.api', () => addressesApi);
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('company frontend', () => {
@@ -116,6 +117,34 @@ describe('company frontend', () => {
     await waitFor(() => expect(addressesApi.setPrimaryCompanyAddressRequest).toHaveBeenCalledWith(1, 2));
   });
 
+  it('shows Back to Companies on detail pages with a direct-route fallback', async () => {
+    companiesApi.getCompanyRequest.mockResolvedValue(companyDetail());
+
+    renderCompanyRoute(<CompanyDetailsPage />, '/companies/:id', '/companies/1');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Acme Pharma' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /back to companies/i })).toHaveAttribute('href', '/companies');
+  });
+
+  it('opens detail pages with the current company list URL in navigation state', async () => {
+    companiesApi.listCompaniesRequest.mockResolvedValue({
+      companies: [companyListItem()],
+      pagination: { page: 2, limit: 10, total: 12, totalPages: 2, hasNextPage: false, hasPreviousPage: true },
+    });
+
+    renderCompany(
+      <Routes>
+        <Route path="/companies" element={<CompaniesPage />} />
+        <Route path="/companies/:id" element={<CompanyReturnStateProbe />} />
+      </Routes>,
+      '/companies?search=acme&isActive=true&page=2&limit=10&sort=name:asc',
+    );
+
+    await userEvent.click((await screen.findAllByRole('link', { name: /^view$/i }))[0]);
+
+    expect(await screen.findByText('/companies?search=acme&isActive=true&page=2&limit=10&sort=name:asc')).toBeInTheDocument();
+  });
+
   it('displays backend deletion conflicts safely', async () => {
     companiesApi.listCompaniesRequest.mockResolvedValue({
       companies: [companyListItem()],
@@ -165,6 +194,23 @@ describe('company frontend', () => {
     expect(await screen.findByText('Q-001')).toBeInTheDocument();
     expect(screen.getByText(/₹10,000.00/)).toBeInTheDocument();
   });
+
+  it('renders company quotation history as compact cards on mobile and tablet widths', async () => {
+    mockViewport(700);
+    companiesApi.getCompanyRequest.mockResolvedValue(companyDetail());
+    companiesApi.listCompanyQuotationsRequest.mockResolvedValue({
+      quotations: [quotation()],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+    });
+
+    renderCompanyRoute(<CompanyDetailsPage />, '/companies/:id', '/companies/1?tab=quotations');
+
+    expect(await screen.findByLabelText('Company quotation history cards')).toBeInTheDocument();
+    expect(screen.getByText('Q-001')).toBeInTheDocument();
+    expect(screen.getByText('Quotation date')).toBeInTheDocument();
+    expect(screen.getByText('Valid until')).toBeInTheDocument();
+    expect(screen.getByText(/₹10,000.00/)).toBeInTheDocument();
+  });
 });
 
 function renderCompany(ui: ReactElement, route: string) {
@@ -174,6 +220,34 @@ function renderCompany(ui: ReactElement, route: string) {
 
 function renderCompanyRoute(ui: ReactElement, path: string, route: string) {
   return renderCompany(<Routes><Route path={path} element={ui} /></Routes>, route);
+}
+
+function CompanyReturnStateProbe() {
+  const location = useLocation();
+  const state = location.state as { from?: string } | null;
+  return <div>{state?.from ?? 'missing return state'}</div>;
+}
+
+function mockViewport(width: number) {
+  vi.stubGlobal('innerWidth', width);
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: matchesMediaQuery(query, width),
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
+function matchesMediaQuery(query: string, width: number) {
+  const maxWidth = query.match(/\(max-width:\s*([0-9.]+)px\)/);
+  if (maxWidth && width > Number(maxWidth[1])) return false;
+  const minWidth = query.match(/\(min-width:\s*([0-9.]+)px\)/);
+  if (minWidth && width < Number(minWidth[1])) return false;
+  return true;
 }
 
 function companyListItem(overrides: Partial<CompanyListItem> = {}): CompanyListItem {

@@ -59,26 +59,26 @@ export function QuotationItemRow({
   return (
     <Card variant="outlined" sx={{ borderRadius: 2, bgcolor: 'background.paper' }}>
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-          <Stack direction="row" spacing={1} alignItems="center">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, gap: 1 }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
             <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
               #{index + 1}
             </Typography>
             {selectedMaster ? (
-              <Typography variant="caption" sx={{ bgcolor: 'grey.100', px: 1, py: 0.25, borderRadius: 1, fontWeight: 600 }}>
+              <Typography variant="caption" sx={{ bgcolor: 'grey.100', px: 1, py: 0.25, borderRadius: 1, fontWeight: 600, wordBreak: 'break-word' }}>
                 {selectedMaster.itemCode}
               </Typography>
             ) : null}
           </Stack>
 
-          <Stack direction="row" spacing={0.5}>
-            <IconButton size="small" onClick={onMoveUp} disabled={!canMoveUp} title="Move Up">
+          <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+            <IconButton size="small" onClick={onMoveUp} disabled={!canMoveUp} title="Move Up" aria-label={`Move line ${index + 1} up`}>
               <ArrowUpwardOutlinedIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" onClick={onMoveDown} disabled={!canMoveDown} title="Move Down">
+            <IconButton size="small" onClick={onMoveDown} disabled={!canMoveDown} title="Move Down" aria-label={`Move line ${index + 1} down`}>
               <ArrowDownwardOutlinedIcon fontSize="small" />
             </IconButton>
-            <IconButton size="small" color="error" onClick={onRemove} disabled={!canRemove} title="Remove Item">
+            <IconButton size="small" color="error" onClick={onRemove} disabled={!canRemove} title="Remove Item" aria-label={`Remove line ${index + 1}`}>
               <DeleteOutlineOutlinedIcon fontSize="small" />
             </IconButton>
           </Stack>
@@ -157,7 +157,7 @@ export function QuotationItemRow({
         </Box>
 
         {/* Financial Inputs Row */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1.2fr 1fr 1fr 1.2fr' }, gap: 1.5, alignItems: 'center' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1.2fr 1fr 1fr 1.2fr' }, gap: 1.5, alignItems: 'center' }}>
           {/* Quantity */}
           <Controller
             name={`items.${index}.quantity`}
@@ -252,8 +252,10 @@ export function QuotationItemRow({
           <Box
             sx={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
+              flexDirection: { xs: 'column', sm: 'row' },
               alignItems: 'center',
+              gap: 1,
               mt: 1.5,
               pt: 1,
               borderTop: '1px dashed',
@@ -264,10 +266,10 @@ export function QuotationItemRow({
               borderRadius: 1,
             }}
           >
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ width: '100%', wordBreak: 'break-word' }}>
               Base: {formatCurrency(calculatedLine.baseAmount, currency)} | Taxable: {formatCurrency(calculatedLine.taxableAmount, currency)} | Tax: {formatCurrency(calculatedLine.taxAmount, currency)} ({calculatedLine.gstRate}%)
             </Typography>
-            <Typography variant="subtitle2" fontWeight={700} color="primary.main">
+            <Typography variant="subtitle2" fontWeight={700} color="primary.main" sx={{ width: { xs: '100%', sm: 'auto' }, textAlign: { xs: 'left', sm: 'right' } }}>
               Line Total: {formatCurrency(calculatedLine.lineTotal, currency)}
             </Typography>
           </Box>

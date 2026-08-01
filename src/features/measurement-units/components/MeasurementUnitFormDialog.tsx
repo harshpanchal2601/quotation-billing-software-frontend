@@ -15,18 +15,18 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { toApiError } from '../../../services/apiClient';
-import { applyApiFieldErrors } from '../../../services/formErrors';
+import { toApiError } from '@shared/api/apiClient';
+import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import {
   createMeasurementUnitRequest,
   updateMeasurementUnitRequest,
 } from '../api/measurement-units.api';
-import { measurementUnitsQueryKeys } from '../measurement-units.query-keys';
+import { measurementUnitsQueryKeys } from '../model/measurement-units.query-keys';
 import {
   measurementUnitFormSchema,
   type MeasurementUnitFormValues,
-} from '../measurement-units.schema';
-import type { MeasurementUnitListItem } from '../measurement-units.types';
+} from '../model/measurement-units.schema';
+import type { MeasurementUnitListItem } from '../model/measurement-units.types';
 
 type FormDialogProps = {
   open: boolean;

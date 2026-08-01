@@ -4,7 +4,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 
-import { EmptyState } from '../../components/common/EmptyState';
+import { EmptyState } from '@shared/components/common/EmptyState';
 import { getRouteTitle, paths } from '../routeConfig';
 
 export function ModulePlaceholderPage() {

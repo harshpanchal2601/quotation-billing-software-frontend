@@ -1,4 +1,4 @@
-import { apiClient, type ApiSuccessResponse } from '../../../services/apiClient';
+import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import type { QuotationAttachment, QuotationAttachmentListResponse } from '../quotation-attachments.types';
 import { parseContentDispositionFilename } from '../quotation-attachments.utils';
 

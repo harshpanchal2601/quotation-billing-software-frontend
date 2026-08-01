@@ -12,7 +12,7 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import { formatCurrency } from '../../quotations/quotations.utils';
-import type { MonthlyTrendDto } from '../dashboard.types';
+import type { MonthlyTrendDto } from '../model/dashboard.types';
 
 type MonthlyQuotationTrendProps = {
   monthlyTrend: MonthlyTrendDto[];

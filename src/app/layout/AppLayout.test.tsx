@@ -2,10 +2,11 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
+import { renderWithProviders } from '@shared/test/render';
 import { AppLayout } from './AppLayout';
 
-vi.mock('../../features/auth/auth.hooks', () => ({
+vi.mock('@features/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@features/auth')>()),
   useAuth: () => ({
     user: { id: 1, name: 'Admin User', email: 'admin@example.com', username: 'admin', role: 'ADMIN', status: 'ACTIVE' },
     logout: vi.fn().mockResolvedValue(undefined),

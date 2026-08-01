@@ -5,16 +5,16 @@ import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { theme } from '../../theme/theme';
-import { ProtectedRoute } from './ProtectedRoute';
-import { PublicOnlyRoute } from './PublicOnlyRoute';
+import { theme } from '@app/theme/theme';
+import { ProtectedRoute } from '@app/router/guards/ProtectedRoute';
+import { PublicOnlyRoute } from '@app/router/guards/PublicOnlyRoute';
 
 const authState = vi.hoisted(() => ({
   isAuthenticated: false,
   isInitialising: false,
 }));
 
-vi.mock('./auth.hooks', () => ({
+vi.mock('../hooks/useAuth', () => ({
   useAuth: () => authState,
 }));
 

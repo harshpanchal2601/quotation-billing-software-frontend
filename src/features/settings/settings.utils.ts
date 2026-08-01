@@ -1,4 +1,4 @@
-import { frontendEnv } from '../../config/env';
+import { frontendEnv } from '@app/config/env';
 
 export function emptyStringToNull(value: string | null | undefined) {
   const trimmed = value?.trim() ?? '';

@@ -1,4 +1,4 @@
-import { apiClient, type ApiSuccessResponse } from '../../../services/apiClient';
+import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import type { BrandingAssetType, BusinessProfile } from '../settings.types';
 
 export const businessProfileQueryKey = ['settings', 'business-profile'] as const;

@@ -15,21 +15,21 @@ import Typography from '@mui/material/Typography';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
-import { ErrorState } from '../../components/common/ErrorState';
-import { toApiError } from '../../services/apiClient';
-import { useAuth } from '../../features/auth/auth.hooks';
-import { getDashboardOverviewRequest } from '../../features/dashboard/api/dashboard.api';
-import { DashboardMetricCard } from '../../features/dashboard/components/DashboardMetricCard';
-import { DashboardPeriodFilter } from '../../features/dashboard/components/DashboardPeriodFilter';
-import { ExpiringQuotationsSection } from '../../features/dashboard/components/ExpiringQuotationsSection';
-import { MonthlyQuotationTrend } from '../../features/dashboard/components/MonthlyQuotationTrend';
-import { QuotationStatusBreakdown } from '../../features/dashboard/components/QuotationStatusBreakdown';
-import { RecentQuotationsSection } from '../../features/dashboard/components/RecentQuotationsSection';
-import { TopCustomersSection } from '../../features/dashboard/components/TopCustomersSection';
-import { dashboardQueryKeys } from '../../features/dashboard/dashboard.query-keys';
-import type { DashboardOverviewQuery, DashboardPeriod } from '../../features/dashboard/dashboard.types';
-import { formatCurrency } from '../../features/quotations/quotations.utils';
-import { paths } from '../routeConfig';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { toApiError } from '@shared/api/apiClient';
+import { paths } from '@app/router/routeConfig';
+import { useAuth } from '@features/auth';
+import { getDashboardOverviewRequest } from '@features/dashboard/api/dashboard.api';
+import { DashboardMetricCard } from '@features/dashboard/components/DashboardMetricCard';
+import { DashboardPeriodFilter } from '@features/dashboard/components/DashboardPeriodFilter';
+import { ExpiringQuotationsSection } from '@features/dashboard/components/ExpiringQuotationsSection';
+import { MonthlyQuotationTrend } from '@features/dashboard/components/MonthlyQuotationTrend';
+import { QuotationStatusBreakdown } from '@features/dashboard/components/QuotationStatusBreakdown';
+import { RecentQuotationsSection } from '@features/dashboard/components/RecentQuotationsSection';
+import { TopCustomersSection } from '@features/dashboard/components/TopCustomersSection';
+import { dashboardQueryKeys } from '../model/dashboard.query-keys';
+import type { DashboardOverviewQuery, DashboardPeriod } from '../model/dashboard.types';
+import { formatCurrency } from '@features/quotations/quotations.utils';
 
 export function DashboardPage() {
   const { user } = useAuth();

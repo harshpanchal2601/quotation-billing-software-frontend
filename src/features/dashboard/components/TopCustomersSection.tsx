@@ -6,9 +6,9 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { EmptyState } from '../../../components/common/EmptyState';
+import { EmptyState } from '@shared/components/common/EmptyState';
 import { formatCurrency } from '../../quotations/quotations.utils';
-import type { TopCustomerDto } from '../dashboard.types';
+import type { TopCustomerDto } from '../model/dashboard.types';
 
 type TopCustomersSectionProps = {
   topCustomers: TopCustomerDto[];

@@ -2,10 +2,10 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
+import { renderWithProviders } from '@shared/test/render';
 import { ChangePasswordPage } from './ChangePasswordPage';
 
-vi.mock('./auth.hooks', () => ({
+vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
     changePassword: vi.fn().mockResolvedValue(undefined),
     authError: null,

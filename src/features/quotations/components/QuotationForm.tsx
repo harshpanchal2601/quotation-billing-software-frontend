@@ -18,8 +18,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { getItemOptionsRequest } from '../../items/api/items.api';
 import { listBankDetailsRequest } from '../../settings/api/bank-details.api';
-import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
-import { applyApiFieldErrors } from '../../../services/formErrors';
+import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
+import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { calculatePreviewRequest } from '../api/quotations.api';
 import type { CalculatedQuotationTotals, CalculationPreviewInput, QuotationDetail } from '../quotations.types';
 import { quotationFormSchema, type QuotationFormSubmitValues } from '../quotations.schema';

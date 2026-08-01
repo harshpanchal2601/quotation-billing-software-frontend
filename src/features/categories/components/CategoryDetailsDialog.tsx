@@ -12,12 +12,12 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { toApiError } from '@shared/api/apiClient';
 import { getCategoryRequest } from '../api/categories.api';
-import { categoriesQueryKeys } from '../categories.query-keys';
-import type { CategoryListItem } from '../categories.types';
-import { isProtectedCategory } from '../categories.utils';
+import { categoriesQueryKeys } from '../model/categories.query-keys';
+import type { CategoryListItem } from '../model/categories.types';
+import { isProtectedCategory } from '../model/categories.utils';
 
 type CategoryDetailsDialogProps = {
   categoryId: number | null;

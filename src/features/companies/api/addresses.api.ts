@@ -1,4 +1,4 @@
-import { apiClient, type ApiSuccessResponse } from '../../../services/apiClient';
+import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import type { CompanyAddress } from '../companies.types';
 import type { AddressSubmitValues } from '../schemas/address.schema';
 

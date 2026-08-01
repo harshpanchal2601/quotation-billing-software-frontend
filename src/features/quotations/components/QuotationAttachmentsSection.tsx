@@ -30,8 +30,8 @@ import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { toApiError } from '../../../services/apiClient';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { toApiError } from '@shared/api/apiClient';
 import {
   downloadQuotationAttachmentBlobRequest,
   getQuotationAttachmentsRequest,

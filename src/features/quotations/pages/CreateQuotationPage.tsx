@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { getQuotationSettingsRequest } from '../../settings/api/quotation-settings.api';
-import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
+import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { createQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
 import { quotationsQueryKeys } from '../quotations.query-keys';

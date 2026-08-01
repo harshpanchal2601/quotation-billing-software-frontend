@@ -4,8 +4,8 @@ import { render, type RenderOptions } from '@testing-library/react';
 import { type ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
-import { AuthProvider } from '../features/auth/auth.context';
-import { theme } from '../theme/theme';
+import { theme } from '@app/theme/theme';
+import { AuthProvider } from '@features/auth';
 
 type RenderWithProvidersOptions = RenderOptions & {
   route?: string;

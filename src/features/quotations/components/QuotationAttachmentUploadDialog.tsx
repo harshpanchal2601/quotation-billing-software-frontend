@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useRef, useState } from 'react';
 
-import { toApiError } from '../../../services/apiClient';
+import { toApiError } from '@shared/api/apiClient';
 import { uploadQuotationAttachmentRequest } from '../api/quotation-attachments.api';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
 import { formatFileSize } from '../quotation-attachments.utils';

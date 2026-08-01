@@ -1,5 +1,9 @@
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
@@ -12,13 +16,15 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
-import { EmptyState } from '../../../components/common/EmptyState';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { toApiError } from '../../../services/apiClient';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { toApiError } from '@shared/api/apiClient';
 import { listCompanyQuotationsRequest } from '../api/companies.api';
 import { companiesQueryKeys } from '../companies.query-keys';
 import type { QuotationHistoryParams, QuotationStatus } from '../companies.types';
@@ -27,6 +33,8 @@ import { formatCurrency, formatReadableDate } from '../companies.utils';
 const statuses: Array<QuotationStatus | ''> = ['', 'DRAFT', 'PENDING', 'SENT', 'ACCEPTED', 'REJECTED', 'COMPLETED', 'EXPIRED', 'CANCELLED'];
 
 export function CompanyQuotationHistory({ companyId }: { companyId: number }) {
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(10);
   const [status, setStatus] = useState<QuotationStatus | ''>('');
@@ -52,12 +60,12 @@ export function CompanyQuotationHistory({ companyId }: { companyId: number }) {
   return (
     <Stack spacing={2}>
       <Typography component="h2" variant="h2">Quotation history</Typography>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <TextField select label="Status" value={status} onChange={(event) => { setStatus(event.target.value as QuotationStatus | ''); setPage(0); }} sx={{ minWidth: 180 }}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'flex-start' }}>
+        <TextField select label="Status" value={status} onChange={(event) => { setStatus(event.target.value as QuotationStatus | ''); setPage(0); }} sx={{ minWidth: { xs: 0, md: 180 }, width: { xs: '100%', md: 'auto' } }}>
           {statuses.map((item) => <MenuItem key={item || 'all'} value={item}>{item || 'All statuses'}</MenuItem>)}
         </TextField>
-        <TextField label="Date from" type="date" value={dateFrom} onChange={(event) => { setDateFrom(event.target.value); setPage(0); }} InputLabelProps={{ shrink: true }} />
-        <TextField label="Date to" type="date" value={dateTo} onChange={(event) => { setDateTo(event.target.value); setPage(0); }} InputLabelProps={{ shrink: true }} error={dateRangeInvalid} helperText={dateRangeInvalid ? 'Date from cannot be later than date to' : undefined} />
+        <TextField label="Date from" type="date" value={dateFrom} onChange={(event) => { setDateFrom(event.target.value); setPage(0); }} InputLabelProps={{ shrink: true }} sx={{ width: { xs: '100%', md: 'auto' } }} />
+        <TextField label="Date to" type="date" value={dateTo} onChange={(event) => { setDateTo(event.target.value); setPage(0); }} InputLabelProps={{ shrink: true }} error={dateRangeInvalid} helperText={dateRangeInvalid ? 'Date from cannot be later than date to' : undefined} sx={{ width: { xs: '100%', md: 'auto' } }} />
       </Stack>
       {dateRangeInvalid ? <Alert severity="error">Fix the date range to load quotations.</Alert> : null}
       {query.isPending ? <Stack spacing={1}>{Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack> : null}
@@ -70,34 +78,65 @@ export function CompanyQuotationHistory({ companyId }: { companyId: number }) {
       {query.data && query.data.quotations.length === 0 ? <EmptyState title="No quotation history" description="Quotations linked to this company will appear here." /> : null}
       {query.data && query.data.quotations.length > 0 ? (
         <Paper variant="outlined">
-          <TableContainer>
-            <Table aria-label="Company quotation history">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Quotation number</TableCell>
-                  <TableCell>Revision</TableCell>
-                  <TableCell>Quotation date</TableCell>
-                  <TableCell>Valid until</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Amount</TableCell>
-                  <TableCell>Created</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {query.data.quotations.map((quotation) => (
-                  <TableRow key={quotation.id}>
-                    <TableCell>{quotation.quotationNumber}</TableCell>
-                    <TableCell>{quotation.revisionNumber}</TableCell>
-                    <TableCell>{formatReadableDate(quotation.quotationDate)}</TableCell>
-                    <TableCell>{formatReadableDate(quotation.validUntil)}</TableCell>
-                    <TableCell>{quotation.status}</TableCell>
-                    <TableCell>{formatCurrency(quotation.grandTotal, quotation.currency)}</TableCell>
-                    <TableCell>{formatReadableDate(quotation.createdAt)}</TableCell>
+          {isCompact ? (
+            <Stack spacing={1.5} sx={{ p: 1.5 }} aria-label="Company quotation history cards">
+              {query.data.quotations.map((quotation) => (
+                <Card key={quotation.id} variant="outlined">
+                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle2" fontWeight={700} sx={{ wordBreak: 'break-word' }}>
+                          {quotation.quotationNumber}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Revision {quotation.revisionNumber}
+                        </Typography>
+                      </Box>
+                      <Typography variant="subtitle2" fontWeight={700} color="primary.main" sx={{ textAlign: 'right', wordBreak: 'break-word' }}>
+                        {formatCurrency(quotation.grandTotal, quotation.currency)}
+                      </Typography>
+                    </Stack>
+                    <Divider sx={{ my: 1.5 }} />
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
+                      <HistoryMetric label="Quotation date" value={formatReadableDate(quotation.quotationDate)} />
+                      <HistoryMetric label="Valid until" value={formatReadableDate(quotation.validUntil)} />
+                      <HistoryMetric label="Status" value={quotation.status} />
+                      <HistoryMetric label="Created" value={formatReadableDate(quotation.createdAt)} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          ) : (
+            <TableContainer>
+              <Table aria-label="Company quotation history" sx={{ minWidth: 840 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Quotation number</TableCell>
+                    <TableCell>Revision</TableCell>
+                    <TableCell>Quotation date</TableCell>
+                    <TableCell>Valid until</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Amount</TableCell>
+                    <TableCell>Created</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {query.data.quotations.map((quotation) => (
+                    <TableRow key={quotation.id}>
+                      <TableCell>{quotation.quotationNumber}</TableCell>
+                      <TableCell>{quotation.revisionNumber}</TableCell>
+                      <TableCell>{formatReadableDate(quotation.quotationDate)}</TableCell>
+                      <TableCell>{formatReadableDate(quotation.validUntil)}</TableCell>
+                      <TableCell>{quotation.status}</TableCell>
+                      <TableCell>{formatCurrency(quotation.grandTotal, quotation.currency)}</TableCell>
+                      <TableCell>{formatReadableDate(quotation.createdAt)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
           <TablePagination
             component="div"
             count={query.data.pagination.total}
@@ -110,5 +149,18 @@ export function CompanyQuotationHistory({ companyId }: { companyId: number }) {
         </Paper>
       ) : null}
     </Stack>
+  );
+}
+
+function HistoryMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant="caption" color="text.secondary" display="block">
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+        {value}
+      </Typography>
+    </Box>
   );
 }

@@ -1,5 +1,5 @@
-import { apiClient, type ApiSuccessResponse } from '../../../services/apiClient';
-import type { DashboardOverviewData, DashboardOverviewQuery } from '../dashboard.types';
+import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
+import type { DashboardOverviewData, DashboardOverviewQuery } from '../model/dashboard.types';
 
 export async function getDashboardOverviewRequest(
   params?: DashboardOverviewQuery,

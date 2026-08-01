@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
+import { renderWithProviders } from '@shared/test/render';
 import { LoginPage } from './LoginPage';
 
 const authMock = vi.hoisted(() => ({
@@ -12,7 +12,7 @@ const authMock = vi.hoisted(() => ({
   isLoggingIn: false,
 }));
 
-vi.mock('./auth.hooks', () => ({
+vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
     login: authMock.login,
     authError: null,

@@ -14,8 +14,8 @@ import TextField from '@mui/material/TextField';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import type { ApiFieldErrors } from '../../../services/apiClient';
-import { applyApiFieldErrors } from '../../../services/formErrors';
+import type { ApiFieldErrors } from '@shared/api/apiClient';
+import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { bankDetailsSchema, type BankDetailsFormValues, type BankDetailsSubmitValues } from '../schemas/bank-details.schema';
 import type { BankDetail } from '../settings.types';
 

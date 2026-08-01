@@ -18,7 +18,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useState, type MouseEvent } from 'react';
 
-import { SafeImage } from '../../../components/common/SafeImage';
+import { SafeImage } from '@shared/components/common/SafeImage';
 import type { ItemListItem } from '../items.types';
 import {
   formatCurrencyRate,

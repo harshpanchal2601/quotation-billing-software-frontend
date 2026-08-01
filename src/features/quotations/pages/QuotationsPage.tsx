@@ -8,11 +8,13 @@ import TablePagination from '@mui/material/TablePagination';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { toApiError } from '@shared/api/apiClient';
+import { paths } from '@app/router/routeConfig';
+import { getCurrentListReturnState } from '@app/router/returnNavigation';
 import { listCompaniesRequest } from '../../companies/api/companies.api';
 import {
   deleteQuotationRequest,
@@ -28,6 +30,7 @@ import type { QuotationListItem, QuotationListParams, QuotationStatus } from '..
 
 export function QuotationsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -147,13 +150,14 @@ export function QuotationsPage() {
   const quotations = data?.quotations || [];
   const pagination = data?.pagination;
   const showRefreshing = isFetching && !isLoading;
+  const listReturnState = getCurrentListReturnState(location.pathname, location.search);
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <Box sx={{ width: '100%', maxWidth: '100%' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Box>
-          <Typography variant="h5" fontWeight={700}>
+          <Typography component="h1" variant="h1">
             Quotations
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -164,7 +168,7 @@ export function QuotationsPage() {
           variant="contained"
           color="primary"
           startIcon={<NoteAddOutlinedIcon />}
-          onClick={() => navigate('/quotations/new')}
+          onClick={() => navigate(paths.newQuotation)}
         >
           Create Quotation
         </Button>
@@ -203,7 +207,7 @@ export function QuotationsPage() {
               Clear Filters
             </Button>
           ) : (
-            <Button variant="contained" size="small" startIcon={<NoteAddOutlinedIcon />} onClick={() => navigate('/quotations/new')}>
+            <Button variant="contained" size="small" startIcon={<NoteAddOutlinedIcon />} onClick={() => navigate(paths.newQuotation)}>
               Create First Quotation
             </Button>
           )}
@@ -212,6 +216,7 @@ export function QuotationsPage() {
         <Box aria-busy={isLoading || showRefreshing}>
           <QuotationTable
             quotations={quotations}
+            returnState={listReturnState}
             onOpenStatusDialog={(quo) => setStatusDialogTarget(quo)}
             onOpenDeleteDialog={(quo) => setDeleteDialogTarget(quo)}
           />

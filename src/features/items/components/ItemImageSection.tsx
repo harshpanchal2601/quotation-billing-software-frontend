@@ -16,8 +16,8 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 
-import { SafeImage } from '../../../components/common/SafeImage';
-import { toApiError } from '../../../services/apiClient';
+import { SafeImage } from '@shared/components/common/SafeImage';
+import { toApiError } from '@shared/api/apiClient';
 import { deleteItemImageRequest, uploadItemImageRequest } from '../api/items.api';
 import { itemsQueryKeys } from '../items.query-keys';
 import type { ItemDetail } from '../items.types';

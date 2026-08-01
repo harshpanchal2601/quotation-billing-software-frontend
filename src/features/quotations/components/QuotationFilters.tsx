@@ -87,7 +87,7 @@ export function QuotationFilters({
   return (
     <Box
       sx={{
-        p: 2,
+        p: { xs: 1.5, sm: 2 },
         mb: 3,
         bgcolor: 'background.paper',
         borderRadius: 2,
@@ -101,10 +101,11 @@ export function QuotationFilters({
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
         <TextField
           size="small"
+          label="Search quotations"
           placeholder="Search by quote number, company, contact or remarks..."
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          sx={{ minWidth: 280, flexGrow: 1 }}
+          sx={{ minWidth: { xs: 0, sm: 280 }, width: { xs: '100%', sm: 'auto' }, flexGrow: 1 }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -115,7 +116,7 @@ export function QuotationFilters({
         />
 
         {companyOptions.length > 0 ? (
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 180 }, width: { xs: '100%', sm: 'auto' } }}>
             <InputLabel id="company-filter-label">Customer Company</InputLabel>
             <Select
               labelId="company-filter-label"
@@ -138,7 +139,7 @@ export function QuotationFilters({
           </FormControl>
         ) : null}
 
-        <FormControl size="small" sx={{ minWidth: 160 }}>
+        <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 160 }, width: { xs: '100%', sm: 'auto' } }}>
           <InputLabel id="status-filter-label">Status</InputLabel>
           <Select
             labelId="status-filter-label"
@@ -160,7 +161,7 @@ export function QuotationFilters({
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: 180 }}>
+        <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 180 }, width: { xs: '100%', sm: 'auto' } }}>
           <InputLabel id="sort-filter-label">Sort By</InputLabel>
           <Select
             labelId="sort-filter-label"
@@ -177,7 +178,7 @@ export function QuotationFilters({
         </FormControl>
 
         {hasActiveFilters ? (
-          <Button size="small" color="inherit" onClick={onClearFilters} startIcon={<FilterListOutlinedIcon />}>
+          <Button size="small" color="inherit" onClick={onClearFilters} startIcon={<FilterListOutlinedIcon />} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Clear Filters
           </Button>
         ) : null}
@@ -192,7 +193,7 @@ export function QuotationFilters({
           value={params.dateFrom || ''}
           onChange={(e) => onFilterChange({ dateFrom: e.target.value || undefined, page: 1 })}
           InputLabelProps={{ shrink: true }}
-          sx={{ width: 165 }}
+          sx={{ width: { xs: '100%', sm: 165 } }}
         />
         <TextField
           size="small"
@@ -201,7 +202,7 @@ export function QuotationFilters({
           value={params.dateTo || ''}
           onChange={(e) => onFilterChange({ dateTo: e.target.value || undefined, page: 1 })}
           InputLabelProps={{ shrink: true }}
-          sx={{ width: 165 }}
+          sx={{ width: { xs: '100%', sm: 165 } }}
         />
         <TextField
           size="small"
@@ -214,7 +215,7 @@ export function QuotationFilters({
             onFilterChange({ validFrom: val, page: 1 });
           }}
           InputLabelProps={{ shrink: true }}
-          sx={{ width: 165 }}
+          sx={{ width: { xs: '100%', sm: 165 } }}
         />
         <TextField
           size="small"
@@ -227,7 +228,7 @@ export function QuotationFilters({
             onFilterChange({ validTo: val, page: 1 });
           }}
           InputLabelProps={{ shrink: true }}
-          sx={{ width: 165 }}
+          sx={{ width: { xs: '100%', sm: 165 } }}
         />
         <TextField
           size="small"
@@ -240,7 +241,7 @@ export function QuotationFilters({
               page: 1,
             })
           }
-          sx={{ width: 120 }}
+          sx={{ width: { xs: '100%', sm: 120 } }}
         />
         <TextField
           size="small"
@@ -253,7 +254,7 @@ export function QuotationFilters({
               page: 1,
             })
           }
-          sx={{ width: 120 }}
+          sx={{ width: { xs: '100%', sm: 120 } }}
         />
       </Box>
     </Box>

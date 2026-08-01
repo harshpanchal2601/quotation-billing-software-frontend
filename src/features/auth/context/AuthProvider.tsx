@@ -1,16 +1,16 @@
 import { type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { setAuthenticationFailureHandler, toApiError, type ApiError } from '../../services/apiClient';
+import { setAuthenticationFailureHandler, toApiError, type ApiError } from '@shared/api/apiClient';
 import {
   authQueryKey,
   changePasswordRequest,
   getCurrentUserRequest,
   loginRequest,
   logoutRequest,
-} from './auth.api';
-import { AuthContext, type AuthContextValue } from './auth.context-value';
-import type { AuthUser } from './auth.types';
+} from '../api/auth.api';
+import { AuthContext, type AuthContextValue } from './auth-context';
+import type { AuthUser } from '../model/auth.types';
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();

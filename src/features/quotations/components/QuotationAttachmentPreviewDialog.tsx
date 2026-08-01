@@ -20,7 +20,7 @@ import {
   downloadQuotationAttachmentBlobRequest,
   getQuotationAttachmentPreviewBlobRequest,
 } from '../api/quotation-attachments.api';
-import { toApiError } from '../../../services/apiClient';
+import { toApiError } from '@shared/api/apiClient';
 import type { QuotationAttachment } from '../quotation-attachments.types';
 import { formatFileSize } from '../quotation-attachments.utils';
 

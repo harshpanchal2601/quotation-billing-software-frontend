@@ -1,8 +1,9 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-import { FullPageLoader } from '../../components/common/FullPageLoader';
-import { paths } from '../../routes/routeConfig';
-import { useAuth } from './auth.hooks';
+import { useAuth } from '@features/auth';
+import { FullPageLoader } from '@shared/components/common/FullPageLoader';
+
+import { paths } from '../routeConfig';
 
 export function ProtectedRoute() {
   const location = useLocation();

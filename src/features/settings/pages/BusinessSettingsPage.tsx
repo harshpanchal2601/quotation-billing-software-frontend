@@ -11,8 +11,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useWatch, useForm } from 'react-hook-form';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { toApiError } from '@shared/api/apiClient';
 import {
   businessProfileQueryKey,
   deleteBrandingAssetRequest,
@@ -22,7 +22,6 @@ import {
 } from '../api/business-profile.api';
 import { BrandingAssetCard } from '../components/BrandingAssetCard';
 import { ColourField } from '../components/ColourField';
-import { SettingsNavigation } from '../components/SettingsNavigation';
 import { SettingsSection } from '../components/SettingsSection';
 import { businessProfileSchema, type BusinessProfileFormValues, type BusinessProfileSubmitValues } from '../schemas/business-profile.schema';
 import type { BrandingAssetType, BusinessProfile } from '../settings.types';
@@ -206,7 +205,6 @@ function SettingsPageHeader({ title, description, children }: React.PropsWithChi
         <Typography component="h1" variant="h1">{title}</Typography>
         <Typography color="text.secondary">{description}</Typography>
       </Box>
-      <SettingsNavigation />
       {children}
     </Stack>
   );

@@ -13,20 +13,20 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { EmptyState } from '../../../components/common/EmptyState';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { toApiError } from '../../../services/apiClient';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { toApiError } from '@shared/api/apiClient';
 import {
   deleteMeasurementUnitRequest,
   listMeasurementUnitsRequest,
   updateMeasurementUnitStatusRequest,
 } from '../api/measurement-units.api';
-import { measurementUnitsQueryKeys } from '../measurement-units.query-keys';
+import { measurementUnitsQueryKeys } from '../model/measurement-units.query-keys';
 import type {
   MeasurementUnitListItem,
   MeasurementUnitListParams,
-} from '../measurement-units.types';
+} from '../model/measurement-units.types';
 import {
   MeasurementUnitDeleteDialog,
   MeasurementUnitStatusDialog,
@@ -156,7 +156,7 @@ export function MeasurementUnitsPage() {
               page: 1,
             })
           }
-          sx={{ minWidth: 150 }}
+          sx={{ minWidth: { xs: 0, md: 150 }, width: { xs: '100%', md: 'auto' } }}
         >
           <MenuItem value="all">All Statuses</MenuItem>
           <MenuItem value="true">Active</MenuItem>
@@ -173,7 +173,7 @@ export function MeasurementUnitsPage() {
               page: 1,
             })
           }
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: { xs: 0, md: 200 }, width: { xs: '100%', md: 'auto' } }}
         >
           <MenuItem value="all">All Quantity Types</MenuItem>
           <MenuItem value="true">Allows Decimal</MenuItem>
@@ -191,7 +191,7 @@ export function MeasurementUnitsPage() {
             ];
             updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
           }}
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: { xs: 0, md: 200 }, width: { xs: '100%', md: 'auto' } }}
         >
           {sortOptions.map((option) => (
             <MenuItem key={option.value} value={option.value}>

@@ -14,14 +14,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { toApiError } from '@shared/api/apiClient';
 import {
   getQuotationSettingsRequest,
   quotationSettingsQueryKey,
   updateQuotationSettingsRequest,
 } from '../api/quotation-settings.api';
-import { SettingsNavigation } from '../components/SettingsNavigation';
 import { SettingsSection } from '../components/SettingsSection';
 import {
   quotationSettingsSchema,
@@ -180,7 +179,6 @@ function SettingsPageShell({ title, description, children }: PropsWithChildren<{
         <Typography component="h1" variant="h1">{title}</Typography>
         <Typography color="text.secondary">{description}</Typography>
       </Box>
-      <SettingsNavigation />
       {children}
     </Stack>
   );

@@ -14,10 +14,10 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { EmptyState } from '../../../components/common/EmptyState';
+import { EmptyState } from '@shared/components/common/EmptyState';
 import { QuotationStatusChip } from '../../quotations/components/QuotationStatusChip';
 import { formatCurrency } from '../../quotations/quotations.utils';
-import type { RecentQuotationDto } from '../dashboard.types';
+import type { RecentQuotationDto } from '../model/dashboard.types';
 
 type RecentQuotationsSectionProps = {
   recentQuotations: RecentQuotationDto[];

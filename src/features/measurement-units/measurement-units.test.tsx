@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
-import { measurementUnitFormSchema } from './measurement-units.schema';
-import type { MeasurementUnitListItem } from './measurement-units.types';
+import { renderWithProviders } from '@shared/test/render';
+import { measurementUnitFormSchema } from './model/measurement-units.schema';
+import type { MeasurementUnitListItem } from './model/measurement-units.types';
 import { MeasurementUnitsPage } from './pages/MeasurementUnitsPage';
 
 const unitsApi = vi.hoisted(() => ({

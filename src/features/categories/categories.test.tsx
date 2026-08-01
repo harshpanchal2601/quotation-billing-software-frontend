@@ -3,8 +3,8 @@ import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
-import type { CategoryListItem } from './categories.types';
+import { renderWithProviders } from '@shared/test/render';
+import type { CategoryListItem } from './model/categories.types';
 import { CategoriesPage } from './pages/CategoriesPage';
 
 const categoriesApi = vi.hoisted(() => ({

@@ -1,3 +1,4 @@
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
@@ -16,11 +17,12 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type MouseEvent } from 'react';
-import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { paths } from '@app/router/routeConfig';
+import { getSafeListReturnPath } from '@app/router/returnNavigation';
+import { toApiError } from '@shared/api/apiClient';
 import { createCompanyAddressRequest, deleteCompanyAddressRequest, setPrimaryCompanyAddressRequest, updateCompanyAddressRequest } from '../api/addresses.api';
 import { deleteCompanyRequest, getCompanyRequest, updateCompanyStatusRequest } from '../api/companies.api';
 import { createCompanyContactRequest, deleteCompanyContactRequest, setPrimaryCompanyContactRequest, updateCompanyContactRequest } from '../api/contacts.api';
@@ -41,6 +43,7 @@ const tabs: CompanyTab[] = ['overview', 'contacts', 'addresses', 'quotations'];
 export function CompanyDetailsPage() {
   const companyId = Number(useParams().id);
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') as CompanyTab | null;
@@ -78,7 +81,7 @@ export function CompanyDetailsPage() {
     onSuccess: async () => {
       queryClient.removeQueries({ queryKey: companiesQueryKeys.detail(companyId) });
       await queryClient.invalidateQueries({ queryKey: companiesQueryKeys.lists() });
-      navigate(paths.companies);
+      navigate(returnPath);
     },
     onError: (error) => setPageError(toApiError(error).message),
   });
@@ -127,6 +130,7 @@ export function CompanyDetailsPage() {
 
   const company = query.data;
   const isMutating = statusMutation.isPending || deleteMutation.isPending || contactActionMutation.isPending || addressActionMutation.isPending;
+  const returnPath = getSafeListReturnPath(location, paths.companies);
 
   function openMenu(event: MouseEvent<HTMLElement>) {
     setMenuAnchor(event.currentTarget);
@@ -155,7 +159,10 @@ export function CompanyDetailsPage() {
           <Typography color="text.secondary">{company.companyCode}</Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button component={RouterLink} to={`${paths.companies}/${company.id}/edit`} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</Button>
+          <Button component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
+            Back to Companies
+          </Button>
+          <Button component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</Button>
           <IconButton aria-label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></IconButton>
           <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
             <MenuItem onClick={() => { setMenuAnchor(null); setStatusOpen(true); }}><PowerSettingsNewOutlinedIcon fontSize="small" sx={{ mr: 1 }} />{company.isActive ? 'Deactivate' : 'Activate'}</MenuItem>

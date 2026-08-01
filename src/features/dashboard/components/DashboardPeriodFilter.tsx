@@ -10,7 +10,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { useState } from 'react';
 
-import type { DashboardPeriod } from '../dashboard.types';
+import type { DashboardPeriod } from '../model/dashboard.types';
 
 type DashboardPeriodFilterProps = {
   period: DashboardPeriod;
@@ -68,7 +68,7 @@ export function DashboardPeriodFilter({
         />
       ) : null}
 
-      <FormControl size="small" sx={{ minWidth: 200 }}>
+      <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 200 }, width: { xs: '100%', sm: 'auto' } }}>
         <Select
           value={period}
           onChange={(e) => handlePeriodSelect(e.target.value as DashboardPeriod)}
@@ -84,7 +84,7 @@ export function DashboardPeriodFilter({
       </FormControl>
 
       {period === 'CUSTOM' ? (
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <TextField
             size="small"
             type="date"
@@ -93,6 +93,7 @@ export function DashboardPeriodFilter({
             onChange={(e) => setCustomFrom(e.target.value)}
             InputLabelProps={{ shrink: true }}
             error={Boolean(dateError)}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           />
           <TextField
             size="small"
@@ -102,8 +103,9 @@ export function DashboardPeriodFilter({
             onChange={(e) => setCustomTo(e.target.value)}
             InputLabelProps={{ shrink: true }}
             error={Boolean(dateError)}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           />
-          <Button variant="outlined" size="small" onClick={handleCustomApply} sx={{ height: 40 }}>
+          <Button variant="outlined" size="small" onClick={handleCustomApply} sx={{ height: 40, width: { xs: '100%', sm: 'auto' } }}>
             Apply
           </Button>
         </Stack>
@@ -120,7 +122,7 @@ export function DashboardPeriodFilter({
         startIcon={<RefreshOutlinedIcon />}
         onClick={onRefresh}
         disabled={isFetching}
-        sx={{ height: 40, ml: 'auto' }}
+        sx={{ height: 40, ml: { xs: 0, sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}
       >
         {isFetching ? 'Refreshing...' : 'Refresh'}
       </Button>

@@ -1,5 +1,7 @@
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
+import KeyboardArrowRightOutlinedIcon from '@mui/icons-material/KeyboardArrowRightOutlined';
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import Alert from '@mui/material/Alert';
@@ -9,6 +11,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import Collapse from '@mui/material/Collapse';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
@@ -22,11 +25,13 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { toApiError } from '../../../services/apiClient';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { toApiError } from '@shared/api/apiClient';
 import {
   downloadQuotationPdfBlobRequest,
   generateQuotationPdfRequest,
@@ -40,6 +45,7 @@ import type { GeneratedDocumentHistoryItem, QuotationCommunicationHistoryItem } 
 import type { QuotationDetail } from '../quotations.types';
 import { quotationDocumentsQueryKeys } from '../quotation-documents.query-keys';
 import { quotationsQueryKeys } from '../quotations.query-keys';
+import { dashboardQueryKeys } from '@features/dashboard';
 import { QuotationPdfPreviewDialog } from './QuotationPdfPreviewDialog';
 import { QuotationEmailDialog } from './QuotationEmailDialog';
 
@@ -149,7 +155,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
   const showRefreshing = isFetching && !isLoading;
 
   return (
-    <Paper variant="outlined" sx={{ p: 3, mt: 3, borderRadius: 2 }} aria-busy={isLoading || showRefreshing}>
+    <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 3 }, mt: 3, borderRadius: 2 }} aria-busy={isLoading || showRefreshing}>
       {/* Header */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -310,9 +316,9 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
             {documents.map((doc) => (
               <Card key={doc.id} variant="outlined">
                 <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Box sx={{ overflow: 'hidden' }}>
-                      <Typography variant="subtitle2" noWrap fontWeight={600}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="subtitle2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
                         {doc.displayFilename}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -328,7 +334,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
 
                   <Divider sx={{ my: 1.5 }} />
 
-                  <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1}>
                     <Button
                       size="small"
                       variant="outlined"
@@ -396,6 +402,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           queryClient.invalidateQueries({ queryKey: quotationDocumentsQueryKeys.communications(quotation.id) });
           queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.detail(quotation.id) });
           queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.lists() });
+          queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
         }}
       />
 
@@ -426,6 +433,10 @@ function CommunicationHistorySection({
   error: unknown;
   onRetry: () => void;
 }) {
+  const [expandedCommunicationId, setExpandedCommunicationId] = useState<number | null>(null);
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
+
   return (
     <Box sx={{ mt: 3 }}>
       <Divider sx={{ mb: 2 }} />
@@ -466,61 +477,204 @@ function CommunicationHistorySection({
           </Typography>
         </Box>
       ) : (
+        isCompact ? (
+          <Stack spacing={1.5} aria-label="Communication history cards">
+            {communications.map((communication) => {
+              const isExpanded = expandedCommunicationId === communication.id;
+              const detailId = `communication-${communication.id}-mobile-details`;
+
+              return (
+                <Card key={communication.id} variant="outlined">
+                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="flex-start">
+                      <Box sx={{ minWidth: 0 }}>
+                        <CommunicationStatusChip communication={communication} />
+                        <Typography variant="body2" fontWeight={600} sx={{ mt: 1, wordBreak: 'break-word' }}>
+                          {communication.subject}
+                        </Typography>
+                        {communication.failureSummary ? (
+                          <Typography variant="caption" color="error.main" display="block" sx={{ wordBreak: 'break-word' }}>
+                            {communication.failureSummary}
+                          </Typography>
+                        ) : null}
+                      </Box>
+                      <IconButton
+                        size="small"
+                        aria-label={isExpanded ? 'Collapse communication details' : 'Expand communication details'}
+                        aria-expanded={isExpanded}
+                        aria-controls={detailId}
+                        onClick={() => setExpandedCommunicationId(isExpanded ? null : communication.id)}
+                      >
+                        {isExpanded ? (
+                          <KeyboardArrowDownOutlinedIcon fontSize="small" />
+                        ) : (
+                          <KeyboardArrowRightOutlinedIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                    </Stack>
+
+                    <Divider sx={{ my: 1.5 }} />
+
+                    <Stack spacing={1}>
+                      <DetailRow label="Recipients" value={`To: ${communication.to.join(', ')}`} />
+                      {communication.cc.length > 0 ? <DetailRow label="CC" value={communication.cc.join(', ')} /> : null}
+                      {communication.bcc.length > 0 ? <DetailRow label="BCC" value={communication.bcc.join(', ')} /> : null}
+                      <DetailRow label="PDF" value={getDocumentLabel(communication)} />
+                      <DetailRow label="Revision" value={getRevisionLabel(communication)} />
+                      <DetailRow label="Attachments" value={getAttachmentSummary(communication)} />
+                      <DetailRow label="Sent By" value={communication.sender?.name || 'Admin'} />
+                      <DetailRow label="Timestamp" value={getTimestampLabel(communication)} />
+                    </Stack>
+
+                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                      <Box id={detailId} sx={{ pt: 2 }}>
+                        <CommunicationExpandedDetails communication={communication} />
+                      </Box>
+                    </Collapse>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Stack>
+        ) : (
         <TableContainer>
-          <Table size="small">
+          <Table size="small" sx={{ minWidth: 1120 }}>
             <TableHead>
               <TableRow>
+                <TableCell width={48} />
                 <TableCell>Status</TableCell>
                 <TableCell>Recipients</TableCell>
                 <TableCell>Subject</TableCell>
                 <TableCell>PDF</TableCell>
+                <TableCell>Revision</TableCell>
+                <TableCell>Attachments</TableCell>
                 <TableCell>Sent By</TableCell>
                 <TableCell>Timestamp</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {communications.map((communication) => (
-                <TableRow key={communication.id} hover>
-                  <TableCell>
-                    <CommunicationStatusChip communication={communication} />
-                  </TableCell>
-                  <TableCell sx={{ maxWidth: 260 }}>
-                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                      To: {communication.to.join(', ')}
-                    </Typography>
-                    {communication.cc.length > 0 ? (
-                      <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: 'break-word' }}>
-                        CC: {communication.cc.join(', ')}
-                      </Typography>
-                    ) : null}
-                    {communication.bcc.length > 0 ? (
-                      <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: 'break-word' }}>
-                        BCC: {communication.bcc.join(', ')}
-                      </Typography>
-                    ) : null}
-                  </TableCell>
-                  <TableCell sx={{ maxWidth: 260 }}>
-                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                      {communication.subject}
-                    </Typography>
-                    {communication.failureSummary ? (
-                      <Typography variant="caption" color="error.main" display="block">
-                        {communication.failureSummary}
-                      </Typography>
-                    ) : null}
-                  </TableCell>
-                  <TableCell>{getDocumentLabel(communication)}</TableCell>
-                  <TableCell>{communication.sender?.name || 'Admin'}</TableCell>
-                  <TableCell>
-                    {new Date(communication.acceptedAt || communication.failedAt || communication.createdAt).toLocaleString()}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {communications.map((communication) => {
+                const isExpanded = expandedCommunicationId === communication.id;
+                const detailId = `communication-${communication.id}-details`;
+
+                return (
+                  <Fragment key={communication.id}>
+                    <TableRow key={communication.id} hover>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          aria-label={isExpanded ? 'Collapse communication details' : 'Expand communication details'}
+                          aria-expanded={isExpanded}
+                          aria-controls={detailId}
+                          onClick={() => setExpandedCommunicationId(isExpanded ? null : communication.id)}
+                        >
+                          {isExpanded ? (
+                            <KeyboardArrowDownOutlinedIcon fontSize="small" />
+                          ) : (
+                            <KeyboardArrowRightOutlinedIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </TableCell>
+                      <TableCell>
+                        <CommunicationStatusChip communication={communication} />
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 260 }}>
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                          To: {communication.to.join(', ')}
+                        </Typography>
+                        {communication.cc.length > 0 ? (
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: 'break-word' }}>
+                            CC: {communication.cc.join(', ')}
+                          </Typography>
+                        ) : null}
+                        {communication.bcc.length > 0 ? (
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: 'break-word' }}>
+                            BCC: {communication.bcc.join(', ')}
+                          </Typography>
+                        ) : null}
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 260 }}>
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                          {communication.subject}
+                        </Typography>
+                        {communication.failureSummary ? (
+                          <Typography variant="caption" color="error.main" display="block">
+                            {communication.failureSummary}
+                          </Typography>
+                        ) : null}
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 220, wordBreak: 'break-word' }}>{getDocumentLabel(communication)}</TableCell>
+                      <TableCell>{getRevisionLabel(communication)}</TableCell>
+                      <TableCell>{getAttachmentSummary(communication)}</TableCell>
+                      <TableCell>{communication.sender?.name || 'Admin'}</TableCell>
+                      <TableCell>
+                        {getTimestampLabel(communication)}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow key={`${communication.id}-details`}>
+                      <TableCell colSpan={9} sx={{ py: 0, borderBottom: isExpanded ? undefined : 0 }}>
+                        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                          <Box id={detailId} sx={{ py: 2 }}>
+                            <CommunicationExpandedDetails communication={communication} />
+                          </Box>
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  </Fragment>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
+        )
       )}
     </Box>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant="caption" color="text.secondary" display="block">
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
+function CommunicationExpandedDetails({ communication }: { communication: QuotationCommunicationHistoryItem }) {
+  return (
+    <Stack spacing={1.5}>
+      <Box>
+        <Typography variant="caption" color="text.secondary" display="block">
+          Message
+        </Typography>
+        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {communication.message}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography variant="caption" color="text.secondary" display="block">
+          Supporting attachments
+        </Typography>
+        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+          {getAttachmentNames(communication)}
+        </Typography>
+      </Box>
+      {communication.failureSummary ? (
+        <Box>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Failure
+          </Typography>
+          <Typography variant="body2" color="error.main" sx={{ wordBreak: 'break-word' }}>
+            {communication.failureSummary}
+          </Typography>
+        </Box>
+      ) : null}
+    </Stack>
   );
 }
 
@@ -535,10 +689,33 @@ function CommunicationStatusChip({ communication }: { communication: QuotationCo
 }
 
 function getDocumentLabel(communication: QuotationCommunicationHistoryItem) {
-  const snapshot = communication.document;
-  if (typeof snapshot === 'object' && snapshot !== null && 'displayFilename' in snapshot) {
-    const filename = (snapshot as { displayFilename?: unknown }).displayFilename;
-    if (typeof filename === 'string') return filename;
-  }
+  const filename = communication.document?.displayFilename;
+  if (filename) return filename;
   return communication.generatedDocumentId ? `Document #${communication.generatedDocumentId}` : '-';
+}
+
+function getRevisionLabel(communication: QuotationCommunicationHistoryItem) {
+  return typeof communication.quotationRevisionNumber === 'number'
+    ? `Revision ${communication.quotationRevisionNumber}`
+    : 'Revision unavailable';
+}
+
+function getCommunicationAttachments(communication: QuotationCommunicationHistoryItem) {
+  return Array.isArray(communication.attachments) ? communication.attachments : [];
+}
+
+function getAttachmentSummary(communication: QuotationCommunicationHistoryItem) {
+  const attachments = getCommunicationAttachments(communication);
+  if (attachments.length === 0) return 'None';
+  return `${attachments.length} file${attachments.length === 1 ? '' : 's'}`;
+}
+
+function getAttachmentNames(communication: QuotationCommunicationHistoryItem) {
+  const attachments = getCommunicationAttachments(communication);
+  if (attachments.length === 0) return 'No supporting attachments selected.';
+  return attachments.map((attachment) => attachment.originalFilename).join(', ');
+}
+
+function getTimestampLabel(communication: QuotationCommunicationHistoryItem) {
+  return new Date(communication.acceptedAt || communication.failedAt || communication.createdAt).toLocaleString();
 }

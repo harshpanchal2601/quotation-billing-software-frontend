@@ -1,4 +1,4 @@
-import { apiClient, type ApiSuccessResponse } from '../../../services/apiClient';
+import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import type {
   MeasurementUnitCreateInput,
   MeasurementUnitListItem,
@@ -7,7 +7,7 @@ import type {
   MeasurementUnitOption,
   MeasurementUnitOptionsResponse,
   MeasurementUnitUpdateInput,
-} from '../measurement-units.types';
+} from '../model/measurement-units.types';
 
 export async function listMeasurementUnitsRequest(
   params: MeasurementUnitListParams,

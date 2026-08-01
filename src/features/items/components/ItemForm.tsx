@@ -15,10 +15,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { getCategoryOptionsRequest } from '../../categories/api/categories.api';
-import { categoriesQueryKeys } from '../../categories/categories.query-keys';
-import { getMeasurementUnitOptionsRequest } from '../../measurement-units/api/measurement-units.api';
-import { measurementUnitsQueryKeys } from '../../measurement-units/measurement-units.query-keys';
+import { categoriesQueryKeys, getCategoryOptionsRequest } from '@features/categories';
+import { getMeasurementUnitOptionsRequest, measurementUnitsQueryKeys } from '@features/measurement-units';
 import { itemFormSchema, type ItemFormValues } from '../items.schema';
 import type { ItemDetail } from '../items.types';
 import { formatItemSourceTypeLabel } from '../items.utils';

@@ -28,17 +28,19 @@ import { QuotationStatusChip } from './QuotationStatusChip';
 
 type QuotationTableProps = {
   quotations: QuotationListItem[];
+  returnState?: { from: string };
   onOpenStatusDialog: (quotation: QuotationListItem) => void;
   onOpenDeleteDialog: (quotation: QuotationListItem) => void;
 };
 
 export function QuotationTable({
   quotations,
+  returnState,
   onOpenStatusDialog,
   onOpenDeleteDialog,
 }: QuotationTableProps) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -55,18 +57,18 @@ export function QuotationTable({
     setSelectedQuotation(null);
   };
 
-  if (isMobile) {
+  if (isCompact) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {quotations.map((quo) => (
           <Card
             key={quo.id}
             variant="outlined"
-            onClick={() => navigate(`/quotations/${quo.id}`)}
+            onClick={() => navigate(`/quotations/${quo.id}`, { state: returnState })}
             sx={{ cursor: 'pointer', '&:hover': { borderColor: 'primary.main' } }}
           >
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, gap: 1 }}>
                 <Box sx={{ minWidth: 0, flex: 1, pr: 1 }}>
                   <Typography variant="subtitle1" fontWeight={700} color="primary.main" sx={{ wordBreak: 'break-word' }}>
                     {quo.quotationNumber}
@@ -78,7 +80,7 @@ export function QuotationTable({
                     {quo.companyNameSnapshot}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
                   <QuotationStatusChip status={quo.status} />
                   <IconButton
                     size="small"
@@ -90,11 +92,11 @@ export function QuotationTable({
                 </Box>
               </Box>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                <Typography variant="caption" color="text.secondary">
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mt: 2, gap: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 0 }}>
                   {new Date(quo.quotationDate).toLocaleDateString()} • {quo.itemCount} items
                 </Typography>
-                <Typography variant="subtitle2" fontWeight={700}>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ textAlign: 'right', wordBreak: 'break-word' }}>
                   {formatCurrency(quo.grandTotal, quo.currency)}
                 </Typography>
               </Box>
@@ -105,6 +107,7 @@ export function QuotationTable({
         <ActionPopover
           anchorEl={anchorEl}
           quotation={selectedQuotation}
+          returnState={returnState}
           onClose={handleCloseMenu}
           onOpenStatusDialog={onOpenStatusDialog}
           onOpenDeleteDialog={onOpenDeleteDialog}
@@ -115,7 +118,7 @@ export function QuotationTable({
 
   return (
     <TableContainer component={Box} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-      <Table size="medium">
+      <Table size="medium" sx={{ minWidth: 920 }}>
         <TableHead sx={{ bgcolor: 'grey.50' }}>
           <TableRow>
             <TableCell sx={{ fontWeight: 700 }}>Quotation Number</TableCell>
@@ -133,7 +136,7 @@ export function QuotationTable({
             <TableRow
               key={quo.id}
               hover
-              onClick={() => navigate(`/quotations/${quo.id}`)}
+              onClick={() => navigate(`/quotations/${quo.id}`, { state: returnState })}
               sx={{ cursor: 'pointer' }}
             >
               <TableCell sx={{ fontWeight: 600, color: 'primary.main', wordBreak: 'break-word', whiteSpace: 'normal' }}>
@@ -182,6 +185,7 @@ export function QuotationTable({
       <ActionPopover
         anchorEl={anchorEl}
         quotation={selectedQuotation}
+        returnState={returnState}
         onClose={handleCloseMenu}
         onOpenStatusDialog={onOpenStatusDialog}
         onOpenDeleteDialog={onOpenDeleteDialog}
@@ -193,6 +197,7 @@ export function QuotationTable({
 type ActionPopoverProps = {
   anchorEl: HTMLElement | null;
   quotation: QuotationListItem | null;
+  returnState?: { from: string };
   onClose: () => void;
   onOpenStatusDialog: (quotation: QuotationListItem) => void;
   onOpenDeleteDialog: (quotation: QuotationListItem) => void;
@@ -201,6 +206,7 @@ type ActionPopoverProps = {
 function ActionPopover({
   anchorEl,
   quotation,
+  returnState,
   onClose,
   onOpenStatusDialog,
   onOpenDeleteDialog,
@@ -222,7 +228,7 @@ function ActionPopover({
         <MenuItem
           onClick={() => {
             onClose();
-            navigate(`/quotations/${quotation.id}`);
+            navigate(`/quotations/${quotation.id}`, { state: returnState });
           }}
         >
           <VisibilityOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
@@ -233,7 +239,7 @@ function ActionPopover({
           <MenuItem
             onClick={() => {
               onClose();
-              navigate(`/quotations/${quotation.id}/edit`);
+              navigate(`/quotations/${quotation.id}/edit`, { state: returnState });
             }}
           >
             <EditOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />

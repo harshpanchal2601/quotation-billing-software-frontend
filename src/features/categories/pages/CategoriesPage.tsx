@@ -13,17 +13,17 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { EmptyState } from '../../../components/common/EmptyState';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { toApiError } from '../../../services/apiClient';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { toApiError } from '@shared/api/apiClient';
 import {
   deleteCategoryRequest,
   listCategoriesRequest,
   updateCategoryStatusRequest,
 } from '../api/categories.api';
-import { categoriesQueryKeys } from '../categories.query-keys';
-import type { CategoryListItem, CategoryListParams } from '../categories.types';
+import { categoriesQueryKeys } from '../model/categories.query-keys';
+import type { CategoryListItem, CategoryListParams } from '../model/categories.types';
 import { CategoryDeleteDialog, CategoryStatusDialog } from '../components/CategoryConfirmDialogs';
 import { CategoryDetailsDialog } from '../components/CategoryDetailsDialog';
 import { CategoryFormDialog } from '../components/CategoryFormDialog';
@@ -148,7 +148,7 @@ export function CategoriesPage() {
               page: 1,
             })
           }
-          sx={{ minWidth: 160 }}
+          sx={{ minWidth: { xs: 0, md: 160 }, width: { xs: '100%', md: 'auto' } }}
         >
           <MenuItem value="all">All</MenuItem>
           <MenuItem value="true">Active</MenuItem>
@@ -166,7 +166,7 @@ export function CategoriesPage() {
             ];
             updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
           }}
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: { xs: 0, md: 200 }, width: { xs: '100%', md: 'auto' } }}
         >
           {sortOptions.map((option) => (
             <MenuItem key={option.value} value={option.value}>

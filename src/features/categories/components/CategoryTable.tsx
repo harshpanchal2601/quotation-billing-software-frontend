@@ -20,8 +20,8 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useState, type MouseEvent } from 'react';
 
-import type { CategoryListItem } from '../categories.types';
-import { isProtectedCategory } from '../categories.utils';
+import type { CategoryListItem } from '../model/categories.types';
+import { isProtectedCategory } from '../model/categories.utils';
 
 type CategoryTableProps = {
   categories: CategoryListItem[];

@@ -7,8 +7,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
+import { paths } from '@app/router/routeConfig';
+import { toApiError } from '@shared/api/apiClient';
 import { createItemRequest } from '../api/items.api';
 
 import { ItemForm } from '../components/ItemForm';

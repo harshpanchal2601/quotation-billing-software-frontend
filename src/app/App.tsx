@@ -2,7 +2,7 @@ import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
 import { Outlet } from 'react-router-dom';
 
-import { useAuth } from './features/auth/auth.hooks';
+import { useAuth } from '@features/auth';
 
 export function App() {
   const { sessionMessage, clearSessionMessage } = useAuth();
