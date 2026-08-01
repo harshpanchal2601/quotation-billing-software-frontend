@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -18,6 +17,8 @@ import { useForm } from 'react-hook-form';
 
 import { toApiError } from '@shared/api/apiClient';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
+import { AppButton } from '@shared/ui/actions';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { createCategoryRequest, updateCategoryRequest } from '../api/categories.api';
 import { categoriesQueryKeys } from '../model/categories.query-keys';
 import { categoryFormSchema, type CategoryFormValues } from '../model/categories.schema';
@@ -118,7 +119,7 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
       <Box component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
         <DialogContent dividers>
           <Stack spacing={2.5}>
-            {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+            <ServerErrorAlert message={serverError} />
 
             <TextField
               label="Category name"
@@ -181,9 +182,9 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
           <Button onClick={onClose} disabled={mutation.isPending}>
             Cancel
           </Button>
-          <Button type="submit" variant="contained" loading={mutation.isPending}>
+          <AppButton type="submit" variant="contained" isLoading={mutation.isPending}>
             {isEditing ? 'Save Changes' : 'Create Category'}
-          </Button>
+          </AppButton>
         </DialogActions>
       </Box>
     </Dialog>

@@ -1,10 +1,7 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
@@ -17,6 +14,9 @@ import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import {
   deleteMeasurementUnitRequest,
   listMeasurementUnitsRequest,
@@ -120,22 +120,18 @@ export function MeasurementUnitsPage() {
   }
 
   return (
-    <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ sm: 'center' }}>
-        <Box>
-          <Typography component="h1" variant="h1">
-            Measurement Units
-          </Typography>
-          <Typography color="text.secondary">
-            Manage units of measurement for item pricing and quantities.
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={handleOpenCreate}>
-          Add Measurement Unit
-        </Button>
-      </Stack>
+    <PageContainer>
+      <PageHeader
+        title="Measurement Units"
+        description="Manage units of measurement for item pricing and quantities."
+        actions={
+          <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={handleOpenCreate}>
+            Add Measurement Unit
+          </AppButton>
+        }
+      />
 
-      {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+      <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
         <TextField
@@ -202,7 +198,7 @@ export function MeasurementUnitsPage() {
       </Stack>
 
       <RefreshIndicator show={showRefreshing} />
-      <Box aria-busy={query.isPending || showRefreshing}>
+      <Stack aria-busy={query.isPending || showRefreshing}>
       {query.isPending ? (
         <Stack spacing={1}>
           {Array.from({ length: 6 }).map((_, index) => (
@@ -259,7 +255,7 @@ export function MeasurementUnitsPage() {
           />
         </>
       ) : null}
-      </Box>
+      </Stack>
 
       <MeasurementUnitFormDialog
         open={formOpen}
@@ -292,16 +288,8 @@ export function MeasurementUnitsPage() {
         }}
       />
 
-      <Snackbar
-        open={successMessage !== null}
-        autoHideDuration={5000}
-        onClose={() => setSuccessMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
-    </Stack>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
+    </PageContainer>
   );
 }
 
