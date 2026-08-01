@@ -1,5 +1,4 @@
 import Alert from '@mui/material/Alert';
-import DialogContentText from '@mui/material/DialogContentText';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
@@ -37,7 +36,7 @@ export function CategoryStatusDialog({ category, isSubmitting, onClose, onConfir
           </Alert>
         ) : null}
 
-        <DialogContentText>
+        <Typography color="text.secondary">
           {isDeactivating ? (
             <>
               Are you sure you want to deactivate <strong>{category.name}</strong>?
@@ -50,7 +49,7 @@ export function CategoryStatusDialog({ category, isSubmitting, onClose, onConfir
               Are you sure you want to activate <strong>{category.name}</strong>? It will become available for item assignment.
             </>
           )}
-        </DialogContentText>
+        </Typography>
       </Stack>
     </ConfirmDialog>
   );
@@ -91,9 +90,9 @@ export function CategoryDeleteDialog({ category, isDeleting, onClose, onConfirm 
           </Alert>
         ) : null}
 
-        <DialogContentText>
+        <Typography color="text.secondary">
           Are you sure you want to delete <strong>{category.name}</strong> (slug: {category.slug})?
-        </DialogContentText>
+        </Typography>
 
         <Typography variant="body2" color="text.secondary">
           Note: Deletion is a soft deletion. Deleted categories will no longer appear in normal category lists.

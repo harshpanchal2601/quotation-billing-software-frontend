@@ -1,5 +1,4 @@
 import Alert from '@mui/material/Alert';
-import DialogContentText from '@mui/material/DialogContentText';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
@@ -28,7 +27,7 @@ export function MeasurementUnitStatusDialog({ unit, isSubmitting, onClose, onCon
       onConfirm={onConfirm}
     >
       <Stack spacing={2} pt={1}>
-        <DialogContentText>
+        <Typography color="text.secondary">
           {isDeactivating ? (
             <>
               Are you sure you want to deactivate <strong>{unit.name}</strong> ({unit.symbol})?
@@ -41,7 +40,7 @@ export function MeasurementUnitStatusDialog({ unit, isSubmitting, onClose, onCon
               Are you sure you want to activate <strong>{unit.name}</strong> ({unit.symbol})? It will become available for item assignment.
             </>
           )}
-        </DialogContentText>
+        </Typography>
       </Stack>
     </ConfirmDialog>
   );
@@ -75,9 +74,9 @@ export function MeasurementUnitDeleteDialog({ unit, isDeleting, onClose, onConfi
           </Alert>
         ) : null}
 
-        <DialogContentText>
+        <Typography color="text.secondary">
           Are you sure you want to delete <strong>{unit.name}</strong> (symbol: {unit.symbol})?
-        </DialogContentText>
+        </Typography>
 
         <Typography variant="body2" color="text.secondary">
           Note: Deletion is a soft deletion. Deleted measurement units will no longer appear in normal unit lists.

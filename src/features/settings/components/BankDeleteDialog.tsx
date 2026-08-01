@@ -1,10 +1,7 @@
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 
-import { AppButton } from '@shared/ui/actions';
+import { DeleteConfirmDialog } from '@shared/ui/dialogs';
 import type { BankDetail } from '../settings.types';
 import { maskAccountNumber } from '../settings.utils';
 
@@ -17,26 +14,26 @@ type BankDeleteDialogProps = {
 
 export function BankDeleteDialog({ bankDetail, isDeleting, onClose, onConfirm }: BankDeleteDialogProps) {
   return (
-    <Dialog open={bankDetail !== null} onClose={() => (!isDeleting ? onClose() : undefined)}>
-      <DialogTitle>Delete bank account?</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
+    <DeleteConfirmDialog
+      open={bankDetail !== null}
+      title="Delete bank account?"
+      confirmLabel={isDeleting ? 'Deleting...' : 'Delete account'}
+      isDeleting={isDeleting}
+      onClose={onClose}
+      onConfirm={() => void onConfirm()}
+    >
+      <Stack spacing={1}>
+        <Typography color="text.secondary">
           {bankDetail
             ? `This will remove ${bankDetail.bankName} account ${maskAccountNumber(bankDetail.accountNumber)} from future quotations.`
             : 'This bank account will be removed.'}
-        </DialogContentText>
+        </Typography>
         {bankDetail?.isDefault ? (
-          <DialogContentText mt={1}>
+          <Typography color="text.secondary">
             This is the default account. Another active account may become default after deletion.
-          </DialogContentText>
+          </Typography>
         ) : null}
-      </DialogContent>
-      <DialogActions>
-        <AppButton autoFocus onClick={onClose} disabled={isDeleting}>Cancel</AppButton>
-        <AppButton color="error" onClick={() => void onConfirm()} isLoading={isDeleting} loadingPosition="start">
-          {isDeleting ? 'Deleting...' : 'Delete account'}
-        </AppButton>
-      </DialogActions>
-    </Dialog>
+      </Stack>
+    </DeleteConfirmDialog>
   );
 }

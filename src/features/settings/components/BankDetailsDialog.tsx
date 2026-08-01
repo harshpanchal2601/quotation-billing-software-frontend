@@ -1,20 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
 import Checkbox from '@mui/material/Checkbox';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import type { ApiFieldErrors } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
+import { AppDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { bankDetailsSchema, type BankDetailsFormValues, type BankDetailsSubmitValues } from '../schemas/bank-details.schema';
 import type { BankDetail } from '../settings.types';
@@ -74,14 +71,27 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
   }
 
   return (
-    <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)} fullWidth maxWidth="md">
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
-        <DialogContentText mb={2}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      preventClose={isSubmitting}
+      fullWidth
+      maxWidth="md"
+      title={title}
+      actions={
+        <>
+          <AppButton onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
+          <AppButton type="submit" form="bank-details-form" variant="contained" disabled={!form.formState.isValid} isLoading={isSubmitting} loadingPosition="start">
+            {isSubmitting ? 'Saving...' : 'Save account'}
+          </AppButton>
+        </>
+      }
+    >
+        <Typography color="text.secondary" mb={2}>
           Account numbers are stored as text so leading zeros and bank-specific formats are preserved.
-        </DialogContentText>
+        </Typography>
         <Stack component="form" id="bank-details-form" spacing={2} onSubmit={(event) => void form.handleSubmit(handleValidSubmit)(event)} noValidate aria-busy={isSubmitting}>
-          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+          <ServerErrorAlert message={errorMessage} />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <Controller
               name="bankName"
@@ -167,14 +177,7 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
             )}
           />
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <AppButton onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
-        <AppButton type="submit" form="bank-details-form" variant="contained" disabled={!form.formState.isValid} isLoading={isSubmitting} loadingPosition="start">
-          {isSubmitting ? 'Saving...' : 'Save account'}
-        </AppButton>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }
 

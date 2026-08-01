@@ -4,10 +4,6 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -19,6 +15,8 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 import { AppButton } from '@shared/ui/actions';
+import { AppDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { getQuotationAttachmentsRequest } from '../api/quotation-attachments.api';
 import { sendQuotationEmailRequest } from '../api/quotation-documents.api';
 import { toApiError } from '@shared/api/apiClient';
@@ -151,20 +149,51 @@ export function QuotationEmailDialog({
   if (!selectedDocument) return null;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth fullScreen={isMobile} aria-labelledby="send-email-dialog-title">
-      <form onSubmit={handleSubmit} aria-busy={emailMutation.isPending}>
-        <DialogTitle id="send-email-dialog-title" sx={{ pb: 1 }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <EmailOutlinedIcon color="primary" />
-            <Typography variant="h6" component="span" fontWeight={600}>
-              Send Quotation Email
-            </Typography>
+    <AppDialog
+      open={open}
+      onClose={handleClose}
+      preventClose={emailMutation.isPending}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isMobile}
+      title={
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <EmailOutlinedIcon color="primary" />
+          <Typography variant="h6" component="span" fontWeight={600}>
+            Send Quotation Email
+          </Typography>
+        </Stack>
+      }
+      titleProps={{ sx: { pb: 1 } }}
+      contentDividers
+      actionsProps={{ sx: { p: 2, justifyContent: 'space-between' } }}
+      actions={
+        <>
+          <Typography variant="caption" color="text.secondary">
+            SMTP acceptance does not confirm recipient inbox delivery.
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            <AppButton onClick={handleClose} disabled={emailMutation.isPending}>
+              Cancel
+            </AppButton>
+            <AppButton
+              type="submit"
+              form="quotation-email-form"
+              variant="contained"
+              disabled={!toInput.trim() || !subject.trim() || !message.trim() || isSizeOverLimit}
+              isLoading={emailMutation.isPending}
+              loadingPosition="start"
+              startIcon={<EmailOutlinedIcon />}
+            >
+              {emailMutation.isPending ? 'Sending email...' : 'Send Email'}
+            </AppButton>
           </Stack>
-        </DialogTitle>
-
-        <DialogContent dividers>
+        </>
+      }
+    >
+      <Box component="form" id="quotation-email-form" onSubmit={handleSubmit} aria-busy={emailMutation.isPending}>
           <Stack spacing={2.5}>
-            {error && <Alert severity="error">{error}</Alert>}
+            <ServerErrorAlert message={error} />
 
             {/* Document summary card */}
             <Paper variant="outlined" sx={{ p: 2, bgcolor: 'primary.50', borderColor: 'primary.200' }}>
@@ -297,29 +326,7 @@ export function QuotationEmailDialog({
               </Alert>
             )}
           </Stack>
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
-          <Typography variant="caption" color="text.secondary">
-            SMTP acceptance does not confirm recipient inbox delivery.
-          </Typography>
-          <Stack direction="row" spacing={1}>
-            <AppButton onClick={handleClose} disabled={emailMutation.isPending}>
-              Cancel
-            </AppButton>
-            <AppButton
-              type="submit"
-              variant="contained"
-              disabled={!toInput.trim() || !subject.trim() || !message.trim() || isSizeOverLimit}
-              isLoading={emailMutation.isPending}
-              loadingPosition="start"
-              startIcon={<EmailOutlinedIcon />}
-            >
-              {emailMutation.isPending ? 'Sending email...' : 'Send Email'}
-            </AppButton>
-          </Stack>
-        </DialogActions>
-      </form>
-    </Dialog>
+      </Box>
+    </AppDialog>
   );
 }

@@ -2,7 +2,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -13,6 +12,7 @@ import { Controller, useWatch, useForm } from 'react-hook-form';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import {
   businessProfileQueryKey,
   deleteBrandingAssetRequest,
@@ -105,7 +105,7 @@ export function BusinessSettingsPage() {
   return (
     <SettingsPageHeader title="Business Settings" description="Manage company identity, contact details and branding assets.">
       <Stack component="form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isFormBusy}>
-        {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+        <ServerErrorAlert message={serverError} />
         {form.formState.isDirty ? <Alert severity="info">You have unsaved changes.</Alert> : null}
         <SettingsSection title="Company information">
           <TwoColumnGrid>
@@ -170,9 +170,7 @@ export function BusinessSettingsPage() {
           </AppButton>
         </Stack>
       </Stack>
-      <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </SettingsPageHeader>
   );
 }

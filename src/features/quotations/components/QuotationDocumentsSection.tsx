@@ -4,7 +4,6 @@ import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDown
 import KeyboardArrowRightOutlinedIcon from '@mui/icons-material/KeyboardArrowRightOutlined';
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -28,6 +27,7 @@ import { useTheme } from '@mui/material/styles';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
 
+import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
@@ -197,16 +197,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           <Skeleton variant="rectangular" height={48} />
         </Stack>
       ) : isError ? (
-        <Alert
-          severity="error"
-          action={
-            <AppButton color="inherit" size="small" onClick={() => refetch()}>
-              Retry
-            </AppButton>
-          }
-        >
-          {toApiError(error).message}
-        </Alert>
+        <ErrorState message={toApiError(error).message} onRetry={() => void refetch()} />
       ) : documents.length === 0 ? (
         <Box sx={{ py: 4, px: 2, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
           <PictureAsPdfOutlinedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
@@ -458,16 +449,7 @@ function CommunicationHistorySection({
           <Skeleton variant="rectangular" height={48} />
         </Stack>
       ) : isError ? (
-        <Alert
-          severity="error"
-          action={
-            <AppButton color="inherit" size="small" onClick={onRetry}>
-              Retry
-            </AppButton>
-          }
-        >
-          {toApiError(error).message}
-        </Alert>
+        <ErrorState message={toApiError(error).message} onRetry={onRetry} />
       ) : communications.length === 0 ? (
         <Box sx={{ py: 3, px: 2, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
           <EmailOutlinedIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />

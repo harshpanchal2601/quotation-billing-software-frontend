@@ -1,18 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
 import Checkbox from '@mui/material/Checkbox';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { AppButton } from '@shared/ui/actions';
+import { AppDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 
 import type { CompanyContact } from '../companies.types';
 import { contactSchema, toContactSubmitValues, type ContactFormValues, type ContactSubmitValues } from '../schemas/contact.schema';
@@ -48,12 +45,23 @@ export function ContactDialog({ open, contact, isSubmitting, errorMessage, onClo
   }, [contact, form, open]);
 
   return (
-    <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)} fullWidth maxWidth="sm">
-      <DialogTitle>{contact ? 'Edit contact' : 'Add contact'}</DialogTitle>
-      <DialogContent>
-        <DialogContentText mb={2}>Primary contacts are shown in company lists and quotation defaults.</DialogContentText>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      preventClose={isSubmitting}
+      fullWidth
+      maxWidth="sm"
+      title={contact ? 'Edit contact' : 'Add contact'}
+      actions={
+        <>
+          <AppButton onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
+          <AppButton type="submit" form="contact-form" variant="contained" disabled={isSubmitting || !form.formState.isValid}>{isSubmitting ? 'Saving' : 'Save contact'}</AppButton>
+        </>
+      }
+    >
+        <Typography color="text.secondary" mb={2}>Primary contacts are shown in company lists and quotation defaults.</Typography>
         <Stack component="form" id="contact-form" spacing={2} onSubmit={(event) => void handleSubmit(event)} noValidate>
-          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+          <ServerErrorAlert message={errorMessage} />
           <ContactTextField control={form.control} name="name" label="Contact name" required disabled={isSubmitting} />
           <ContactTextField control={form.control} name="designation" label="Designation" disabled={isSubmitting} />
           <ContactTextField control={form.control} name="email" label="Email" disabled={isSubmitting} />
@@ -63,12 +71,7 @@ export function ContactDialog({ open, contact, isSubmitting, errorMessage, onClo
           </Stack>
           <Controller name="isPrimary" control={form.control} render={({ field }) => <FormControlLabel control={<Checkbox checked={field.value} onChange={(event) => field.onChange(event.target.checked)} disabled={isSubmitting} />} label="Make primary contact" />} />
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <AppButton onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
-        <AppButton type="submit" form="contact-form" variant="contained" disabled={isSubmitting || !form.formState.isValid}>{isSubmitting ? 'Saving' : 'Save contact'}</AppButton>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }
 

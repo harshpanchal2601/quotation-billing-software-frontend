@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
@@ -12,6 +11,7 @@ import { useEffect, type PropsWithChildren } from 'react';
 import { Controller, useForm, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 
 import { AppButton } from '@shared/ui/actions';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 
 import {
   companyCreateFormSchema,
@@ -73,7 +73,7 @@ function CompanyCreateForm({ isSubmitting, errorMessage, onSubmit, onCancel }: E
   return (
     <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
       <Stack component="form" spacing={3} onSubmit={(event) => void handleSubmit(event)} noValidate>
-        {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+        <ServerErrorAlert message={errorMessage} />
         <Typography color="text.secondary">Company code is generated automatically after saving.</Typography>
         <CompanyFields control={form.control} disabled={isSubmitting} />
         <Divider />
@@ -119,7 +119,7 @@ function CompanyEditForm({ company, isSubmitting, errorMessage, onSubmit, onCanc
   return (
     <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
       <Stack component="form" spacing={3} onSubmit={(event) => void handleSubmit(event)} noValidate>
-        {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+        <ServerErrorAlert message={errorMessage} />
         <Box>
           <Typography variant="body2" color="text.secondary">Company code</Typography>
           <Typography fontWeight={700}>{company.companyCode}</Typography>

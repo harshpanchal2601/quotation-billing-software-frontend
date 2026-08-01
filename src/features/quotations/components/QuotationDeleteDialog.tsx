@@ -1,11 +1,7 @@
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import { AppButton } from '@shared/ui/actions';
+import { DeleteConfirmDialog } from '@shared/ui/dialogs';
 import { formatCurrency } from '../quotations.utils';
 
 type QuotationDeleteDialogProps = {
@@ -30,26 +26,24 @@ export function QuotationDeleteDialog({
   onConfirm,
 }: QuotationDeleteDialogProps) {
   return (
-    <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)} fullWidth maxWidth="xs">
-      <DialogTitle color="error.main">Delete Draft Quotation</DialogTitle>
-      <DialogContent sx={{ pt: 1 }}>
-        <DialogContentText sx={{ mb: 2 }}>
+    <DeleteConfirmDialog
+      open={open}
+      title="Delete Draft Quotation"
+      confirmLabel={isSubmitting ? 'Deleting...' : 'Delete Quotation'}
+      isDeleting={isSubmitting}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    >
+      <Stack spacing={2} pt={1}>
+        <Typography color="text.secondary">
           Are you sure you want to delete quotation <strong>{quotationNumber}</strong> for <strong>{customerName}</strong> ({formatCurrency(grandTotal, currency)})?
-        </DialogContentText>
+        </Typography>
         <Typography variant="body2" color="text.secondary">
           • Only draft quotations can be deleted.<br />
           • Soft deletion will remove this quotation from active views.<br />
           • Quotation number <strong>{quotationNumber}</strong> will remain reserved for audit integrity.
         </Typography>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <AppButton onClick={onClose} color="inherit" disabled={isSubmitting}>
-          Cancel
-        </AppButton>
-        <AppButton onClick={onConfirm} variant="contained" color="error" isLoading={isSubmitting} loadingPosition="start">
-          {isSubmitting ? 'Deleting...' : 'Delete Quotation'}
-        </AppButton>
-      </DialogActions>
-    </Dialog>
+      </Stack>
+    </DeleteConfirmDialog>
   );
 }

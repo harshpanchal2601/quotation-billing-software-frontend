@@ -1,4 +1,3 @@
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -19,6 +18,7 @@ import { getItemOptionsRequest } from '../../items/api/items.api';
 import { listBankDetailsRequest } from '../../settings/api/bank-details.api';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { calculatePreviewRequest } from '../api/quotations.api';
 import type { CalculatedQuotationTotals, CalculationPreviewInput, QuotationDetail } from '../quotations.types';
@@ -261,7 +261,7 @@ export function QuotationForm({
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)} noValidate aria-busy={isSubmitting || isPreviewCalculating}>
         <Stack spacing={3}>
-          {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+          <ServerErrorAlert message={serverError} />
 
           {/* Header Info Banner if editing */}
           {editingQuotation ? (

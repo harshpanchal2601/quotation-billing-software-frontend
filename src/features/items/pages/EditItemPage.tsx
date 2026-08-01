@@ -1,7 +1,5 @@
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
 import { getItemRequest, updateItemRequest } from '../api/items.api';
@@ -111,15 +110,7 @@ export function EditItemPage() {
         serverError={serverError}
       />
 
-      <Snackbar
-        open={successMessage !== null}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </Stack>
   );
 }

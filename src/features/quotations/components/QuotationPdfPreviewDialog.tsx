@@ -1,18 +1,13 @@
-import CloseIcon from '@mui/icons-material/Close';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 
-import { AppButton, AppIconButton } from '@shared/ui/actions';
+import { AppButton } from '@shared/ui/actions';
+import { AppDialog } from '@shared/ui/dialogs';
+import { InlineLoader, ServerErrorAlert } from '@shared/ui/feedback';
 
 type QuotationPdfPreviewDialogProps = {
   open: boolean;
@@ -51,27 +46,49 @@ export function QuotationPdfPreviewDialog({
   }, [pdfBlob]);
 
   return (
-    <Dialog open={open} onClose={() => (!isLoading ? onClose() : undefined)} fullWidth maxWidth="lg" fullScreen={fullScreen} aria-busy={isLoading}>
-      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      preventClose={isLoading}
+      fullWidth
+      maxWidth="lg"
+      fullScreen={fullScreen}
+      aria-busy={isLoading}
+      showCloseButton
+      closeButtonLabel="Close PDF preview"
+      title={
         <Typography variant="h6" fontWeight={700}>
           Quotation PDF Preview — {quotationNumber}
         </Typography>
-        <AppIconButton label="close" onClick={onClose} size="small" disabled={isLoading}>
-          <CloseIcon />
-        </AppIconButton>
-      </DialogTitle>
-
-      <DialogContent dividers sx={{ p: 0, height: { xs: 'calc(100vh - 120px)', md: '75vh' }, display: 'flex', flexDirection: 'column' }}>
+      }
+      titleProps={{ sx: { m: 0, p: 2 } }}
+      contentDividers
+      contentProps={{ sx: { p: 0, height: { xs: 'calc(100vh - 120px)', md: '75vh' }, display: 'flex', flexDirection: 'column' } }}
+      actionsProps={{ sx: { p: 2 } }}
+      actions={
+        <>
+          <AppButton onClick={onClose} color="inherit" disabled={isLoading}>
+            Close
+          </AppButton>
+          <AppButton
+            onClick={onDownload}
+            variant="contained"
+            color="primary"
+            startIcon={<DownloadOutlinedIcon />}
+            disabled={isLoading || !pdfBlob}
+          >
+            Download PDF
+          </AppButton>
+        </>
+      }
+    >
         {isLoading ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexGrow: 1, p: 4, gap: 2 }}>
-            <CircularProgress size={40} aria-label="Generating PDF preview" />
-            <Typography variant="body2" color="text.secondary">
-              Generating PDF document for quotation {quotationNumber}...
-            </Typography>
+            <InlineLoader size={40} label={`Generating PDF document for quotation ${quotationNumber}...`} direction="column" />
           </Box>
         ) : error ? (
           <Box sx={{ p: 4, flexGrow: 1 }}>
-            <Alert severity="error">{error}</Alert>
+            <ServerErrorAlert message={error} />
           </Box>
         ) : objectUrl ? (
           <Box sx={{ width: '100%', height: '100%', border: 'none', bgcolor: 'grey.100' }}>
@@ -88,22 +105,6 @@ export function QuotationPdfPreviewDialog({
             </Typography>
           </Box>
         )}
-      </DialogContent>
-
-      <DialogActions sx={{ p: 2 }}>
-        <AppButton onClick={onClose} color="inherit" disabled={isLoading}>
-          Close
-        </AppButton>
-        <AppButton
-          onClick={onDownload}
-          variant="contained"
-          color="primary"
-          startIcon={<DownloadOutlinedIcon />}
-          disabled={isLoading || !pdfBlob}
-        >
-          Download PDF
-        </AppButton>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

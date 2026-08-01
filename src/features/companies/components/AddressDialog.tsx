@@ -1,19 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
 import Checkbox from '@mui/material/Checkbox';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { AppButton } from '@shared/ui/actions';
+import { AppDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 
 import type { CompanyAddress } from '../companies.types';
 import { addressTypeLabel } from '../companies.utils';
@@ -52,12 +49,23 @@ export function AddressDialog({ open, address, isSubmitting, errorMessage, onClo
   }, [address, form, open]);
 
   return (
-    <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)} fullWidth maxWidth="sm">
-      <DialogTitle>{address ? 'Edit address' : 'Add address'}</DialogTitle>
-      <DialogContent>
-        <DialogContentText mb={2}>One primary address is allowed for each address type.</DialogContentText>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      preventClose={isSubmitting}
+      fullWidth
+      maxWidth="sm"
+      title={address ? 'Edit address' : 'Add address'}
+      actions={
+        <>
+          <AppButton onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
+          <AppButton type="submit" form="address-form" variant="contained" disabled={isSubmitting || !form.formState.isValid}>{isSubmitting ? 'Saving' : 'Save address'}</AppButton>
+        </>
+      }
+    >
+        <Typography color="text.secondary" mb={2}>One primary address is allowed for each address type.</Typography>
         <Stack component="form" id="address-form" spacing={2} onSubmit={(event) => void handleSubmit(event)} noValidate>
-          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+          <ServerErrorAlert message={errorMessage} />
           <Controller name="addressType" control={form.control} render={({ field, fieldState }) => (
             <TextField {...field} select fullWidth required label="Address type" disabled={isSubmitting} error={fieldState.invalid} helperText={fieldState.error?.message}>
               {addressTypes.map((addressType) => <MenuItem key={addressType} value={addressType}>{addressTypeLabel(addressType)}</MenuItem>)}
@@ -75,12 +83,7 @@ export function AddressDialog({ open, address, isSubmitting, errorMessage, onClo
           </Stack>
           <Controller name="isPrimary" control={form.control} render={({ field }) => <FormControlLabel control={<Checkbox checked={field.value} onChange={(event) => field.onChange(event.target.checked)} disabled={isSubmitting} />} label="Make primary for this type" />} />
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <AppButton onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
-        <AppButton type="submit" form="address-form" variant="contained" disabled={isSubmitting || !form.formState.isValid}>{isSubmitting ? 'Saving' : 'Save address'}</AppButton>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }
 

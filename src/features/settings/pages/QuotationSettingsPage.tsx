@@ -4,7 +4,6 @@ import Box from '@mui/material/Box';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
@@ -16,6 +15,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import {
   getQuotationSettingsRequest,
   quotationSettingsQueryKey,
@@ -83,7 +83,7 @@ export function QuotationSettingsPage() {
   return (
     <SettingsPageShell title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences.">
       <Stack component="form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate>
-        {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+        <ServerErrorAlert message={serverError} />
         {form.formState.isDirty ? <Alert severity="info">You have unsaved changes.</Alert> : null}
         <SettingsSection title="Quotation numbering">
           <TwoColumnGrid>
@@ -144,9 +144,7 @@ export function QuotationSettingsPage() {
           <AppButton type="submit" variant="contained" disabled={isBusy || !form.formState.isDirty}>{isBusy ? 'Saving' : 'Save changes'}</AppButton>
         </Stack>
       </Stack>
-      <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </SettingsPageShell>
   );
 }

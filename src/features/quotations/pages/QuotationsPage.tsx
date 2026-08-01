@@ -1,8 +1,6 @@
 import NoteAddOutlinedIcon from '@mui/icons-material/NoteAddOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import TablePagination from '@mui/material/TablePagination';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +10,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar } from '@shared/ui/feedback';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
@@ -265,15 +264,13 @@ export function QuotationsPage() {
       ) : null}
 
       {/* Feedback Snackbar */}
-      <Snackbar
+      <AppSnackbar
         open={feedback.open}
         autoHideDuration={4000}
+        message={feedback.message}
+        severity={feedback.severity}
         onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
-      >
-        <Alert severity={feedback.severity} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
-          {feedback.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

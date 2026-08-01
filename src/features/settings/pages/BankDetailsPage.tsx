@@ -1,8 +1,6 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +11,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import {
   bankDetailsQueryKey,
   createBankDetailRequest,
@@ -150,7 +149,7 @@ export function BankDetailsPage() {
           </Box>
           <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={openAddDialog}>Add Bank Account</AppButton>
         </Stack>
-        {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+        <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
         <RefreshIndicator show={showRefreshing} />
         <Box aria-busy={query.isPending || showRefreshing}>
         {bankDetails.length === 0 ? (
@@ -183,9 +182,7 @@ export function BankDetailsPage() {
           if (deletingBankDetail !== null) await deleteMutation.mutateAsync(deletingBankDetail.id);
         }}
       />
-      <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </SettingsPageShell>
   );
 }

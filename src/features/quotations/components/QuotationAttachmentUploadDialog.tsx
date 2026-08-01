@@ -1,10 +1,5 @@
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import LinearProgress from '@mui/material/LinearProgress';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -14,6 +9,8 @@ import React, { useRef, useState } from 'react';
 
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
+import { AppDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { uploadQuotationAttachmentRequest } from '../api/quotation-attachments.api';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
 import { formatFileSize } from '../quotation-attachments.utils';
@@ -146,13 +143,35 @@ export function QuotationAttachmentUploadDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth aria-labelledby="upload-attachment-dialog-title">
-      <form onSubmit={handleSubmit} aria-busy={uploadMutation.isPending}>
-        <DialogTitle id="upload-attachment-dialog-title">Upload Quotation Attachment</DialogTitle>
-
-        <DialogContent dividers>
+    <AppDialog
+      open={open}
+      onClose={handleClose}
+      preventClose={uploadMutation.isPending}
+      maxWidth="sm"
+      fullWidth
+      title="Upload Quotation Attachment"
+      contentDividers
+      actions={
+        <>
+          <AppButton onClick={handleClose} disabled={uploadMutation.isPending}>
+            Cancel
+          </AppButton>
+          <AppButton
+            type="submit"
+            form="quotation-attachment-upload-form"
+            variant="contained"
+            disabled={!selectedFile || remainingCapacity <= 0}
+            isLoading={uploadMutation.isPending}
+            loadingPosition="start"
+          >
+            {uploadMutation.isPending ? 'Uploading...' : 'Upload Attachment'}
+          </AppButton>
+        </>
+      }
+    >
+      <Box component="form" id="quotation-attachment-upload-form" onSubmit={handleSubmit} aria-busy={uploadMutation.isPending}>
           <Stack spacing={2.5}>
-            {validationError && <Alert severity="error">{validationError}</Alert>}
+            <ServerErrorAlert message={validationError} />
 
             <Typography variant="body2" color="text.secondary">
               Attach supporting documents (technical specifications, layouts, drawings, terms). Attachments are stored securely and separate from generated quotation PDFs.
@@ -237,23 +256,7 @@ export function QuotationAttachmentUploadDialog({
               </Box>
             )}
           </Stack>
-        </DialogContent>
-
-        <DialogActions>
-          <AppButton onClick={handleClose} disabled={uploadMutation.isPending}>
-            Cancel
-          </AppButton>
-          <AppButton
-            type="submit"
-            variant="contained"
-            disabled={!selectedFile || remainingCapacity <= 0}
-            isLoading={uploadMutation.isPending}
-            loadingPosition="start"
-          >
-            {uploadMutation.isPending ? 'Uploading...' : 'Upload Attachment'}
-          </AppButton>
-        </DialogActions>
-      </form>
-    </Dialog>
+      </Box>
+    </AppDialog>
   );
 }

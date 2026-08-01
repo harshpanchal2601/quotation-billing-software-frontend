@@ -13,6 +13,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AppBrand } from '@shared/components/brand/AppBrand';
 import { PasswordField } from '@shared/components/common/PasswordField';
 import { AppButton } from '@shared/ui/actions';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
 import { useAuth } from '../hooks/useAuth';
 import { loginSchema, type LoginFormValues } from '../model/auth.schema';
@@ -58,7 +59,7 @@ export function LoginPage() {
                 <Typography color="text.secondary">Sign in to manage companies, items and quotations.</Typography>
               </Box>
               {sessionMessage ? <Alert severity="info" onClose={clearSessionMessage}>{sessionMessage}</Alert> : null}
-              {authError ? <Alert severity="error">{authError.message}</Alert> : null}
+              <ServerErrorAlert message={authError?.message} />
               <Controller
                 name="identifier"
                 control={form.control}

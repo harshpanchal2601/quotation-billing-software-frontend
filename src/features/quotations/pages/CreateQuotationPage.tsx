@@ -1,6 +1,4 @@
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -8,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { getQuotationSettingsRequest } from '../../settings/api/quotation-settings.api';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
+import { AppSnackbar } from '@shared/ui/feedback';
 import { createQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
 import { quotationsQueryKeys } from '../quotations.query-keys';
@@ -104,15 +103,13 @@ export function CreateQuotationPage() {
         }}
       />
 
-      <Snackbar
+      <AppSnackbar
         open={feedback.open}
         autoHideDuration={4000}
+        message={feedback.message}
+        severity={feedback.severity}
         onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
-      >
-        <Alert severity={feedback.severity} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
-          {feedback.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

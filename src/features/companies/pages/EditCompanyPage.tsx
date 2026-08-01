@@ -1,6 +1,4 @@
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
 import { getCompanyRequest, updateCompanyRequest } from '../api/companies.api';
@@ -45,9 +44,7 @@ export function EditCompanyPage() {
         <Typography color="text.secondary">Company contacts and addresses are managed from the details page.</Typography>
       </Stack>
       <CompanyForm mode="edit" company={query.data} isSubmitting={mutation.isPending} errorMessage={errorMessage} onSubmit={async (values) => { setErrorMessage(null); await mutation.mutateAsync(values); }} onCancel={() => navigate(`${paths.companies}/${companyId}`)} />
-      <Snackbar open={successMessage !== null} autoHideDuration={4000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled">{successMessage}</Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </Stack>
   );
 }

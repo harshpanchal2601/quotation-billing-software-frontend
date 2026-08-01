@@ -1,6 +1,4 @@
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
+import { AppSnackbar } from '@shared/ui/feedback';
 import { createItemRequest } from '../api/items.api';
 
 import { ItemForm } from '../components/ItemForm';
@@ -72,15 +71,7 @@ export function CreateItemPage() {
         serverError={serverError}
       />
 
-      <Snackbar
-        open={snackbarMessage !== null}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSnackbarMessage(null)}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      <AppSnackbar open={snackbarMessage !== null} autoHideDuration={4000} message={snackbarMessage} onClose={() => setSnackbarMessage(null)} />
     </Stack>
   );
 }

@@ -7,7 +7,6 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -28,6 +27,7 @@ import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
@@ -161,16 +161,7 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
           <Skeleton variant="rectangular" height={48} />
         </Stack>
       ) : isError ? (
-        <Alert
-          severity="error"
-          action={
-            <AppButton color="inherit" size="small" onClick={() => refetch()}>
-              Retry
-            </AppButton>
-          }
-        >
-          {toApiError(error).message}
-        </Alert>
+        <ErrorState message={toApiError(error).message} onRetry={() => void refetch()} />
       ) : attachments.length === 0 ? (
         <Box sx={{ text: 'center', py: 4, px: 2, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
           <UploadFileOutlinedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />

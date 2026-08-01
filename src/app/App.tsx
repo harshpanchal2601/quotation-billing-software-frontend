@@ -1,8 +1,7 @@
-import Alert from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
 import { Outlet } from 'react-router-dom';
 
 import { useAuth } from '@features/auth';
+import { AppSnackbar } from '@shared/ui/feedback';
 
 export function App() {
   const { sessionMessage, clearSessionMessage } = useAuth();
@@ -10,11 +9,13 @@ export function App() {
   return (
     <>
       <Outlet />
-      <Snackbar open={sessionMessage !== null} autoHideDuration={6000} onClose={clearSessionMessage}>
-        <Alert severity="info" onClose={clearSessionMessage} variant="filled">
-          {sessionMessage}
-        </Alert>
-      </Snackbar>
+      <AppSnackbar
+        open={sessionMessage !== null}
+        autoHideDuration={6000}
+        message={sessionMessage}
+        severity="info"
+        onClose={clearSessionMessage}
+      />
     </>
   );
 }

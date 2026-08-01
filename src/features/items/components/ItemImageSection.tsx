@@ -1,15 +1,9 @@
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +12,8 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { SafeImage } from '@shared/components/common/SafeImage';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
+import { DeleteConfirmDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { deleteItemImageRequest, uploadItemImageRequest } from '../api/items.api';
 import { itemsQueryKeys } from '../items.query-keys';
 import type { ItemDetail } from '../items.types';
@@ -131,7 +127,7 @@ export function ItemImageSection({ item, onSuccess }: ItemImageSectionProps) {
             </Typography>
           </Box>
 
-          {errorMessage ? <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert> : null}
+          <ServerErrorAlert message={errorMessage} onDismiss={() => setErrorMessage(null)} />
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center">
             <Box
@@ -222,27 +218,18 @@ export function ItemImageSection({ item, onSuccess }: ItemImageSectionProps) {
         </Stack>
       </CardContent>
 
-      <Dialog open={deleteConfirmOpen} onClose={isBusy ? undefined : () => setDeleteConfirmOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Remove Product Image</DialogTitle>
-        <DialogContent>
-          <DialogContentText pt={1}>
-            Are you sure you want to remove the image for <strong>{item.name}</strong>?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <AppButton onClick={() => setDeleteConfirmOpen(false)} disabled={isBusy}>
-            Cancel
-          </AppButton>
-          <AppButton
-            variant="contained"
-            color="error"
-            onClick={() => void deleteMutation.mutateAsync().catch(() => undefined)}
-            isLoading={deleteMutation.isPending}
-          >
-            Remove Image
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      <DeleteConfirmDialog
+        open={deleteConfirmOpen}
+        title="Remove Product Image"
+        confirmLabel="Remove Image"
+        isDeleting={deleteMutation.isPending}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={() => void deleteMutation.mutateAsync().catch(() => undefined)}
+      >
+        <Typography color="text.secondary" pt={1}>
+          Are you sure you want to remove the image for <strong>{item.name}</strong>?
+        </Typography>
+      </DeleteConfirmDialog>
     </Card>
   );
 }

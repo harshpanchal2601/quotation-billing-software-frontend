@@ -1,14 +1,11 @@
-import Alert from '@mui/material/Alert';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { toApiError } from '@shared/api/apiClient';
-import { AppButton } from '@shared/ui/actions';
+import { DeleteConfirmDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { deleteQuotationAttachmentRequest } from '../api/quotation-attachments.api';
 import type { QuotationAttachment } from '../quotation-attachments.types';
 import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
@@ -63,37 +60,23 @@ export function QuotationAttachmentDeleteDialog({
   if (!attachment) return null;
 
   return (
-    <Dialog
+    <DeleteConfirmDialog
       open={open}
+      title="Delete Attachment?"
+      confirmLabel={deleteMutation.isPending ? 'Deleting...' : 'Delete Attachment'}
+      isDeleting={deleteMutation.isPending}
       onClose={handleClose}
-      maxWidth="xs"
-      fullWidth
-      aria-labelledby="delete-attachment-dialog-title"
+      onConfirm={handleConfirm}
     >
-      <DialogTitle id="delete-attachment-dialog-title">Delete Attachment?</DialogTitle>
-      <DialogContent>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <Stack spacing={1}>
+        <ServerErrorAlert message={error} />
         <Typography variant="body2" gutterBottom>
           Are you sure you want to delete <strong>{attachment.originalFilename}</strong> ({attachment.fileCategory}, {formatFileSize(attachment.fileSize)})?
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
           This will remove the stored attachment file. The quotation itself, its financial totals, status, and generated PDFs will remain unchanged.
         </Typography>
-      </DialogContent>
-      <DialogActions>
-        <AppButton onClick={handleClose} autoFocus disabled={deleteMutation.isPending}>
-          Cancel
-        </AppButton>
-        <AppButton
-          onClick={handleConfirm}
-          color="error"
-          variant="contained"
-          isLoading={deleteMutation.isPending}
-          loadingPosition="start"
-        >
-          {deleteMutation.isPending ? 'Deleting...' : 'Delete Attachment'}
-        </AppButton>
-      </DialogActions>
-    </Dialog>
+      </Stack>
+    </DeleteConfirmDialog>
   );
 }

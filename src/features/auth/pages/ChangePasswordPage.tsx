@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -13,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { PasswordField } from '@shared/components/common/PasswordField';
 import { AppButton } from '@shared/ui/actions';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
 import { useAuth } from '../hooks/useAuth';
 import { changePasswordSchema, type ChangePasswordFormValues } from '../model/auth.schema';
@@ -49,7 +49,7 @@ export function ChangePasswordPage() {
       <Card>
         <CardContent>
           <Stack component="form" spacing={2.25} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isChangingPassword}>
-            {authError ? <Alert severity="error">{authError.message}</Alert> : null}
+            <ServerErrorAlert message={authError?.message} />
             <Controller name="currentPassword" control={form.control} render={({ field, fieldState }) => (
               <PasswordField {...field} fullWidth label="Current password" autoComplete="current-password" error={fieldState.invalid} helperText={fieldState.error?.message} disabled={isChangingPassword} />
             )} />

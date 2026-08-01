@@ -1,5 +1,3 @@
-import Alert from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
+import { AppSnackbar } from '@shared/ui/feedback';
 import { createCompanyRequest } from '../api/companies.api';
 import { companiesQueryKeys } from '../companies.query-keys';
 import { CompanyForm } from '../components/CompanyForm';
@@ -40,9 +39,7 @@ export function CreateCompanyPage() {
         <Typography color="text.secondary">Create a company with an optional primary contact and addresses.</Typography>
       </Stack>
       <CompanyForm mode="create" isSubmitting={mutation.isPending} errorMessage={errorMessage} onSubmit={handleSubmit} onCancel={() => navigate(paths.companies)} />
-      <Snackbar open={successMessage !== null} autoHideDuration={4000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled">{successMessage}</Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </Stack>
   );
 }

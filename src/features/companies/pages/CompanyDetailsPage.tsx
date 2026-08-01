@@ -3,12 +3,10 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -19,6 +17,7 @@ import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParam
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -169,7 +168,7 @@ export function CompanyDetailsPage() {
           </Menu>
         </Stack>
       </Stack>
-      {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+      <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
       <Tabs value={selectedTab} onChange={(_event, value: CompanyTab) => setSearchParams((current) => { const next = new URLSearchParams(current); next.set('tab', value); return next; })} variant="scrollable" allowScrollButtonsMobile>
         <Tab label="Overview" value="overview" />
         <Tab label="Contacts" value="contacts" />
@@ -224,9 +223,7 @@ export function CompanyDetailsPage() {
       />
       <CompanyStatusDialog company={statusOpen ? company : null} isSubmitting={statusMutation.isPending} onClose={() => setStatusOpen(false)} onConfirm={async () => { await statusMutation.mutateAsync(); }} />
       <DeleteCompanyDialog company={deleteOpen ? company : null} isDeleting={deleteMutation.isPending} onClose={() => setDeleteOpen(false)} onConfirm={() => deleteMutation.mutateAsync()} />
-      <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </Stack>
   );
 }

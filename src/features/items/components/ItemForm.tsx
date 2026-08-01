@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -17,6 +16,7 @@ import { useForm } from 'react-hook-form';
 import { categoriesQueryKeys, getCategoryOptionsRequest } from '@features/categories';
 import { getMeasurementUnitOptionsRequest, measurementUnitsQueryKeys } from '@features/measurement-units';
 import { AppButton } from '@shared/ui/actions';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { itemFormSchema, type ItemFormValues } from '../items.schema';
 import type { ItemDetail } from '../items.types';
 import { formatItemSourceTypeLabel } from '../items.utils';
@@ -97,7 +97,7 @@ export function ItemForm({
   return (
     <Box component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
       <Stack spacing={3}>
-        {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+        <ServerErrorAlert message={serverError} />
 
         <Card variant="outlined">
           <CardContent sx={{ p: 3 }}>

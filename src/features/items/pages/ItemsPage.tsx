@@ -1,9 +1,7 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
@@ -16,6 +14,7 @@ import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -142,7 +141,7 @@ export function ItemsPage() {
         </AppButton>
       </Stack>
 
-      {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+      <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
 
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -359,15 +358,7 @@ export function ItemsPage() {
         }}
       />
 
-      <Snackbar
-        open={successMessage !== null}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </Stack>
   );
 }

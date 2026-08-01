@@ -1,16 +1,13 @@
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import { AppButton } from '@shared/ui/actions';
+import { AppDialog } from '@shared/ui/dialogs';
 import type { QuotationStatus } from '../quotations.types';
 import { formatQuotationStatusLabel, getValidNextStatuses } from '../quotations.utils';
 
@@ -43,16 +40,40 @@ export function QuotationStatusDialog({
   };
 
   return (
-    <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)} fullWidth maxWidth="xs">
-      <DialogTitle>Update Quotation Status</DialogTitle>
-      <DialogContent sx={{ pt: 1 }}>
-        <DialogContentText sx={{ mb: 2 }}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      preventClose={isSubmitting}
+      fullWidth
+      maxWidth="xs"
+      title="Update Quotation Status"
+      contentProps={{ sx: { pt: 1 } }}
+      actionsProps={{ sx: { px: 3, pb: 2 } }}
+      actions={
+        <>
+          <AppButton onClick={onClose} color="inherit" disabled={isSubmitting}>
+            Cancel
+          </AppButton>
+          <AppButton
+            onClick={handleConfirm}
+            variant="contained"
+            color="primary"
+            disabled={!targetStatus || allowedNext.length === 0}
+            isLoading={isSubmitting}
+            loadingPosition="start"
+          >
+            {isSubmitting ? 'Updating...' : 'Update Status'}
+          </AppButton>
+        </>
+      }
+    >
+        <Typography color="text.secondary" sx={{ mb: 2 }}>
           Change status for quotation <strong>{quotationNumber}</strong> (Current: {formatQuotationStatusLabel(currentStatus)}).
-        </DialogContentText>
+        </Typography>
         {allowedNext.length === 0 ? (
-          <DialogContentText color="error">
+          <Typography color="error">
             This quotation is in a terminal status ({formatQuotationStatusLabel(currentStatus)}) and cannot transition to any other status.
-          </DialogContentText>
+          </Typography>
         ) : (
           <>
             <FormControl fullWidth size="small" sx={{ mb: 2 }}>
@@ -84,22 +105,6 @@ export function QuotationStatusDialog({
             />
           </>
         )}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <AppButton onClick={onClose} color="inherit" disabled={isSubmitting}>
-          Cancel
-        </AppButton>
-        <AppButton
-          onClick={handleConfirm}
-          variant="contained"
-          color="primary"
-          disabled={!targetStatus || allowedNext.length === 0}
-          isLoading={isSubmitting}
-          loadingPosition="start"
-        >
-          {isSubmitting ? 'Updating...' : 'Update Status'}
-        </AppButton>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

@@ -3,14 +3,8 @@ import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutli
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -19,6 +13,8 @@ import { useState, type PropsWithChildren } from 'react';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
 import { AppButton } from '@shared/ui/actions';
+import { DeleteConfirmDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import type { CompanyAddress, CompanyContact, CompanyDetail } from '../companies.types';
 import { addressTypeLabel, formatAddress, formatReadableDate, unavailable } from '../companies.utils';
 
@@ -85,7 +81,7 @@ export function ContactsSection({
   return (
     <Stack spacing={2}>
       <SectionHeader title="Contacts" actionLabel="Add contact" onAction={onAdd} />
-      {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+      <ServerErrorAlert message={errorMessage} />
       {contacts.length === 0 ? <EmptyState title="No contacts yet" description="Add contacts for quotation communication." /> : (
         <Stack spacing={1.5}>
           {contacts.map((contact) => (
@@ -146,7 +142,7 @@ export function AddressesSection({
   return (
     <Stack spacing={2}>
       <SectionHeader title="Addresses" actionLabel="Add address" onAction={onAdd} />
-      {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+      <ServerErrorAlert message={errorMessage} />
       {addresses.length === 0 ? <EmptyState title="No addresses yet" description="Add billing and shipping addresses for quotation snapshots." /> : (
         <Stack spacing={1.5}>
           {addresses.map((address) => (
@@ -216,13 +212,15 @@ function SectionHeader({ title, actionLabel, onAction }: { title: string; action
 
 function DeleteChildDialog({ open, title, description, isSubmitting, onClose, onConfirm }: { open: boolean; title: string; description: string; isSubmitting: boolean; onClose: () => void; onConfirm: () => Promise<void> }) {
   return (
-    <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)}>
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent><DialogContentText>{description}</DialogContentText></DialogContent>
-      <DialogActions>
-        <AppButton autoFocus onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
-        <AppButton color="error" onClick={() => void onConfirm().catch(() => undefined)} disabled={isSubmitting}>Delete</AppButton>
-      </DialogActions>
-    </Dialog>
+    <DeleteConfirmDialog
+      open={open}
+      title={title}
+      confirmLabel="Delete"
+      isDeleting={isSubmitting}
+      onClose={onClose}
+      onConfirm={() => void onConfirm().catch(() => undefined)}
+    >
+      <Typography color="text.secondary">{description}</Typography>
+    </DeleteConfirmDialog>
   );
 }

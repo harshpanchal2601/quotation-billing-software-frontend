@@ -1,7 +1,6 @@
 import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -9,7 +8,6 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -25,6 +23,7 @@ import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-r
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { SafeImage } from '@shared/components/common/SafeImage';
 import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -151,7 +150,7 @@ export function ItemDetailsPage() {
         </Stack>
       </Stack>
 
-      {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+      <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
         <Card variant="outlined" sx={{ width: { xs: '100%', md: 280 }, flexShrink: 0 }}>
@@ -362,15 +361,7 @@ export function ItemDetailsPage() {
         }}
       />
 
-      <Snackbar
-        open={successMessage !== null}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </Stack>
   );
 }

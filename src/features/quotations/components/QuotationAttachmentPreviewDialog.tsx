@@ -1,12 +1,6 @@
-import CloseIcon from '@mui/icons-material/Close';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -14,7 +8,9 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 
-import { AppButton, AppIconButton } from '@shared/ui/actions';
+import { AppButton } from '@shared/ui/actions';
+import { AppDialog } from '@shared/ui/dialogs';
+import { InlineLoader, ServerErrorAlert } from '@shared/ui/feedback';
 import {
   downloadQuotationAttachmentBlobRequest,
   getQuotationAttachmentPreviewBlobRequest,
@@ -128,31 +124,47 @@ export function QuotationAttachmentPreviewDialog({
   const isText = attachment.mimeType === 'text/plain';
 
   return (
-    <Dialog
+    <AppDialog
       open={open}
       onClose={handleClose}
       fullWidth
       maxWidth="md"
       fullScreen={fullScreen}
-      aria-labelledby="attachment-preview-dialog-title"
+      showCloseButton
+      closeButtonLabel="Close attachment preview"
+      title={
+        <Box>
+          <Typography variant="h6" component="div" noWrap fontWeight={600}>
+            {attachment.originalFilename}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {attachment.fileCategory} • {formatFileSize(attachment.fileSize)}
+          </Typography>
+        </Box>
+      }
+      titleProps={{ sx: { m: 0, p: 2, pr: 6 } }}
+      contentDividers
+      contentProps={{ sx: { p: 2, bgcolor: 'grey.50', display: 'flex', flexDirection: 'column', minHeight: 400 } }}
+      actionsProps={{ sx: { p: 2, justifyContent: 'space-between' } }}
+      actions={
+        <>
+          <Typography variant="caption" color="text.secondary">
+            Uploaded: {new Date(attachment.uploadedAt).toLocaleDateString()}
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            <AppButton onClick={handleClose}>Close</AppButton>
+            <AppButton
+              variant="contained"
+              startIcon={<DownloadOutlinedIcon />}
+              onClick={handleDownload}
+              disabled={downloading}
+            >
+              {downloading ? 'Downloading...' : 'Download'}
+            </AppButton>
+          </Stack>
+        </>
+      }
     >
-      <DialogTitle id="attachment-preview-dialog-title" sx={{ m: 0, p: 2, pr: 6 }}>
-        <Typography variant="h6" component="div" noWrap fontWeight={600}>
-          {attachment.originalFilename}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {attachment.fileCategory} • {formatFileSize(attachment.fileSize)}
-        </Typography>
-        <AppIconButton
-          label="Close attachment preview"
-          onClick={handleClose}
-          sx={{ position: 'absolute', right: 8, top: 8, color: 'grey.500' }}
-        >
-          <CloseIcon />
-        </AppIconButton>
-      </DialogTitle>
-
-      <DialogContent dividers sx={{ p: 2, bgcolor: 'grey.50', display: 'flex', flexDirection: 'column', minHeight: 400 }}>
         {!attachment.canPreview ? (
           <Box sx={{ my: 'auto', textAlign: 'center', p: 3 }}>
             <Alert severity="info" sx={{ maxWidth: 480, mx: 'auto', textAlign: 'left', mb: 2 }}>
@@ -173,15 +185,12 @@ export function QuotationAttachmentPreviewDialog({
           </Box>
         ) : loading ? (
           <Box sx={{ my: 'auto', textAlign: 'center', p: 4 }}>
-            <CircularProgress size={40} sx={{ mb: 2 }} />
-            <Typography variant="body2" color="text.secondary">
-              Loading preview...
-            </Typography>
+            <InlineLoader size={40} label="Loading preview..." direction="column" />
           </Box>
         ) : error ? (
-          <Alert severity="error" sx={{ my: 'auto' }}>
-            {error}
-          </Alert>
+          <Box sx={{ my: 'auto' }}>
+            <ServerErrorAlert message={error} />
+          </Box>
         ) : isPdf && blobUrl ? (
           <Box
             component="iframe"
@@ -236,24 +245,6 @@ export function QuotationAttachmentPreviewDialog({
             {textContent}
           </Paper>
         ) : null}
-      </DialogContent>
-
-      <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
-        <Typography variant="caption" color="text.secondary">
-          Uploaded: {new Date(attachment.uploadedAt).toLocaleDateString()}
-        </Typography>
-        <Stack direction="row" spacing={1}>
-          <AppButton onClick={handleClose}>Close</AppButton>
-          <AppButton
-            variant="contained"
-            startIcon={<DownloadOutlinedIcon />}
-            onClick={handleDownload}
-            disabled={downloading}
-          >
-            {downloading ? 'Downloading...' : 'Download'}
-          </AppButton>
-        </Stack>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }

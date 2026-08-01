@@ -1,9 +1,7 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
@@ -16,6 +14,7 @@ import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -102,7 +101,7 @@ export function CompaniesPage() {
         </Box>
         <AppButton component={RouterLink} to={paths.newCompany} variant="contained" startIcon={<AddOutlinedIcon />}>Add Company</AppButton>
       </Stack>
-      {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+      <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
         <TextField label="Search companies" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} fullWidth />
         <TextField select label="Status" value={params.isActive === undefined ? 'all' : String(params.isActive)} onChange={(event) => updateSearchParams(setSearchParams, { isActive: event.target.value === 'all' ? undefined : event.target.value === 'true', page: 1 })} sx={{ minWidth: { xs: 0, md: 160 }, width: { xs: '100%', md: 'auto' } }}>
@@ -153,9 +152,7 @@ export function CompaniesPage() {
       </Box>
       <CompanyStatusDialog company={statusTarget} isSubmitting={statusMutation.isPending} onClose={() => setStatusTarget(null)} onConfirm={async () => { if (statusTarget) await statusMutation.mutateAsync(statusTarget); }} />
       <DeleteCompanyDialog company={deleteTarget} isDeleting={deleteMutation.isPending} onClose={() => setDeleteTarget(null)} onConfirm={async () => { if (deleteTarget) await deleteMutation.mutateAsync(deleteTarget); }} />
-      <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert>
-      </Snackbar>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </Stack>
   );
 }
