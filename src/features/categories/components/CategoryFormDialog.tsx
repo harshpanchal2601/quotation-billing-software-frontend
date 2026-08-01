@@ -1,9 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Box from '@mui/material/Box';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormHelperText from '@mui/material/FormHelperText';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +8,7 @@ import { useForm } from 'react-hook-form';
 
 import { toApiError } from '@shared/api/apiClient';
 import { applyApiFieldErrors, FormActions } from '@shared/forms';
+import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { FormDialogShell } from '@shared/ui/dialogs';
 import { createCategoryRequest, updateCategoryRequest } from '../api/categories.api';
@@ -42,15 +39,10 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
     },
   });
   const {
-    register,
     handleSubmit,
     reset,
-    watch,
-    setValue,
-    formState: { errors },
+    control,
   } = form;
-
-  const isActiveValue = watch('isActive');
 
   useEffect(() => {
     if (open) {
@@ -127,13 +119,11 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
       <Stack spacing={2.5}>
         <ServerErrorAlert message={serverError} />
 
-        <TextField
+        <ControlledTextField
+          control={control}
+          name="name"
           label="Category name"
           required
-          fullWidth
-          {...register('name')}
-          error={Boolean(errors.name)}
-          helperText={errors.name?.message}
         />
 
         {isEditing && category ? (
@@ -150,37 +140,26 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
           </Typography>
         )}
 
-        <TextField
+        <ControlledTextField
+          control={control}
+          name="description"
           label="Description"
           multiline
           rows={3}
-          fullWidth
-          {...register('description')}
-          error={Boolean(errors.description)}
-          helperText={errors.description?.message ?? 'Optional brief description for the category.'}
+          helperText="Optional brief description for the category."
         />
 
-        <Box>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isActiveValue}
-                onChange={(e) => setValue('isActive', e.target.checked)}
-                disabled={isProtected || mutation.isPending}
-              />
-            }
-            label="Active category"
-          />
-          {isProtected ? (
-            <FormHelperText error={false}>
-              The default Uncategorised category cannot be deactivated.
-            </FormHelperText>
-          ) : (
-            <FormHelperText>
-              Inactive categories cannot be selected when creating or updating items.
-            </FormHelperText>
-          )}
-        </Box>
+        <ControlledSwitch
+          control={control}
+          name="isActive"
+          label="Active category"
+          disabled={isProtected || mutation.isPending}
+          helperText={
+            isProtected
+              ? 'The default Uncategorised category cannot be deactivated.'
+              : 'Inactive categories cannot be selected when creating or updating items.'
+          }
+        />
       </Stack>
     </FormDialogShell>
   );

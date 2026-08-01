@@ -1,6 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -8,7 +6,8 @@ import Typography from '@mui/material/Typography';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import { AppButton } from '@shared/ui/actions';
+import { FormActions } from '@shared/forms';
+import { ControlledCheckbox, ControlledTextField } from '@shared/forms/controlled';
 import { AppDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 
@@ -57,10 +56,13 @@ export function AddressDialog({ open, address, isSubmitting, errorMessage, onClo
       maxWidth="sm"
       title={address ? 'Edit address' : 'Add address'}
       actions={
-        <>
-          <AppButton onClick={onClose} disabled={isSubmitting}>Cancel</AppButton>
-          <AppButton type="submit" form="address-form" variant="contained" disabled={isSubmitting || !form.formState.isValid}>{isSubmitting ? 'Saving' : 'Save address'}</AppButton>
-        </>
+        <FormActions
+          submitLabel={isSubmitting ? 'Saving' : 'Save address'}
+          isSubmitting={isSubmitting}
+          isSubmitDisabled={isSubmitting || !form.formState.isValid}
+          onCancel={onClose}
+          submitButtonProps={{ form: 'address-form' }}
+        />
       }
     >
         <Typography color="text.secondary" mb={2}>One primary address is allowed for each address type.</Typography>
@@ -81,7 +83,7 @@ export function AddressDialog({ open, address, isSubmitting, errorMessage, onClo
             <AddressTextField control={form.control} name="postalCode" label="Postal code" disabled={isSubmitting} />
             <AddressTextField control={form.control} name="country" label="Country" required disabled={isSubmitting} />
           </Stack>
-          <Controller name="isPrimary" control={form.control} render={({ field }) => <FormControlLabel control={<Checkbox checked={field.value} onChange={(event) => field.onChange(event.target.checked)} disabled={isSubmitting} />} label="Make primary for this type" />} />
+          <ControlledCheckbox control={form.control} name="isPrimary" label="Make primary for this type" disabled={isSubmitting} />
         </Stack>
     </AppDialog>
   );
@@ -90,7 +92,7 @@ export function AddressDialog({ open, address, isSubmitting, errorMessage, onClo
 type AddressTextFieldName = Exclude<keyof AddressFormValues, 'addressType' | 'isPrimary'>;
 
 function AddressTextField({ control, name, label, disabled, required }: { control: ReturnType<typeof useForm<AddressFormValues>>['control']; name: AddressTextFieldName; label: string; disabled: boolean; required?: boolean }) {
-  return <Controller name={name} control={control} render={({ field, fieldState }) => <TextField {...field} fullWidth required={required} label={label} disabled={disabled} error={fieldState.invalid} helperText={fieldState.error?.message} />} />;
+  return <ControlledTextField control={control} name={name} required={required} label={label} disabled={disabled} />;
 }
 
 function addressToFormValues(address: CompanyAddress | null): AddressFormValues {

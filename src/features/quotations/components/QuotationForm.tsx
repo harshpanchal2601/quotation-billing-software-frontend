@@ -17,7 +17,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { getItemOptionsRequest } from '../../items/api/items.api';
 import { listBankDetailsRequest } from '../../settings/api/bank-details.api';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
-import { AppButton } from '@shared/ui/actions';
+import { FormActions } from '@shared/forms';
+import { ControlledTextField } from '@shared/forms/controlled';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { calculatePreviewRequest } from '../api/quotations.api';
@@ -323,18 +324,13 @@ export function QuotationForm({
                   )}
                 />
 
-                <Controller
-                  name="currency"
+                <ControlledTextField
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Currency Code"
-                      placeholder="INR"
-                      inputProps={{ maxLength: 3 }}
-                    />
-                  )}
+                  name="currency"
+                  size="small"
+                  label="Currency Code"
+                  placeholder="INR"
+                  inputProps={{ maxLength: 3 }}
                 />
 
                 <Controller
@@ -483,66 +479,50 @@ export function QuotationForm({
               </Box>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                <Controller
+                <ControlledTextField
+                  control={control}
                   name="remarks"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      value={field.value || ''}
-                      size="small"
-                      multiline
-                      rows={3}
-                      label="Customer Remarks"
-                      placeholder="Remarks displayed on quotation..."
-                    />
-                  )}
+                  size="small"
+                  multiline
+                  rows={3}
+                  label="Customer Remarks"
+                  placeholder="Remarks displayed on quotation..."
                 />
 
-                <Controller
+                <ControlledTextField
+                  control={control}
                   name="termsAndConditions"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      value={field.value || ''}
-                      size="small"
-                      multiline
-                      rows={3}
-                      label="Terms & Conditions"
-                      placeholder="Specific terms and conditions..."
-                    />
-                  )}
+                  size="small"
+                  multiline
+                  rows={3}
+                  label="Terms & Conditions"
+                  placeholder="Specific terms and conditions..."
                 />
 
-                <Controller
-                  name="internalNotes"
+                <ControlledTextField
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      value={field.value || ''}
-                      size="small"
-                      multiline
-                      rows={2}
-                      label="Internal Notes"
-                      placeholder="Internal administrative notes (not shown to customer)..."
-                      sx={{ gridColumn: { xs: '1 / -1', sm: '1 / -1' } }}
-                    />
-                  )}
+                  name="internalNotes"
+                  size="small"
+                  multiline
+                  rows={2}
+                  label="Internal Notes"
+                  placeholder="Internal administrative notes (not shown to customer)..."
+                  sx={{ gridColumn: { xs: '1 / -1', sm: '1 / -1' } }}
                 />
               </Box>
             </CardContent>
           </Card>
 
           {/* Form Action Buttons */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1 }}>
-            <AppButton color="inherit" onClick={onCancel} disabled={isSubmitting}>
-              Cancel
-            </AppButton>
-            <AppButton type="submit" variant="contained" color="primary" isLoading={isSubmitting} loadingPosition="start">
-              {isSubmitting ? 'Saving quotation...' : editingQuotation ? 'Update Draft Quotation' : 'Save Quotation Draft'}
-            </AppButton>
+          <Box sx={{ pt: 1 }}>
+            <FormActions
+              spacing={2}
+              isSubmitting={isSubmitting}
+              onCancel={onCancel}
+              submitLabel={isSubmitting ? 'Saving quotation...' : editingQuotation ? 'Update Draft Quotation' : 'Save Quotation Draft'}
+              cancelButtonProps={{ color: 'inherit' }}
+              submitButtonProps={{ color: 'primary' }}
+            />
           </Box>
         </Stack>
       </form>

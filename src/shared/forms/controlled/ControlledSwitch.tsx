@@ -4,17 +4,23 @@ import FormHelperText from '@mui/material/FormHelperText';
 import Switch, { type SwitchProps } from '@mui/material/Switch';
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 
-export type ControlledSwitchProps<TFieldValues extends FieldValues> = Omit<
+export type ControlledSwitchProps<
+  TFieldValues extends FieldValues,
+  TTransformedValues = TFieldValues,
+> = Omit<
   SwitchProps,
   'name' | 'checked' | 'defaultChecked' | 'onChange' | 'onBlur' | 'inputRef'
 > & {
-  control: Control<TFieldValues>;
+  control: Control<TFieldValues, unknown, TTransformedValues>;
   name: FieldPath<TFieldValues>;
   label: string;
   helperText?: string;
 };
 
-export function ControlledSwitch<TFieldValues extends FieldValues>({
+export function ControlledSwitch<
+  TFieldValues extends FieldValues,
+  TTransformedValues = TFieldValues,
+>({
   control,
   name,
   label,
@@ -22,7 +28,7 @@ export function ControlledSwitch<TFieldValues extends FieldValues>({
   disabled,
   required,
   ...switchProps
-}: ControlledSwitchProps<TFieldValues>) {
+}: ControlledSwitchProps<TFieldValues, TTransformedValues>) {
   return (
     <Controller
       name={name}

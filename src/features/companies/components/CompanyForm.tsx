@@ -1,15 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useEffect, type PropsWithChildren } from 'react';
-import { Controller, useForm, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
+import { useEffect } from 'react';
+import { useForm, type Control, type FieldPath } from 'react-hook-form';
 
+import { FormActions, FormSection } from '@shared/forms';
+import { ControlledCheckbox, ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 
@@ -79,26 +78,25 @@ function CompanyCreateForm({ isSubmitting, errorMessage, onSubmit, onCancel }: E
         <Divider />
         <FormSection title="Primary contact">
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <TextController control={form.control} name="contact.name" label="Contact name" disabled={isSubmitting} />
-            <TextController control={form.control} name="contact.designation" label="Designation" disabled={isSubmitting} />
+            <ControlledTextField control={form.control} name="contact.name" label="Contact name" disabled={isSubmitting} />
+            <ControlledTextField control={form.control} name="contact.designation" label="Designation" disabled={isSubmitting} />
           </Stack>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <TextController control={form.control} name="contact.email" label="Email" disabled={isSubmitting} />
-            <TextController control={form.control} name="contact.phone" label="Phone" disabled={isSubmitting} />
-            <TextController control={form.control} name="contact.alternatePhone" label="Alternate phone" disabled={isSubmitting} />
+            <ControlledTextField control={form.control} name="contact.email" label="Email" disabled={isSubmitting} />
+            <ControlledTextField control={form.control} name="contact.phone" label="Phone" disabled={isSubmitting} />
+            <ControlledTextField control={form.control} name="contact.alternatePhone" label="Alternate phone" disabled={isSubmitting} />
           </Stack>
         </FormSection>
         <Divider />
         <AddressFields control={form.control} prefix="billingAddress" title="Billing address" disabled={isSubmitting} />
-        <Controller
-          name="useBillingAsShipping"
+        <ControlledCheckbox
           control={form.control}
-          render={({ field }) => (
-            <FormControlLabel control={<Checkbox checked={field.value} onChange={(event) => field.onChange(event.target.checked)} disabled={isSubmitting} />} label="Use billing address as shipping address" />
-          )}
+          name="useBillingAsShipping"
+          label="Use billing address as shipping address"
+          disabled={isSubmitting}
         />
         {!useBillingAsShipping ? <AddressFields control={form.control} prefix="shippingAddress" title="Shipping address" disabled={isSubmitting} /> : null}
-        <FormActions isSubmitting={isSubmitting} isSaveDisabled={!form.formState.isValid || isSubmitting} onCancel={onCancel} submitLabel="Create company" />
+        <FormActions isSubmitting={isSubmitting} isSubmitDisabled={!form.formState.isValid || isSubmitting} onCancel={onCancel} submitLabel="Create company" />
       </Stack>
     </Paper>
   );
@@ -125,13 +123,17 @@ function CompanyEditForm({ company, isSubmitting, errorMessage, onSubmit, onCanc
           <Typography fontWeight={700}>{company.companyCode}</Typography>
         </Box>
         <CompanyFields control={form.control} disabled={isSubmitting} />
-        <Stack direction="row" spacing={1} justifyContent="flex-end">
-          <AppButton onClick={() => form.reset(companyToUpdateValues(company))} disabled={isSubmitting || !form.formState.isDirty}>Reset</AppButton>
-          <AppButton onClick={onCancel} disabled={isSubmitting}>Cancel</AppButton>
-          <AppButton type="submit" variant="contained" disabled={isSubmitting || !form.formState.isValid || !form.formState.isDirty}>
-            {isSubmitting ? 'Saving' : 'Save changes'}
-          </AppButton>
-        </Stack>
+        <FormActions
+          isSubmitting={isSubmitting}
+          isSubmitDisabled={isSubmitting || !form.formState.isValid || !form.formState.isDirty}
+          onCancel={onCancel}
+          submitLabel={isSubmitting ? 'Saving' : 'Save changes'}
+          secondaryAction={
+            <AppButton onClick={() => form.reset(companyToUpdateValues(company))} disabled={isSubmitting || !form.formState.isDirty}>
+              Reset
+            </AppButton>
+          }
+        />
       </Stack>
     </Paper>
   );
@@ -142,20 +144,20 @@ function CompanyFields<TFieldValues extends CompanyCreateFormValues | CompanyUpd
     <>
       <FormSection title="Company information">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextController control={control} name={'name' as FieldPath<TFieldValues>} label="Company name" required disabled={disabled} />
-          <TextController control={control} name={'legalName' as FieldPath<TFieldValues>} label="Legal name" disabled={disabled} />
+          <ControlledTextField control={control} name={'name' as FieldPath<TFieldValues>} label="Company name" required disabled={disabled} />
+          <ControlledTextField control={control} name={'legalName' as FieldPath<TFieldValues>} label="Legal name" disabled={disabled} />
         </Stack>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextController control={control} name={'website' as FieldPath<TFieldValues>} label="Website" disabled={disabled} />
-          <Controller name={'isActive' as FieldPath<TFieldValues>} control={control} render={({ field }) => <FormControlLabel control={<Checkbox checked={Boolean(field.value)} onChange={(event) => field.onChange(event.target.checked)} disabled={disabled} />} label="Active company" />} />
+          <ControlledTextField control={control} name={'website' as FieldPath<TFieldValues>} label="Website" disabled={disabled} />
+          <ControlledCheckbox control={control} name={'isActive' as FieldPath<TFieldValues>} label="Active company" disabled={disabled} />
         </Stack>
       </FormSection>
       <FormSection title="Legal and tax information">
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextController control={control} name={'gstin' as FieldPath<TFieldValues>} label="GSTIN" disabled={disabled} />
-          <TextController control={control} name={'pan' as FieldPath<TFieldValues>} label="PAN" disabled={disabled} />
+          <ControlledTextField control={control} name={'gstin' as FieldPath<TFieldValues>} label="GSTIN" disabled={disabled} />
+          <ControlledTextField control={control} name={'pan' as FieldPath<TFieldValues>} label="PAN" disabled={disabled} />
         </Stack>
-        <TextController control={control} name={'notes' as FieldPath<TFieldValues>} label="Notes" disabled={disabled} multiline minRows={4} />
+        <ControlledTextField control={control} name={'notes' as FieldPath<TFieldValues>} label="Notes" disabled={disabled} multiline minRows={4} />
       </FormSection>
     </>
   );
@@ -164,45 +166,15 @@ function CompanyFields<TFieldValues extends CompanyCreateFormValues | CompanyUpd
 function AddressFields({ control, prefix, title, disabled }: { control: ReturnType<typeof useForm<CompanyCreateFormValues>>['control']; prefix: 'billingAddress' | 'shippingAddress'; title: string; disabled: boolean }) {
   return (
     <FormSection title={title}>
-      <TextController control={control} name={`${prefix}.addressLine1`} label="Address line 1" disabled={disabled} />
-      <TextController control={control} name={`${prefix}.addressLine2`} label="Address line 2" disabled={disabled} />
+      <ControlledTextField control={control} name={`${prefix}.addressLine1`} label="Address line 1" disabled={disabled} />
+      <ControlledTextField control={control} name={`${prefix}.addressLine2`} label="Address line 2" disabled={disabled} />
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <TextController control={control} name={`${prefix}.city`} label="City" disabled={disabled} />
-        <TextController control={control} name={`${prefix}.state`} label="State" disabled={disabled} />
-        <TextController control={control} name={`${prefix}.postalCode`} label="Postal code" disabled={disabled} />
+        <ControlledTextField control={control} name={`${prefix}.city`} label="City" disabled={disabled} />
+        <ControlledTextField control={control} name={`${prefix}.state`} label="State" disabled={disabled} />
+        <ControlledTextField control={control} name={`${prefix}.postalCode`} label="Postal code" disabled={disabled} />
       </Stack>
-      <TextController control={control} name={`${prefix}.country`} label="Country" disabled={disabled} />
+      <ControlledTextField control={control} name={`${prefix}.country`} label="Country" disabled={disabled} />
     </FormSection>
-  );
-}
-
-function TextController<TFieldValues extends FieldValues>({ control, name, label, disabled, required, multiline, minRows }: { control: Control<TFieldValues>; name: FieldPath<TFieldValues>; label: string; disabled: boolean; required?: boolean; multiline?: boolean; minRows?: number }) {
-  return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState }) => (
-        <TextField {...field} value={String(field.value ?? '')} fullWidth required={required} label={label} disabled={disabled} error={fieldState.invalid} helperText={fieldState.error?.message} multiline={multiline} minRows={minRows} />
-      )}
-    />
-  );
-}
-
-function FormSection({ title, children }: PropsWithChildren<{ title: string }>) {
-  return (
-    <Stack spacing={2}>
-      <Typography component="h2" variant="h3">{title}</Typography>
-      {children}
-    </Stack>
-  );
-}
-
-function FormActions({ isSubmitting, isSaveDisabled, onCancel, submitLabel }: { isSubmitting: boolean; isSaveDisabled: boolean; onCancel: () => void; submitLabel: string }) {
-  return (
-    <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1} justifyContent="flex-end">
-      <AppButton onClick={onCancel} disabled={isSubmitting}>Cancel</AppButton>
-      <AppButton type="submit" variant="contained" disabled={isSaveDisabled}>{isSubmitting ? 'Saving' : submitLabel}</AppButton>
-    </Stack>
   );
 }
 

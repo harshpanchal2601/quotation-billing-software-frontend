@@ -1,16 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Box from '@mui/material/Box';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormHelperText from '@mui/material/FormHelperText';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
-import TextField from '@mui/material/TextField';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { toApiError } from '@shared/api/apiClient';
 import { applyApiFieldErrors, FormActions } from '@shared/forms';
+import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
 import { FormDialogShell } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import {
@@ -46,16 +42,13 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
     },
   });
   const {
-    register,
     handleSubmit,
     reset,
     watch,
-    setValue,
-    formState: { errors },
+    control,
   } = form;
 
   const allowDecimalValue = watch('allowDecimal');
-  const isActiveValue = watch('isActive');
 
   useEffect(() => {
     if (open) {
@@ -136,57 +129,41 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
       <Stack spacing={2.5}>
         <ServerErrorAlert message={serverError} />
 
-        <TextField
+        <ControlledTextField
+          control={control}
+          name="name"
           label="Unit name"
           required
-          fullWidth
-          {...register('name')}
-          error={Boolean(errors.name)}
-          helperText={errors.name?.message ?? 'Full name of the unit, e.g., Kilogram, Piece, Meter.'}
+          helperText="Full name of the unit, e.g., Kilogram, Piece, Meter."
         />
 
-        <TextField
+        <ControlledTextField
+          control={control}
+          name="symbol"
           label="Symbol"
           required
-          fullWidth
-          {...register('symbol')}
-          error={Boolean(errors.symbol)}
-          helperText={errors.symbol?.message ?? 'Exact symbol string, e.g., kg, m², NOS, %.'}
+          helperText="Exact symbol string, e.g., kg, m², NOS, %."
         />
 
-        <Box>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={allowDecimalValue}
-                onChange={(e) => setValue('allowDecimal', e.target.checked)}
-                disabled={mutation.isPending}
-              />
-            }
-            label="Allow decimal quantities"
-          />
-          <FormHelperText>
-            {allowDecimalValue
+        <ControlledSwitch
+          control={control}
+          name="allowDecimal"
+          label="Allow decimal quantities"
+          disabled={mutation.isPending}
+          helperText={
+            allowDecimalValue
               ? 'Enabled: fractional quantities such as 1.5 or 0.25 are allowed.'
-              : 'Disabled: only whole integer quantities are allowed.'}
-          </FormHelperText>
-        </Box>
+              : 'Disabled: only whole integer quantities are allowed.'
+          }
+        />
 
-        <Box>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isActiveValue}
-                onChange={(e) => setValue('isActive', e.target.checked)}
-                disabled={mutation.isPending}
-              />
-            }
-            label="Active measurement unit"
-          />
-          <FormHelperText>
-            Inactive measurement units cannot be selected when creating or updating items.
-          </FormHelperText>
-        </Box>
+        <ControlledSwitch
+          control={control}
+          name="isActive"
+          label="Active measurement unit"
+          disabled={mutation.isPending}
+          helperText="Inactive measurement units cannot be selected when creating or updating items."
+        />
       </Stack>
     </FormDialogShell>
   );

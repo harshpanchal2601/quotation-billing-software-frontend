@@ -4,7 +4,6 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -12,6 +11,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { AppBrand } from '@shared/components/brand/AppBrand';
 import { PasswordField } from '@shared/components/common/PasswordField';
+import { ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
@@ -60,21 +60,13 @@ export function LoginPage() {
               </Box>
               {sessionMessage ? <Alert severity="info" onClose={clearSessionMessage}>{sessionMessage}</Alert> : null}
               <ServerErrorAlert message={authError?.message} />
-              <Controller
+              <ControlledTextField
                 name="identifier"
                 control={form.control}
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    autoFocus
-                    fullWidth
-                    label="Email or username"
-                    autoComplete="username"
-                    error={fieldState.invalid}
-                    helperText={fieldState.error?.message}
-                    disabled={isLoggingIn}
-                  />
-                )}
+                autoFocus
+                label="Email or username"
+                autoComplete="username"
+                disabled={isLoggingIn}
               />
               <Controller
                 name="password"

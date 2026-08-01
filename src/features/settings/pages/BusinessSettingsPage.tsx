@@ -3,14 +3,15 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Controller, useWatch, useForm } from 'react-hook-form';
+import { useWatch, useForm, type FieldPath } from 'react-hook-form';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
+import { FormActions } from '@shared/forms';
+import { ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import {
@@ -161,14 +162,15 @@ export function BusinessSettingsPage() {
             <BrandingAssetCard assetType="stamp" title="Company stamp" description="Used for stamped quotation output." imageUrl={profile.stampUrl} updatedAt={profile.updatedAt} isBusy={activeBrandingAsset === 'stamp'} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'stamp', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('stamp').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
           </Box>
         </SettingsSection>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
-          <AppButton type="button" variant="outlined" disabled={isFormBusy || !form.formState.isDirty} onClick={() => form.reset(toBusinessProfileFormValues(profile))}>
-            Reset changes
-          </AppButton>
-          <AppButton type="submit" variant="contained" disabled={!form.formState.isDirty} isLoading={updateMutation.isPending} loadingPosition="start">
-            {updateMutation.isPending ? 'Saving...' : 'Save changes'}
-          </AppButton>
-        </Stack>
+        <FormActions
+          submitLabel={updateMutation.isPending ? 'Saving...' : 'Save changes'}
+          isSubmitting={updateMutation.isPending}
+          isSubmitDisabled={!form.formState.isDirty}
+          isCancelDisabled={isFormBusy || !form.formState.isDirty}
+          onCancel={() => form.reset(toBusinessProfileFormValues(profile))}
+          cancelLabel="Reset changes"
+          cancelButtonProps={{ type: 'button', variant: 'outlined' }}
+        />
       </Stack>
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </SettingsPageHeader>
@@ -179,19 +181,20 @@ type ProfileForm = ReturnType<typeof useForm<BusinessProfileFormValues, unknown,
 
 function ProfileTextField({ form, name, label, required, disabled, autoComplete }: {
   form: ProfileForm;
-  name: keyof BusinessProfileFormValues;
+  name: FieldPath<BusinessProfileFormValues>;
   label: string;
   required?: boolean;
   disabled?: boolean;
   autoComplete?: string;
 }) {
   return (
-    <Controller
+    <ControlledTextField
       name={name}
       control={form.control}
-      render={({ field, fieldState }) => (
-        <TextField {...field} value={field.value ?? ''} fullWidth required={required} label={label} autoComplete={autoComplete} disabled={disabled} error={fieldState.invalid} helperText={fieldState.error?.message} />
-      )}
+      required={required}
+      label={label}
+      autoComplete={autoComplete}
+      disabled={disabled}
     />
   );
 }

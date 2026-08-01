@@ -1,22 +1,28 @@
 import TextField, { type TextFieldProps } from '@mui/material/TextField';
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 
-export type ControlledTextFieldProps<TFieldValues extends FieldValues> = Omit<
+export type ControlledTextFieldProps<
+  TFieldValues extends FieldValues,
+  TTransformedValues = TFieldValues,
+> = Omit<
   TextFieldProps,
   'name' | 'value' | 'defaultValue' | 'onChange' | 'onBlur' | 'error' | 'helperText'
 > & {
-  control: Control<TFieldValues>;
+  control: Control<TFieldValues, unknown, TTransformedValues>;
   name: FieldPath<TFieldValues>;
   helperText?: TextFieldProps['helperText'];
 };
 
-export function ControlledTextField<TFieldValues extends FieldValues>({
+export function ControlledTextField<
+  TFieldValues extends FieldValues,
+  TTransformedValues = TFieldValues,
+>({
   control,
   name,
   helperText,
   fullWidth = true,
   ...textFieldProps
-}: ControlledTextFieldProps<TFieldValues>) {
+}: ControlledTextFieldProps<TFieldValues, TTransformedValues>) {
   return (
     <Controller
       name={name}

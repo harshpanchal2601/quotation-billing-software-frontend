@@ -11,7 +11,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import { PasswordField } from '@shared/components/common/PasswordField';
-import { AppButton } from '@shared/ui/actions';
+import { FormActions } from '@shared/forms';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { paths } from '@app/router/routeConfig';
 import { useAuth } from '../hooks/useAuth';
@@ -65,10 +65,11 @@ export function ChangePasswordPage() {
                 {requirements.map((item) => <ListItem key={item} disableGutters><ListItemText primary={item} /></ListItem>)}
               </List>
             </Box>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <AppButton type="submit" variant="contained" isLoading={isChangingPassword} loadingPosition="start">{isChangingPassword ? 'Changing password...' : 'Change password'}</AppButton>
-              <AppButton variant="outlined" onClick={() => navigate(paths.dashboard)} disabled={isChangingPassword}>Cancel</AppButton>
-            </Stack>
+            <FormActions
+              submitLabel={isChangingPassword ? 'Changing password...' : 'Change password'}
+              isSubmitting={isChangingPassword}
+              onCancel={() => navigate(paths.dashboard)}
+            />
           </Stack>
         </CardContent>
       </Card>

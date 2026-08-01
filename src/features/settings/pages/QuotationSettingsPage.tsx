@@ -1,11 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +12,8 @@ import { Controller, useForm } from 'react-hook-form';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
+import { FormActions } from '@shared/forms';
+import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import {
@@ -87,7 +87,7 @@ export function QuotationSettingsPage() {
         {form.formState.isDirty ? <Alert severity="info">You have unsaved changes.</Alert> : null}
         <SettingsSection title="Quotation numbering">
           <TwoColumnGrid>
-            <QuotationTextField form={form} name="quotationPrefix" label="Quotation prefix" required disabled={isBusy} />
+            <ControlledTextField control={form.control} name="quotationPrefix" label="Quotation prefix" required disabled={isBusy} />
             <QuotationTextField form={form} name="financialYearFormat" label="Financial year format" required disabled={isBusy} select>
               <MenuItem value="YYYY-YY">YYYY-YY</MenuItem>
             </QuotationTextField>
@@ -108,41 +108,44 @@ export function QuotationSettingsPage() {
         </SettingsSection>
         <SettingsSection title="Default commercial terms">
           <TwoColumnGrid>
-            <QuotationTextField form={form} name="defaultDeliveryTerms" label="Delivery terms" disabled={isBusy} multiline minRows={3} />
-            <QuotationTextField form={form} name="defaultDispatchTerms" label="Dispatch terms" disabled={isBusy} multiline minRows={3} />
-            <QuotationTextField form={form} name="defaultPaymentTerms" label="Payment terms" disabled={isBusy} multiline minRows={3} />
-            <QuotationTextField form={form} name="defaultFreightTerms" label="Freight terms" disabled={isBusy} multiline minRows={3} />
-            <QuotationTextField form={form} name="defaultWarrantyTerms" label="Warranty terms" disabled={isBusy} multiline minRows={3} />
+            <ControlledTextField control={form.control} name="defaultDeliveryTerms" label="Delivery terms" disabled={isBusy} multiline minRows={3} />
+            <ControlledTextField control={form.control} name="defaultDispatchTerms" label="Dispatch terms" disabled={isBusy} multiline minRows={3} />
+            <ControlledTextField control={form.control} name="defaultPaymentTerms" label="Payment terms" disabled={isBusy} multiline minRows={3} />
+            <ControlledTextField control={form.control} name="defaultFreightTerms" label="Freight terms" disabled={isBusy} multiline minRows={3} />
+            <ControlledTextField control={form.control} name="defaultWarrantyTerms" label="Warranty terms" disabled={isBusy} multiline minRows={3} />
           </TwoColumnGrid>
         </SettingsSection>
         <SettingsSection title="Default content">
           <Stack spacing={2}>
-            <QuotationTextField form={form} name="defaultRemarks" label="Default remarks" disabled={isBusy} multiline minRows={4} />
-            <QuotationTextField form={form} name="defaultTermsAndConditions" label="Default terms and conditions" disabled={isBusy} multiline minRows={6} />
+            <ControlledTextField control={form.control} name="defaultRemarks" label="Default remarks" disabled={isBusy} multiline minRows={4} />
+            <ControlledTextField control={form.control} name="defaultTermsAndConditions" label="Default terms and conditions" disabled={isBusy} multiline minRows={6} />
           </Stack>
         </SettingsSection>
         <SettingsSection title="PDF display preferences">
           <Stack spacing={1}>
-            <Controller
+            <ControlledSwitch
+              control={form.control}
               name="showBankDetails"
-              control={form.control}
-              render={({ field }) => (
-                <FormControlLabel control={<Switch checked={field.value} onChange={(event) => field.onChange(event.target.checked)} disabled={isBusy} />} label="Show bank details on quotation PDFs" />
-              )}
+              label="Show bank details on quotation PDFs"
+              disabled={isBusy}
             />
-            <Controller
-              name="showAmountInWords"
+            <ControlledSwitch
               control={form.control}
-              render={({ field }) => (
-                <FormControlLabel control={<Switch checked={field.value} onChange={(event) => field.onChange(event.target.checked)} disabled={isBusy} />} label="Show amount in words on quotation PDFs" />
-              )}
+              name="showAmountInWords"
+              label="Show amount in words on quotation PDFs"
+              disabled={isBusy}
             />
           </Stack>
         </SettingsSection>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
-          <AppButton type="button" variant="outlined" disabled={isBusy || !form.formState.isDirty} onClick={() => form.reset(toQuotationFormValues(query.data))}>Reset changes</AppButton>
-          <AppButton type="submit" variant="contained" disabled={isBusy || !form.formState.isDirty}>{isBusy ? 'Saving' : 'Save changes'}</AppButton>
-        </Stack>
+        <FormActions
+          submitLabel={isBusy ? 'Saving' : 'Save changes'}
+          isSubmitting={isBusy}
+          isSubmitDisabled={isBusy || !form.formState.isDirty}
+          isCancelDisabled={isBusy || !form.formState.isDirty}
+          onCancel={() => form.reset(toQuotationFormValues(query.data))}
+          cancelLabel="Reset changes"
+          cancelButtonProps={{ type: 'button', variant: 'outlined' }}
+        />
       </Stack>
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </SettingsPageShell>
