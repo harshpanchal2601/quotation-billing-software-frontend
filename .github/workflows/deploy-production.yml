@@ -78,6 +78,16 @@ jobs:
 
           DEPLOY_TARGET="${EC2_USER}@${EC2_HOST}"
 
+          zip -qr frontend-dist.zip dist
+
+          scp \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -i "$HOME/.ssh/erp-key.pem" \
+            -P "$DEPLOY_PORT" \
+            frontend-dist.zip \
+            "$DEPLOY_TARGET:/tmp/erp-frontend-dist.zip"
+
           ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
@@ -94,16 +104,17 @@ jobs:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-          cd "$APP_PATH"
+          echo "Publishing frontend build..."
+          mkdir -p "$APP_PATH"
+          rm -rf "$APP_PATH/dist"
 
-          echo "Pulling frontend code..."
-          git pull --ff-only origin main
+          if ! command -v unzip >/dev/null 2>&1; then
+            echo "unzip is required on the EC2 instance to deploy the frontend archive."
+            exit 1
+          fi
 
-          echo "Installing frontend dependencies..."
-          npm install
-
-          echo "Building frontend..."
-          npm run build
+          unzip -q /tmp/erp-frontend-dist.zip -d "$APP_PATH"
+          rm -f /tmp/erp-frontend-dist.zip
 
           if [ ! -f "$APP_PATH/dist/index.html" ]; then
             echo "Frontend build failed: dist/index.html not found."
