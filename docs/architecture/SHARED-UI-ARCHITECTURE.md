@@ -27,3 +27,12 @@ Shared UI provides reusable, business-neutral building blocks for route pages, a
 - Tables: table container, pagination, row actions, and skeletons.
 - Forms: controlled MUI field adapters.
 - Common display: image safety, empty/error/loading states, avatars, and refresh indicators.
+
+## Accepted Exceptions
+
+- `src/shared/test` may compose App and Feature providers for test rendering.
+- Feature-owned complex dialogs, preview surfaces, editable quotation line items, mobile row cards, status chips, and domain cards may use direct MUI composition when extracting them would change behaviour or require domain imports.
+
+## FE-47 Acceptance
+
+Static audit accepted the App, Shared, and Feature ownership split. Shared production code remains business-neutral and imports no App or Feature production code.

@@ -87,3 +87,18 @@ Quotations was not structurally migrated in FE-44. Its changes are limited to im
 
 - Test infrastructure may import App/Features when it exists specifically to compose providers or test route guards.
 - Direct MUI layout, typography, form-control composition, and feature-specific UI remain allowed while shared primitives cover reusable actions, dialogs, feedback, layout shells, and table shells.
+
+## FE-47 Final Acceptance Audit
+
+### Result
+
+- Final static architecture audit accepted the frontend target structure: `app`, `shared`, and `features`.
+- App owns routing, providers, global layout, theme, query-client wiring, guards, bootstrap, and navigation.
+- Shared owns business-neutral API transport, routing contracts, UI primitives, forms, tables, feedback, hooks, and common display helpers.
+- Features own domain APIs, query keys, schemas, mappers, mutations, domain helpers, pages, and feature-specific UI.
+- Production boundary searches found no Shared-to-App/Feature imports, no Feature-to-App imports, no deep cross-feature imports, no self-public-entry imports, and no broad export stars.
+- The only FE-47 source correction was a semantic login heading fix; no route, API, query-key, mutation, validation, calculation, PDF, attachment, email, or communication-history behaviour was changed.
+
+### Closure
+
+Frontend architecture migration is accepted with documented validation limitations because automated and manual validation were prohibited in this session.

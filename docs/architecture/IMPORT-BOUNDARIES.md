@@ -50,6 +50,8 @@
 
 - Quotations imports Companies, Items, and Settings through the public feature entry points.
 - Items imports Categories and Measurement Units through their public feature entry points.
+- Dashboard imports Quotations display helpers through the public Quotations entry point.
+- Quotations imports the public Dashboard query key to refresh dashboard data after quotation email/document activity.
 
 ## Retained Exceptions
 
@@ -87,3 +89,9 @@
   - App production code can import Features only through public feature entries.
   - Cross-feature production imports must use public feature entries.
   - Feature internals cannot import their own public feature entry.
+
+## FE-47 Verification
+
+- Static source searches verified the documented production import boundaries.
+- No Shared-to-App, Shared-to-Feature, Feature-to-App, deep cross-feature, self-barrel, or broad export-star production violation was found.
+- Test-only exceptions remain limited to provider composition and route-guard tests.

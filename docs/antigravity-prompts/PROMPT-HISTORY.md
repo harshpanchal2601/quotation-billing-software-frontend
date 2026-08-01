@@ -16,7 +16,7 @@ Cleanup: removed obsolete `.gitkeep` placeholders and empty schema folders after
 
 Validation: static source inspection and boundary searches were performed. Automated validation was not run because active instructions prohibit npm, lint, typecheck, tests, build, install, Docker, deployment, migrations, and git commands.
 
-Exceptions: pre-existing feature-to-app route helper imports remain outside FE-44 scope; Shared test render retains its Auth test-harness dependency.
+Exceptions: pre-existing feature-to-app route helper imports were outside FE-44 scope and were later resolved in FE-46; Shared test render retains its Auth test-harness dependency.
 
 Behavior preservation: query keys, API URLs, HTTP methods, payload mappings, schemas, validation, mutation behavior, cache invalidation, navigation, and upload/image behavior were preserved.
 
@@ -48,7 +48,7 @@ Cleanup: removed the obsolete Quotations `.gitkeep` placeholder.
 
 Validation: static source inspection and boundary searches were performed. Automated validation was not run by Codex because active instructions prohibit npm, lint, typecheck, tests, build, install, Docker, deployment, migrations, and git commands.
 
-Exceptions: pre-existing feature-to-app route helper imports remain outside FE-45 scope.
+Exceptions: pre-existing feature-to-app route helper imports were outside FE-45 scope and were later resolved in FE-46.
 
 Behaviour preservation: query keys, API URLs, HTTP methods, payload mapping, validation, calculations, revision behaviour, PDF behaviour, attachment behaviour, email behaviour, communication history, mutation invalidation, navigation, responsive JSX, and object URL cleanup were preserved.
 
@@ -71,3 +71,25 @@ Documentation: updated architecture maps/status and added shared UI migration, p
 Exceptions: shared test render and auth route-guard tests may import App/Features because they are test-only infrastructure.
 
 Validation: static source inspection and boundary searches were performed. Automated validation was not run by Codex because active instructions prohibit npm, lint, typecheck, tests, build, install, Docker, deployment, migrations, and git commands.
+
+## FE-47 - Final Frontend Regression and Architecture Acceptance Audit
+
+Scope: perform the final frontend-wide static regression, architecture, shared UI, feature boundary, documentation, responsiveness, and accessibility acceptance audit without backend changes.
+
+Architecture result: App, Shared, and Feature ownership was accepted by source inspection and boundary searches; production Shared-to-App/Feature, Feature-to-App, deep cross-feature, self-barrel, and broad export-star violations were not found.
+
+Regression result: no route, API contract, query-key, invalidation, mutation, form payload, validation, calculation, revision, PDF, attachment, email, or communication-history source regression was found.
+
+Shared UI result: adopted primitives remain in use where appropriate; direct MUI exceptions and deferred primitives remain intentional and documented.
+
+Feature result: Auth, Dashboard, Categories, Measurement Units, Companies, Items, Settings, and Quotations retain feature-owned APIs, models, schemas, query keys, mutations, pages, components, and narrow public exports.
+
+Responsive/accessibility result: source-level responsive patterns remain consistent; one accessibility correction changed the login brand headline from a second `h1` to a paragraph with the same visual variant.
+
+Validation: static validation completed. Automated lint, typecheck, tests, build, and manual/browser validation were not run because active instructions prohibit npm/test/build commands and this was a static-audit session.
+
+Corrections made: one semantic login heading fix and documentation updates.
+
+Exceptions: test-only provider composition and route-guard tests may import App/Features; direct MUI feature-owned composition remains documented.
+
+Final closure decision: complete with documented limitations.

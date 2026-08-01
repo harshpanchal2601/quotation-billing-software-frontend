@@ -48,7 +48,7 @@ Status: implementation complete; automated validation not run.
 
 ### Exceptions
 
-- Feature pages still import app route constants and return-navigation helpers. This is a retained pre-existing app routing dependency outside FE-44 scope.
+- The former feature-to-app route helper exception was resolved in FE-46 by moving route path and return-navigation contracts to Shared.
 - Shared test render helper still imports Auth as a test-harness exception.
 
 ### Validation
@@ -109,7 +109,7 @@ API URLs, HTTP methods, query-key values, schemas, validation messages, form pay
 
 ### Exceptions
 
-- Feature pages still import app route constants and return-navigation helpers. This is a retained pre-existing routing dependency outside FE-45 scope.
+- The former feature-to-app route helper exception was resolved in FE-46 by moving route path and return-navigation contracts to Shared.
 
 ### Validation
 
@@ -156,3 +156,37 @@ Status: implementation complete; automated validation not run by Codex.
 ### Risks & Assumptions
 
 - The architecture boundary test must be run by the user through the existing test command because Codex is not permitted to execute npm/test commands in this session.
+
+## FE-47 - Final Frontend Regression and Architecture Acceptance Audit
+
+Status: complete with documented limitations.
+
+### Architecture Result
+
+- App, Shared, and Feature dependency boundaries were statically accepted.
+- Shared production code imports no App or Feature production code.
+- Feature production code imports no App production code.
+- App and cross-feature imports use public feature entries.
+- Public feature and Shared exports are explicit and narrow.
+- Architecture enforcement exists in `src/architecture-boundaries.test.ts`.
+
+### Regression Result
+
+- No route, guard, lazy import, API URL/method, query key, invalidation, mutation lifecycle, form payload, validation rule, quotation calculation, revision, PDF, attachment, email, or communication-history source regression was found by static audit.
+- One narrow accessibility correction was made on the login screen: the brand headline is no longer a second `h1` while preserving visual styling.
+
+### Shared UI Result
+
+- Reusable actions, dialogs, forms, layout, feedback, table shells, and display primitives remain adopted where appropriate.
+- Direct MUI exceptions remain documented and intentional for feature-specific forms, cards, chips, previews, local loaders, and domain UI.
+- Deferred primitives remain deferred because no stable business-neutral abstraction was proven during FE-47.
+
+### Validation
+
+- Static validation completed by source inspection and search.
+- Automated validation was not run because active repository instructions prohibit npm, lint, typecheck, tests, build, install, Docker, deployment, migrations, and git commands.
+- Manual/browser validation was not run in this static-audit session.
+
+### Closure Decision
+
+Frontend architecture migration is closed with documented validation limitations. Product work may continue as normal feature development, not as a required architecture migration phase.

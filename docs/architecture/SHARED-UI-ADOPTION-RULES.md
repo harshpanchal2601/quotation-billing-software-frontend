@@ -38,3 +38,9 @@
 - Quotation email recipient/payload behaviour remains feature-owned.
 - Quotation communication history remains feature-owned.
 - Shared UI primitives remain business-neutral and must not import Quotations.
+
+## FE-47 Final Acceptance
+
+- Standard reusable actions, dialogs, feedback, layout, forms, and table shells use the existing Shared primitives where they fit.
+- Feature-owned exceptions remain local for domain payloads, search/filter state, mobile card rendering, preview lifecycles, quotation calculations, and custom status display.
+- No additional shared primitive is required to close the architecture migration.

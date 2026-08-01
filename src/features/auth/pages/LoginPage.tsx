@@ -48,7 +48,7 @@ export function LoginPage() {
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 3, md: 8 }} alignItems="center" width="100%" maxWidth={980}>
         <Stack spacing={2} flex={1} alignItems={{ xs: 'center', md: 'flex-start' }} textAlign={{ xs: 'center', md: 'left' }}>
           <AppBrand />
-          <Typography variant="h1" color="secondary.main">Buminex Quotation Management System</Typography>
+          <Typography component="p" variant="h1" color="secondary.main">Buminex Quotation Management System</Typography>
           <Typography color="text.secondary" maxWidth={420}>Clean, controlled quotation workflows for pharmaceutical and industrial operations.</Typography>
         </Stack>
         <Card sx={{ width: '100%', maxWidth: 420 }}>

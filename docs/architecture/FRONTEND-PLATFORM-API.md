@@ -24,9 +24,21 @@
 - App and cross-feature consumers must import another feature through that public API.
 - Feature internals should use relative imports inside the same feature.
 - Feature-owned API clients, schemas, query keys, types, mappers, and domain helpers stay inside that feature.
+- Verified public feature APIs are `auth`, `dashboard`, `categories`, `measurement-units`, `companies`, `items`, `settings`, and `quotations`.
+- Public feature exports are explicit and narrow; no broad feature `export *` is used.
 
 ## Tests
 
 - Tests may import the unit under test directly, including App route guards or provider composition.
 - Test-only helpers may compose App and Feature providers.
 - Production boundary enforcement intentionally excludes `*.test.*`, `*.spec.*`, `__tests__`, and `src/shared/test`.
+
+## Enforcement
+
+- `src/architecture-boundaries.test.ts` enforces production dependency boundaries with existing Vitest/Vite tooling.
+- The boundary test rejects Shared-to-App/Feature production imports, Feature-to-App production imports, App deep feature imports, cross-feature deep imports, and feature self-public-entry imports.
+- Direct MUI usage is documented and audited rather than automatically banned because many feature-owned forms, cards, chips, and previews are intentional domain UI.
+
+## FE-47 Result
+
+Static audit verified that platform APIs and public feature APIs match the active source tree.

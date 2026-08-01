@@ -26,3 +26,13 @@
 ## Enforcement
 
 Direct MUI usage is currently documented rather than automatically banned because feature screens still legitimately use MUI for layout and domain-specific composition. Dependency boundaries are enforced by `src/architecture-boundaries.test.ts`.
+
+## FE-47 Direct MUI Classification
+
+- `Button`, `IconButton`, `Dialog`, `DialogTitle`, `DialogContent`, `DialogActions`, `Snackbar`, `TableContainer`, and `TablePagination` are concentrated in Shared primitive implementation files.
+- `Alert` remains valid for business warnings, informational notices, and shared error surfaces.
+- `CircularProgress` remains valid for local loaders, row-level download states, upload/preview states, and Shared loader primitives.
+- `TextField`, `Checkbox`, and `Switch` remain valid in Shared form adapters and feature-owned forms, filters, and specialized inputs.
+- `Chip` remains valid for Shared status chips plus feature-owned counts, tags, primary/default markers, and quotation custom statuses.
+- `Card` and `Paper` remain valid for app shell pages, feature detail sections, dashboard cards, preview surfaces, and mobile row cards.
+- Direct image rendering remains limited to Shared `SafeImage`, the brand mark, and attachment preview surfaces; user-managed/backend images use `SafeImage` where appropriate.
