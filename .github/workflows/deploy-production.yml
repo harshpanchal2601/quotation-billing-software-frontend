@@ -39,6 +39,8 @@ jobs:
         run: npm run typecheck
 
       - name: Verify frontend build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL }}
         run: npm run build
 
       - name: Configure SSH
