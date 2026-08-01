@@ -1,12 +1,8 @@
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -18,8 +14,8 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { useState, type MouseEvent } from 'react';
 
+import { RowActionsMenu } from '@shared/ui/tables';
 import type { CategoryListItem } from '../model/categories.types';
 import { isProtectedCategory } from '../model/categories.utils';
 
@@ -42,21 +38,37 @@ export function CategoryTable({
 }: CategoryTableProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [activeCategory, setActiveCategory] = useState<CategoryListItem | null>(null);
-
-  function handleOpenMenu(event: MouseEvent<HTMLElement>, category: CategoryListItem) {
-    setAnchorEl(event.currentTarget);
-    setActiveCategory(category);
-  }
-
-  function handleCloseMenu() {
-    setAnchorEl(null);
-    setActiveCategory(null);
-  }
 
   function formatDate(isoString: string) {
     return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(isoString));
+  }
+
+  function renderRowActions(category: CategoryListItem) {
+    const isProtected = isProtectedCategory(category.slug);
+
+    return (
+      <RowActionsMenu
+        triggerLabel={`Actions for ${category.name}`}
+        disabled={busyCategoryId === category.id}
+        actions={[
+          { key: 'view', label: 'View Details', onSelect: () => onView(category) },
+          { key: 'edit', label: 'Edit Category', onSelect: () => onEdit(category) },
+          {
+            key: 'status',
+            label: category.isActive ? 'Deactivate' : 'Activate',
+            disabled: isProtected && category.isActive,
+            onSelect: () => onStatusChange(category),
+          },
+          {
+            key: 'delete',
+            label: 'Delete Category',
+            disabled: isProtected,
+            destructive: true,
+            onSelect: () => onDelete(category),
+          },
+        ]}
+      />
+    );
   }
 
   if (!isDesktop) {
@@ -109,9 +121,7 @@ export function CategoryTable({
                       Linked Items: <strong>{cat.linkedItemCount}</strong>
                     </Typography>
                     <Stack direction="row" spacing={1}>
-                      <IconButton size="small" aria-label={`Actions for ${cat.name}`} onClick={(e) => handleOpenMenu(e, cat)} disabled={busyCategoryId === cat.id}>
-                        <MoreVertIcon fontSize="small" />
-                      </IconButton>
+                      {renderRowActions(cat)}
                     </Stack>
                   </Stack>
                 </Stack>
@@ -119,7 +129,6 @@ export function CategoryTable({
             </Card>
           );
         })}
-        {renderActionMenu()}
       </Stack>
     );
   }
@@ -187,14 +196,7 @@ export function CategoryTable({
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton
-                      size="small"
-                      aria-label={`Actions for ${cat.name}`}
-                      onClick={(e) => handleOpenMenu(e, cat)}
-                      disabled={busyCategoryId === cat.id}
-                    >
-                      <MoreVertIcon fontSize="small" />
-                    </IconButton>
+                    {renderRowActions(cat)}
                   </TableCell>
                 </TableRow>
               );
@@ -202,62 +204,6 @@ export function CategoryTable({
           </TableBody>
         </Table>
       </TableContainer>
-      {renderActionMenu()}
     </>
   );
-
-  function renderActionMenu() {
-    if (!activeCategory) return null;
-    const isProtected = isProtectedCategory(activeCategory.slug);
-
-    return (
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleCloseMenu}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <MenuItem
-          onClick={() => {
-            const cat = activeCategory;
-            handleCloseMenu();
-            onView(cat);
-          }}
-        >
-          View Details
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const cat = activeCategory;
-            handleCloseMenu();
-            onEdit(cat);
-          }}
-        >
-          Edit Category
-        </MenuItem>
-        <MenuItem
-          disabled={isProtected && activeCategory.isActive}
-          onClick={() => {
-            const cat = activeCategory;
-            handleCloseMenu();
-            onStatusChange(cat);
-          }}
-        >
-          {activeCategory.isActive ? 'Deactivate' : 'Activate'}
-        </MenuItem>
-        <MenuItem
-          disabled={isProtected}
-          onClick={() => {
-            const cat = activeCategory;
-            handleCloseMenu();
-            onDelete(cat);
-          }}
-          sx={{ color: isProtected ? 'text.disabled' : 'error.main' }}
-        >
-          Delete Category
-        </MenuItem>
-      </Menu>
-    );
-  }
 }

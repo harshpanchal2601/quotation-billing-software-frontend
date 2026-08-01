@@ -1,9 +1,7 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
-import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -17,6 +15,7 @@ import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import {
   deleteMeasurementUnitRequest,
   listMeasurementUnitsRequest,
@@ -197,38 +196,45 @@ export function MeasurementUnitsPage() {
         </TextField>
       </Stack>
 
-      <RefreshIndicator show={showRefreshing} />
-      <Stack aria-busy={query.isPending || showRefreshing}>
-      {query.isPending ? (
-        <Stack spacing={1}>
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} height={64} />
-          ))}
-        </Stack>
-      ) : null}
-
-      {query.isError ? (
-        <Stack spacing={1}>
-          <ErrorState message={toApiError(query.error).message} />
-          <Button variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
-            Retry
-          </Button>
-        </Stack>
-      ) : null}
-
-      {query.data && query.data.measurementUnits.length === 0 ? (
-        <EmptyState
-          title={isFiltered ? 'No measurement units match the filters' : 'No measurement units created yet'}
-          description={
-            isFiltered
-              ? 'Adjust search, status or quantity type filters to view measurement units.'
-              : 'Add a measurement unit to start assigning units to quotation items.'
-          }
-        />
-      ) : null}
-
-      {query.data && query.data.measurementUnits.length > 0 ? (
-        <>
+      <DataTableShell
+        isLoading={query.isPending}
+        isError={query.isError}
+        isEmpty={Boolean(query.data && query.data.measurementUnits.length === 0)}
+        isRefreshing={showRefreshing}
+        refreshIndicator={<RefreshIndicator show={showRefreshing} />}
+        loadingContent={<TableSkeleton />}
+        errorContent={
+          <Stack spacing={1}>
+            <ErrorState message={toApiError(query.error).message} />
+            <Button variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
+              Retry
+            </Button>
+          </Stack>
+        }
+        emptyContent={
+          <EmptyState
+            title={isFiltered ? 'No measurement units match the filters' : 'No measurement units created yet'}
+            description={
+              isFiltered
+                ? 'Adjust search, status or quantity type filters to view measurement units.'
+                : 'Add a measurement unit to start assigning units to quotation items.'
+            }
+          />
+        }
+        pagination={
+          query.data && query.data.measurementUnits.length > 0 ? (
+            <AppTablePagination
+              count={query.data.pagination.total}
+              page={params.page}
+              rowsPerPage={params.limit}
+              onPageChange={(page) => updateSearchParams(setSearchParams, { page })}
+              onRowsPerPageChange={(limit) => updateSearchParams(setSearchParams, { limit, page: 1 })}
+            />
+          ) : null
+        }
+      >
+        {query.data && query.data.measurementUnits.length > 0 ? (
+          <>
           <Typography color="text.secondary">
             {query.data.pagination.total} measurement unit(s) found
           </Typography>
@@ -241,21 +247,9 @@ export function MeasurementUnitsPage() {
             onStatusChange={(u) => setStatusTarget(u)}
             onDelete={(u) => setDeleteTarget(u)}
           />
-
-          <TablePagination
-            component="div"
-            count={query.data.pagination.total}
-            page={params.page - 1}
-            rowsPerPage={params.limit}
-            rowsPerPageOptions={[10, 20, 50]}
-            onPageChange={(_event, nextPage) => updateSearchParams(setSearchParams, { page: nextPage + 1 })}
-            onRowsPerPageChange={(event) =>
-              updateSearchParams(setSearchParams, { limit: Number(event.target.value), page: 1 })
-            }
-          />
-        </>
-      ) : null}
-      </Stack>
+          </>
+        ) : null}
+      </DataTableShell>
 
       <MeasurementUnitFormDialog
         open={formOpen}
