@@ -106,6 +106,25 @@ describe('category frontend', () => {
     const deleteSubmitBtn = screen.getByRole('button', { name: /delete category/i });
     expect(deleteSubmitBtn).toBeDisabled();
   });
+
+  it('opens category details and preserves the edit action from the details dialog', async () => {
+    const category = categoryListItem();
+    categoriesApi.listCategoriesRequest.mockResolvedValue({
+      categories: [category],
+      pagination: { page: 1, limit: 20, total: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+    });
+    categoriesApi.getCategoryRequest.mockResolvedValue(category);
+
+    renderPage(<CategoriesPage />, '/categories');
+
+    expect(await screen.findByText('Vessels & Reactors')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /actions for vessels & reactors/i }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /view details/i }));
+
+    expect(await screen.findByRole('dialog', { name: /category details/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit category/i })).toBeInTheDocument();
+    expect(categoriesApi.getCategoryRequest).toHaveBeenCalledWith(1);
+  });
 });
 
 function renderPage(ui: ReactElement, route: string) {

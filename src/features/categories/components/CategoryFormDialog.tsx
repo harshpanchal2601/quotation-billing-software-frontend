@@ -1,10 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import Stack from '@mui/material/Stack';
@@ -16,9 +11,9 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { toApiError } from '@shared/api/apiClient';
-import { applyApiFieldErrors } from '@shared/forms/formErrors';
-import { AppButton } from '@shared/ui/actions';
+import { applyApiFieldErrors, FormActions } from '@shared/forms';
 import { ServerErrorAlert } from '@shared/ui/feedback';
+import { FormDialogShell } from '@shared/ui/dialogs';
 import { createCategoryRequest, updateCategoryRequest } from '../api/categories.api';
 import { categoriesQueryKeys } from '../model/categories.query-keys';
 import { categoryFormSchema, type CategoryFormValues } from '../model/categories.schema';
@@ -114,79 +109,79 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
   }
 
   return (
-    <Dialog open={open} onClose={mutation.isPending ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEditing ? 'Edit Category' : 'Add Category'}</DialogTitle>
-      <Box component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
-        <DialogContent dividers>
-          <Stack spacing={2.5}>
-            <ServerErrorAlert message={serverError} />
+    <FormDialogShell
+      open={open}
+      title={isEditing ? 'Edit Category' : 'Add Category'}
+      onClose={onClose}
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      isSubmitting={mutation.isPending}
+      actions={(formId) => (
+        <FormActions
+          submitLabel={isEditing ? 'Save Changes' : 'Create Category'}
+          isSubmitting={mutation.isPending}
+          onCancel={onClose}
+          submitButtonProps={{ form: formId }}
+        />
+      )}
+    >
+      <Stack spacing={2.5}>
+        <ServerErrorAlert message={serverError} />
 
-            <TextField
-              label="Category name"
-              required
-              fullWidth
-              {...register('name')}
-              error={Boolean(errors.name)}
-              helperText={errors.name?.message}
-            />
+        <TextField
+          label="Category name"
+          required
+          fullWidth
+          {...register('name')}
+          error={Boolean(errors.name)}
+          helperText={errors.name?.message}
+        />
 
-            {isEditing && category ? (
-              <TextField
-                label="Slug"
-                value={category.slug}
-                fullWidth
-                disabled
-                helperText="Slug is generated on creation and is read-only."
+        {isEditing && category ? (
+          <TextField
+            label="Slug"
+            value={category.slug}
+            fullWidth
+            disabled
+            helperText="Slug is generated on creation and is read-only."
+          />
+        ) : (
+          <Typography variant="caption" color="text.secondary">
+            Note: Slug will be generated automatically from the category name.
+          </Typography>
+        )}
+
+        <TextField
+          label="Description"
+          multiline
+          rows={3}
+          fullWidth
+          {...register('description')}
+          error={Boolean(errors.description)}
+          helperText={errors.description?.message ?? 'Optional brief description for the category.'}
+        />
+
+        <Box>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isActiveValue}
+                onChange={(e) => setValue('isActive', e.target.checked)}
+                disabled={isProtected || mutation.isPending}
               />
-            ) : (
-              <Typography variant="caption" color="text.secondary">
-                Note: Slug will be generated automatically from the category name.
-              </Typography>
-            )}
-
-            <TextField
-              label="Description"
-              multiline
-              rows={3}
-              fullWidth
-              {...register('description')}
-              error={Boolean(errors.description)}
-              helperText={errors.description?.message ?? 'Optional brief description for the category.'}
-            />
-
-            <Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isActiveValue}
-                    onChange={(e) => setValue('isActive', e.target.checked)}
-                    disabled={isProtected || mutation.isPending}
-                  />
-                }
-                label="Active category"
-              />
-              {isProtected ? (
-                <FormHelperText error={false}>
-                  The default Uncategorised category cannot be deactivated.
-                </FormHelperText>
-              ) : (
-                <FormHelperText>
-                  Inactive categories cannot be selected when creating or updating items.
-                </FormHelperText>
-              )}
-            </Box>
-          </Stack>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={onClose} disabled={mutation.isPending}>
-            Cancel
-          </Button>
-          <AppButton type="submit" variant="contained" isLoading={mutation.isPending}>
-            {isEditing ? 'Save Changes' : 'Create Category'}
-          </AppButton>
-        </DialogActions>
-      </Box>
-    </Dialog>
+            }
+            label="Active category"
+          />
+          {isProtected ? (
+            <FormHelperText error={false}>
+              The default Uncategorised category cannot be deactivated.
+            </FormHelperText>
+          ) : (
+            <FormHelperText>
+              Inactive categories cannot be selected when creating or updating items.
+            </FormHelperText>
+          )}
+        </Box>
+      </Stack>
+    </FormDialogShell>
   );
 }

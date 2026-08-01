@@ -1,10 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import Stack from '@mui/material/Stack';
@@ -15,8 +10,8 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { toApiError } from '@shared/api/apiClient';
-import { applyApiFieldErrors } from '@shared/forms/formErrors';
-import { AppButton } from '@shared/ui/actions';
+import { applyApiFieldErrors, FormActions } from '@shared/forms';
+import { FormDialogShell } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import {
   createMeasurementUnitRequest,
@@ -123,76 +118,76 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
   }
 
   return (
-    <Dialog open={open} onClose={mutation.isPending ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEditing ? 'Edit Measurement Unit' : 'Add Measurement Unit'}</DialogTitle>
-      <Box component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
-        <DialogContent dividers>
-          <Stack spacing={2.5}>
-            <ServerErrorAlert message={serverError} />
+    <FormDialogShell
+      open={open}
+      title={isEditing ? 'Edit Measurement Unit' : 'Add Measurement Unit'}
+      onClose={onClose}
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      isSubmitting={mutation.isPending}
+      actions={(formId) => (
+        <FormActions
+          submitLabel={isEditing ? 'Save Changes' : 'Create Measurement Unit'}
+          isSubmitting={mutation.isPending}
+          onCancel={onClose}
+          submitButtonProps={{ form: formId }}
+        />
+      )}
+    >
+      <Stack spacing={2.5}>
+        <ServerErrorAlert message={serverError} />
 
-            <TextField
-              label="Unit name"
-              required
-              fullWidth
-              {...register('name')}
-              error={Boolean(errors.name)}
-              helperText={errors.name?.message ?? 'Full name of the unit, e.g., Kilogram, Piece, Meter.'}
-            />
+        <TextField
+          label="Unit name"
+          required
+          fullWidth
+          {...register('name')}
+          error={Boolean(errors.name)}
+          helperText={errors.name?.message ?? 'Full name of the unit, e.g., Kilogram, Piece, Meter.'}
+        />
 
-            <TextField
-              label="Symbol"
-              required
-              fullWidth
-              {...register('symbol')}
-              error={Boolean(errors.symbol)}
-              helperText={errors.symbol?.message ?? 'Exact symbol string, e.g., kg, m², NOS, %.'}
-            />
+        <TextField
+          label="Symbol"
+          required
+          fullWidth
+          {...register('symbol')}
+          error={Boolean(errors.symbol)}
+          helperText={errors.symbol?.message ?? 'Exact symbol string, e.g., kg, m², NOS, %.'}
+        />
 
-            <Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={allowDecimalValue}
-                    onChange={(e) => setValue('allowDecimal', e.target.checked)}
-                    disabled={mutation.isPending}
-                  />
-                }
-                label="Allow decimal quantities"
+        <Box>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={allowDecimalValue}
+                onChange={(e) => setValue('allowDecimal', e.target.checked)}
+                disabled={mutation.isPending}
               />
-              <FormHelperText>
-                {allowDecimalValue
-                  ? 'Enabled: fractional quantities such as 1.5 or 0.25 are allowed.'
-                  : 'Disabled: only whole integer quantities are allowed.'}
-              </FormHelperText>
-            </Box>
+            }
+            label="Allow decimal quantities"
+          />
+          <FormHelperText>
+            {allowDecimalValue
+              ? 'Enabled: fractional quantities such as 1.5 or 0.25 are allowed.'
+              : 'Disabled: only whole integer quantities are allowed.'}
+          </FormHelperText>
+        </Box>
 
-            <Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isActiveValue}
-                    onChange={(e) => setValue('isActive', e.target.checked)}
-                    disabled={mutation.isPending}
-                  />
-                }
-                label="Active measurement unit"
+        <Box>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isActiveValue}
+                onChange={(e) => setValue('isActive', e.target.checked)}
+                disabled={mutation.isPending}
               />
-              <FormHelperText>
-                Inactive measurement units cannot be selected when creating or updating items.
-              </FormHelperText>
-            </Box>
-          </Stack>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={onClose} disabled={mutation.isPending}>
-            Cancel
-          </Button>
-          <AppButton type="submit" variant="contained" isLoading={mutation.isPending}>
-            {isEditing ? 'Save Changes' : 'Create Measurement Unit'}
-          </AppButton>
-        </DialogActions>
-      </Box>
-    </Dialog>
+            }
+            label="Active measurement unit"
+          />
+          <FormHelperText>
+            Inactive measurement units cannot be selected when creating or updating items.
+          </FormHelperText>
+        </Box>
+      </Stack>
+    </FormDialogShell>
   );
 }

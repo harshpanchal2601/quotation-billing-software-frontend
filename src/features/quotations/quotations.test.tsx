@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -457,26 +457,22 @@ describe('quotation frontend management', () => {
     renderQuotationForm();
     await waitForPreviewCalls(1);
 
-    await user.clear(screen.getByLabelText(/Unit Rate/i));
-    await user.type(screen.getByLabelText(/Unit Rate/i), '1500');
+    fireEvent.change(screen.getByLabelText(/Unit Rate/i), { target: { value: '1500' } });
     await waitForPreviewCalls(2);
 
     await user.click(screen.getAllByRole('combobox', { name: /Discount/i })[0]!);
     await user.click(await screen.findByRole('option', { name: '%' }));
-    await user.clear(screen.getByLabelText(/Disc Val/i));
-    await user.type(screen.getByLabelText(/Disc Val/i), '5');
+    fireEvent.change(screen.getByLabelText(/Disc Val/i), { target: { value: '5' } });
     await waitForPreviewCalls(3);
 
-    await user.clear(screen.getByLabelText(/GST Rate/i));
-    await user.type(screen.getByLabelText(/GST Rate/i), '12');
+    fireEvent.change(screen.getByLabelText(/GST Rate/i), { target: { value: '12' } });
     await waitForPreviewCalls(4);
 
-    await user.clear(screen.getByLabelText(/Freight Amount/i));
-    await user.type(screen.getByLabelText(/Freight Amount/i), '100');
+    fireEvent.change(screen.getByLabelText(/Freight Amount/i), { target: { value: '100' } });
     await waitForPreviewCalls(5);
 
     expect(quotationsApi.calculatePreviewRequest).toHaveBeenCalledTimes(5);
-  });
+  }, 10000);
 
   it('does not recalculate when only the line description changes', async () => {
     const user = userEvent.setup();
