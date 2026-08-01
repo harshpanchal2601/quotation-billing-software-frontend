@@ -13,8 +13,8 @@ import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { AppTablePagination, DataTableShell } from '@shared/ui/tables';
 import { toApiError } from '@shared/api/apiClient';
-import { paths } from '@app/router/routeConfig';
-import { getCurrentListReturnState } from '@app/router/returnNavigation';
+import { paths } from '@shared/routing/paths';
+import { getCurrentListReturnState } from '@shared/routing/returnNavigation';
 import { listCompaniesRequest } from '@features/companies';
 import {
   deleteQuotationRequest,

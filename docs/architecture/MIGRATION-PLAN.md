@@ -4,6 +4,7 @@
 
 - FE-44 - Companies, Items, and Settings Domain Consolidation
 - FE-45 - Quotations Domain Consolidation
+- FE-46 - Frontend Cleanup and Enforcement
 
 ## FE-44 Result
 
@@ -22,9 +23,18 @@
 - Dashboard consumers now use the Quotations public feature API.
 - Query-key values, API URLs, payload mappers, schemas, validation rules, calculations, mutation side effects, and object URL lifecycles were preserved by source move only.
 
+## FE-46 Result
+
+- Production feature-to-app routing imports were removed.
+- Shared route path and return-navigation contracts were added under `src/shared/routing`.
+- App route configuration now consumes and re-exports shared route paths while retaining route metadata ownership.
+- Obsolete empty folders and `.gitkeep` placeholders under `src` were removed.
+- `src/architecture-boundaries.test.ts` was added to enforce production dependency boundaries.
+- Shared UI, MUI usage, frontend platform API, and migration matrix documentation was added.
+
 ## Next Phase
 
-- FE-46 - Frontend Cleanup and Enforcement
+- Continue incremental shared UI adoption only when a duplicated pattern is proven and behaviour can be preserved.
 
 ## Validation Status
 

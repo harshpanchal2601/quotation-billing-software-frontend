@@ -11,24 +11,10 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
 
-export const paths = {
-  login: '/login',
-  dashboard: '/dashboard',
-  changePassword: '/change-password',
-  quotations: '/quotations',
-  newQuotation: '/quotations/new',
-  companies: '/companies',
-  newCompany: '/companies/new',
-  items: '/items',
-  categories: '/categories',
-  measurementUnits: '/measurement-units',
-  businessSettings: '/settings/business',
-  quotationSettings: '/settings/quotation',
-  bankDetails: '/settings/bank-details',
-  auditLogs: '/audit-logs',
-} as const;
+import { paths, type AppRoutePath } from '@shared/routing/paths';
 
-export type AppRoutePath = (typeof paths)[keyof typeof paths];
+export { paths };
+export type { AppRoutePath };
 
 export type NavigationItem = {
   title: string;

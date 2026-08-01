@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { PasswordField } from '@shared/components/common/PasswordField';
 import { FormActions } from '@shared/forms';
 import { ServerErrorAlert } from '@shared/ui/feedback';
-import { paths } from '@app/router/routeConfig';
+import { paths } from '@shared/routing/paths';
 import { useAuth } from '../hooks/useAuth';
 import { changePasswordSchema, type ChangePasswordFormValues } from '../model/auth.schema';
 

@@ -8,7 +8,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { paths } from '@app/router/routeConfig';
+import { paths } from '@shared/routing/paths';
 import { toApiError } from '@shared/api/apiClient';
 import { getCompanyRequest, updateCompanyRequest } from '../api/companies.api';
 import { companiesQueryKeys } from '../model/companies.query-keys';

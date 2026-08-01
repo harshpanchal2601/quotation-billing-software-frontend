@@ -13,7 +13,7 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-import { paths } from '@app/router/routeConfig';
+import { paths } from '@shared/routing/paths';
 import { AppButton } from '@shared/ui/actions';
 import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
 import type { CompanyListItem } from '../model/companies.types';

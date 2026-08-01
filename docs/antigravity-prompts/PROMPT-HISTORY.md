@@ -53,3 +53,21 @@ Exceptions: pre-existing feature-to-app route helper imports remain outside FE-4
 Behaviour preservation: query keys, API URLs, HTTP methods, payload mapping, validation, calculations, revision behaviour, PDF behaviour, attachment behaviour, email behaviour, communication history, mutation invalidation, navigation, responsive JSX, and object URL cleanup were preserved.
 
 Next phase: FE-46 - Frontend Cleanup and Enforcement.
+
+## FE-46 - Frontend Cleanup and Enforcement
+
+Scope: clean stale frontend structure, remove production dependency-boundary exceptions, and add executable guardrails without changing behaviour, APIs, or UI.
+
+Precondition: FE-45 Quotations consolidation was present; app and Dashboard consumed Quotations through the public feature API.
+
+Boundary changes: route paths moved to `src/shared/routing/paths.ts`; list-return helpers moved to `src/shared/routing/returnNavigation.ts`; feature production files no longer import app router modules.
+
+Cleanup: removed obsolete `.gitkeep` placeholders and empty stale directories under `src`.
+
+Enforcement: added `src/architecture-boundaries.test.ts` to scan production source imports and reject Shared-to-App/Features, Feature-to-App, App-to-feature-internal, cross-feature-internal, and feature self-public-entry imports.
+
+Documentation: updated architecture maps/status and added shared UI migration, platform API, shared UI architecture, and MUI usage rules.
+
+Exceptions: shared test render and auth route-guard tests may import App/Features because they are test-only infrastructure.
+
+Validation: static source inspection and boundary searches were performed. Automated validation was not run by Codex because active instructions prohibit npm, lint, typecheck, tests, build, install, Docker, deployment, migrations, and git commands.

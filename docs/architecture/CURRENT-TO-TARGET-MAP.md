@@ -63,3 +63,27 @@ Quotations was not structurally migrated in FE-44. Its changes are limited to im
 - Attachment upload, preview, download, deletion, validation, and object URL handling remain Quotations-owned.
 - Email recipient, document, attachment, and send behaviour remain Quotations-owned.
 - App and Dashboard consume Quotations through the public feature boundary.
+
+## FE-46 Cleanup and Enforcement
+
+### Before
+
+- Features still consumed app-owned route path constants and list-return helpers.
+- Boundary rules were documented but not executable.
+- Obsolete placeholder directories remained after previous feature consolidation.
+- Shared UI usage expectations were split across implementation and prompt context.
+
+### After
+
+- Route path constants live in `src/shared/routing/paths.ts`.
+- List-return navigation helpers live in `src/shared/routing/returnNavigation.ts`.
+- `src/app/router/routeConfig.tsx` owns route metadata and re-exports the shared route path contract for existing app consumers.
+- Production feature files import route path and return-navigation helpers from Shared instead of App.
+- `src/architecture-boundaries.test.ts` provides executable boundary checks for production source files.
+- Empty stale placeholder folders and `.gitkeep` files under `src` were removed.
+- Architecture docs now describe shared UI migration status, MUI usage rules, and the frontend platform API.
+
+### Remaining Accepted Exceptions
+
+- Test infrastructure may import App/Features when it exists specifically to compose providers or test route guards.
+- Direct MUI layout, typography, form-control composition, and feature-specific UI remain allowed while shared primitives cover reusable actions, dialogs, feedback, layout shells, and table shells.

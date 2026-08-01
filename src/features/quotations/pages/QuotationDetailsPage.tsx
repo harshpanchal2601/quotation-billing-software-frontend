@@ -31,8 +31,8 @@ import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer } from '@shared/ui/layout';
 import { DataTableShell } from '@shared/ui/tables';
-import { paths } from '@app/router/routeConfig';
-import { getSafeListReturnPath } from '@app/router/returnNavigation';
+import { paths } from '@shared/routing/paths';
+import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
 import {
   createQuotationRevisionRequest,

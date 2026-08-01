@@ -6,6 +6,9 @@
 - Features may import Shared.
 - Cross-feature imports must use narrow public feature entry points.
 - Shared production code must not import Features.
+- Shared production code must not import App.
+- Features must not import App.
+- Route path constants and list-return helpers live in `src/shared/routing` because they are string-only routing contracts used by multiple features.
 
 ## FE-44 Public APIs
 
@@ -50,8 +53,8 @@
 
 ## Retained Exceptions
 
-- Companies and Items pages still import app route constants and return-navigation helpers from `@app/router`. This pre-existing pattern was not changed in FE-44 because moving router ownership is outside the Companies, Items, and Settings consolidation scope.
-- `src/shared/test/render.tsx` imports Auth for test rendering. This is an existing test-harness dependency, not production Shared code.
+- `src/shared/test/render.tsx` imports App theme/Auth providers for test rendering. This is an existing test-harness dependency, not production Shared code.
+- `src/features/auth/__tests__/routes.test.tsx` imports App route guards because it directly tests route guard behaviour.
 
 ## FE-45 Quotations Public API
 
@@ -75,4 +78,12 @@
 
 ## FE-46 Enforcement
 
-FE-46 should enforce public-boundary imports and decide whether the pre-existing feature-to-app router helper imports remain acceptable or should move behind an app-neutral navigation abstraction.
+- Production feature-to-app router imports were removed.
+- App route constants were moved behind `src/shared/routing/paths.ts`.
+- Return-navigation helpers were moved behind `src/shared/routing/returnNavigation.ts`.
+- `src/architecture-boundaries.test.ts` enforces production import boundaries:
+  - Shared production code cannot import App or Features.
+  - Feature production code cannot import App.
+  - App production code can import Features only through public feature entries.
+  - Cross-feature production imports must use public feature entries.
+  - Feature internals cannot import their own public feature entry.

@@ -119,3 +119,40 @@ API URLs, HTTP methods, query-key values, schemas, validation messages, form pay
 ### Next Phase
 
 FE-46 - Frontend Cleanup and Enforcement.
+
+## FE-46 - Frontend Cleanup and Enforcement
+
+Status: implementation complete; automated validation not run by Codex.
+
+### Boundary Cleanup
+
+- Production feature imports no longer depend on `@app/router`.
+- Route paths moved to `src/shared/routing/paths.ts`.
+- Return-navigation helpers moved to `src/shared/routing/returnNavigation.ts`.
+- App route metadata remains App-owned in `src/app/router/routeConfig.tsx`.
+- Dashboard self-imports now use relative feature-internal imports instead of its public feature alias.
+
+### Enforcement
+
+- Added `src/architecture-boundaries.test.ts`.
+- The test scans production `.ts` and `.tsx` source files and checks Shared, Feature, App, cross-feature, and self-public-entry boundaries.
+- Test-only provider and route-guard imports remain accepted exceptions.
+
+### Cleanup
+
+- Removed obsolete `.gitkeep` placeholders under `src`.
+- Removed empty stale directories left after previous consolidation.
+
+### Documentation
+
+- Updated import boundary and migration docs.
+- Added shared UI migration matrix, frontend platform API, shared UI architecture, and MUI usage rules.
+
+### Validation
+
+- Static validation completed by source inspection and search.
+- Automated validation was not run by Codex because active repository instructions prohibit npm, lint, typecheck, tests, build, install, Docker, deployment, migrations, and git commands.
+
+### Risks & Assumptions
+
+- The architecture boundary test must be run by the user through the existing test command because Codex is not permitted to execute npm/test commands in this session.

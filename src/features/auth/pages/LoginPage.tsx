@@ -14,7 +14,7 @@ import { PasswordField } from '@shared/components/common/PasswordField';
 import { ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { ServerErrorAlert } from '@shared/ui/feedback';
-import { paths } from '@app/router/routeConfig';
+import { paths } from '@shared/routing/paths';
 import { useAuth } from '../hooks/useAuth';
 import { loginSchema, type LoginFormValues } from '../model/auth.schema';
 
