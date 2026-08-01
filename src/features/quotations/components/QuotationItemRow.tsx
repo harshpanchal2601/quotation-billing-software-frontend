@@ -16,9 +16,9 @@ import { Controller, useFormContext } from 'react-hook-form';
 
 import { AppIconButton } from '@shared/ui/actions';
 import type { ItemOption } from '@features/items';
-import type { CalculatedLineItem } from '../quotations.types';
-import { formatCurrency } from '../quotations.utils';
-import type { QuotationFormSubmitValues } from '../quotations.schema';
+import type { CalculatedLineItem } from '../model/quotations.types';
+import { formatCurrency } from '../model/quotations.utils';
+import type { QuotationFormSubmitValues } from '../model/quotations.schema';
 
 type QuotationItemRowProps = {
   index: number;

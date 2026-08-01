@@ -8,8 +8,8 @@ import { useState } from 'react';
 
 import { AppButton } from '@shared/ui/actions';
 import { AppDialog } from '@shared/ui/dialogs';
-import type { QuotationStatus } from '../quotations.types';
-import { formatQuotationStatusLabel, getValidNextStatuses } from '../quotations.utils';
+import type { QuotationStatus } from '../model/quotations.types';
+import { formatQuotationStatusLabel, getValidNextStatuses } from '../model/quotations.utils';
 
 type QuotationStatusDialogProps = {
   open: boolean;

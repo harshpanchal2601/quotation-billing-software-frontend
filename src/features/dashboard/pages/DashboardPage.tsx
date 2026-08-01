@@ -27,7 +27,7 @@ import { RecentQuotationsSection } from '@features/dashboard/components/RecentQu
 import { TopCustomersSection } from '@features/dashboard/components/TopCustomersSection';
 import { dashboardQueryKeys } from '../model/dashboard.query-keys';
 import type { DashboardOverviewQuery, DashboardPeriod } from '../model/dashboard.types';
-import { formatCurrency } from '@features/quotations/quotations.utils';
+import { formatCurrency } from '@features/quotations';
 
 export function DashboardPage() {
   const { user } = useAuth();

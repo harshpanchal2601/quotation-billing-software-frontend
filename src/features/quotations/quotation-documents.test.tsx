@@ -3,15 +3,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as attachmentsApi from './api/quotation-attachments.api';
-import * as documentsApi from './api/quotation-documents.api';
+import * as attachmentsApi from './attachments/api/quotation-attachments.api';
+import * as documentsApi from './documents/api/quotation-documents.api';
 import * as quotationsApi from './api/quotations.api';
-import { QuotationDocumentsSection } from './components/QuotationDocumentsSection';
-import type { GeneratedDocumentHistoryResponse } from './quotation-documents.types';
-import type { QuotationDetail } from './quotations.types';
+import { QuotationDocumentsSection } from './documents/components/QuotationDocumentsSection';
+import type { GeneratedDocumentHistoryResponse } from './documents/model/quotation-documents.types';
+import type { QuotationDetail } from './model/quotations.types';
 
-vi.mock('./api/quotation-documents.api');
-vi.mock('./api/quotation-attachments.api');
+vi.mock('./documents/api/quotation-documents.api');
+vi.mock('./attachments/api/quotation-attachments.api');
 vi.mock('./api/quotations.api');
 
 function createTestQueryClient() {

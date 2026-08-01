@@ -1,5 +1,5 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
-import { omitEmptyParams } from '../quotations.utils';
+import { omitEmptyParams } from '../model/quotations.utils';
 import type {
   CalculatedQuotationTotals,
   CalculationPreviewInput,
@@ -9,7 +9,7 @@ import type {
   QuotationListResponse,
   QuotationStatusUpdateInput,
   QuotationUpdateInput,
-} from '../quotations.types';
+} from '../model/quotations.types';
 
 export async function listQuotationsRequest(params: QuotationListParams): Promise<QuotationListResponse> {
   const response = await apiClient.get<ApiSuccessResponse<QuotationListResponse>>('/quotations', {

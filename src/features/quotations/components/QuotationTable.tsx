@@ -16,8 +16,8 @@ import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 
 import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
-import type { QuotationListItem } from '../quotations.types';
-import { formatCurrency } from '../quotations.utils';
+import type { QuotationListItem } from '../model/quotations.types';
+import { formatCurrency } from '../model/quotations.utils';
 import { QuotationStatusChip } from './QuotationStatusChip';
 
 type QuotationTableProps = {

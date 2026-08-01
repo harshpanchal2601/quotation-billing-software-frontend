@@ -10,8 +10,8 @@ import { QuotationForm } from './components/QuotationForm';
 import { EditQuotationPage } from './pages/EditQuotationPage';
 import { QuotationDetailsPage } from './pages/QuotationDetailsPage';
 import { QuotationsPage } from './pages/QuotationsPage';
-import { quotationFormSchema, type QuotationFormSubmitValues } from './quotations.schema';
-import type { CalculatedQuotationTotals, QuotationDetail, QuotationListItem } from './quotations.types';
+import { quotationFormSchema, type QuotationFormSubmitValues } from './model/quotations.schema';
+import type { CalculatedQuotationTotals, QuotationDetail, QuotationListItem } from './model/quotations.types';
 
 vi.mock('./api/quotations.api');
 vi.mock('@features/companies', () => ({

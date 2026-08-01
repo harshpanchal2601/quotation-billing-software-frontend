@@ -2,7 +2,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { DeleteConfirmDialog } from '@shared/ui/dialogs';
-import { formatCurrency } from '../quotations.utils';
+import { formatCurrency } from '../model/quotations.utils';
 
 type QuotationDeleteDialogProps = {
   open: boolean;

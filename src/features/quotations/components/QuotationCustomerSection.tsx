@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 import { getCompanyRequest, listCompaniesRequest, type CompanyAddress, type CompanyContact } from '@features/companies';
-import type { QuotationFormSubmitValues } from '../quotations.schema';
+import type { QuotationFormSubmitValues } from '../model/quotations.schema';
 
 export function QuotationCustomerSection() {
   const { control, setValue, watch, formState: { errors } } = useFormContext<QuotationFormSubmitValues>();

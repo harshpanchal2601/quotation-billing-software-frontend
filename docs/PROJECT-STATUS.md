@@ -63,3 +63,59 @@ API URLs, HTTP methods, query-key values, schemas, validation messages, form pay
 ### Next Phase
 
 FE-45 - Quotations Domain Consolidation.
+
+## FE-45 - Quotations Domain Consolidation
+
+Status: implementation complete; automated validation not run by Codex.
+
+### Quotations Structure Before
+
+- Core query keys, schema, types, and helpers were root-level Quotations files.
+- Documents/PDF and attachments used root-level type/query/helper files and shared component/API folders.
+- Email UI was in the shared Quotations component folder.
+- App and Dashboard deep-imported Quotations internals.
+
+### Quotations Structure After
+
+- `api`: core Quotations API client.
+- `model`: core Quotations query keys, schema, types, date/status/calculation helpers, and mappers.
+- `documents`: document/PDF API, query keys, types, history, communication history, PDF preview, and email integration point.
+- `attachments`: attachment API, query keys, types, helpers, upload, preview/download, list, and delete UI.
+- `email`: quotation email dialog.
+- `pages`: list, create, edit, and detail route pages.
+- `components`: core form, line items, totals, filters, status, delete dialog, and table components.
+- `index.ts`: narrow public feature API.
+
+### Behaviour Preservation
+
+API URLs, HTTP methods, query-key values, schemas, validation messages, form payload mapping, calculation helpers, date helpers, status transitions, revision flow, PDF preview/download, attachment upload/download/delete, email payload/lifecycle, communication history, mutation invalidation, object URL cleanup, navigation, and responsive JSX were preserved.
+
+### Files Moved
+
+- Core query keys, schema, types, and utilities moved to `src/features/quotations/model`.
+- Document API, query keys, types, document section, and PDF preview dialog moved under `src/features/quotations/documents`.
+- Attachment API, query keys, types, helpers, and attachment UI moved under `src/features/quotations/attachments`.
+- Email dialog moved under `src/features/quotations/email`.
+
+### Files Removed
+
+- Obsolete Quotations `.gitkeep` placeholder.
+
+### Public Boundaries
+
+- App imports Quotations route pages through `@features/quotations`.
+- Dashboard imports Quotations status chip, status type, and currency formatter through `@features/quotations`.
+- Quotations consumes Companies, Items, Settings, and Dashboard through public feature entry points.
+
+### Exceptions
+
+- Feature pages still import app route constants and return-navigation helpers. This is a retained pre-existing routing dependency outside FE-45 scope.
+
+### Validation
+
+- Static validation completed by source inspection and search.
+- Automated validation was not run by Codex because active repository instructions prohibit npm, lint, typecheck, tests, build, install, Docker, deployment, migrations, and git commands.
+
+### Next Phase
+
+FE-46 - Frontend Cleanup and Enforcement.

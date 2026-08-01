@@ -1,7 +1,7 @@
 import Chip from '@mui/material/Chip';
 
-import type { QuotationStatus } from '../quotations.types';
-import { formatQuotationStatusLabel, getQuotationStatusChipColor } from '../quotations.utils';
+import type { QuotationStatus } from '../model/quotations.types';
+import { formatQuotationStatusLabel, getQuotationStatusChipColor } from '../model/quotations.utils';
 
 type QuotationStatusChipProps = {
   status: QuotationStatus;

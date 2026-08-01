@@ -4,7 +4,7 @@ import type {
   QuotationCommunicationHistoryResponse,
   SendQuotationEmailInput,
   SendQuotationEmailResponse,
-} from '../quotation-documents.types';
+} from '../model/quotation-documents.types';
 
 export async function getGeneratedDocumentHistoryRequest(
   quotationId: number,

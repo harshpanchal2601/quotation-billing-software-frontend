@@ -22,8 +22,8 @@ import { ControlledTextField } from '@shared/forms/controlled';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { calculatePreviewRequest } from '../api/quotations.api';
-import type { CalculatedQuotationTotals, CalculationPreviewInput, QuotationDetail } from '../quotations.types';
-import { quotationFormSchema, type QuotationFormSubmitValues } from '../quotations.schema';
+import type { CalculatedQuotationTotals, CalculationPreviewInput, QuotationDetail } from '../model/quotations.types';
+import { quotationFormSchema, type QuotationFormSubmitValues } from '../model/quotations.schema';
 import {
   addCalendarDaysToDateOnly,
   buildCalculationPreviewInput,
@@ -31,7 +31,7 @@ import {
   formatDateOnlyLocal,
   formatDiscountTypeLabel,
   formatTaxModeLabel,
-} from '../quotations.utils';
+} from '../model/quotations.utils';
 import { QuotationCustomerSection } from './QuotationCustomerSection';
 import { QuotationItemsField } from './QuotationItemsField';
 import { QuotationTotalsSummary } from './QuotationTotalsSummary';

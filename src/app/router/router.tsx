@@ -54,16 +54,16 @@ const EditItemPage = lazy(() =>
   import('@features/items').then((module) => ({ default: module.EditItemPage })),
 );
 const QuotationsPage = lazy(() =>
-  import('@features/quotations/pages/QuotationsPage').then((module) => ({ default: module.QuotationsPage })),
+  import('@features/quotations').then((module) => ({ default: module.QuotationsPage })),
 );
 const CreateQuotationPage = lazy(() =>
-  import('@features/quotations/pages/CreateQuotationPage').then((module) => ({ default: module.CreateQuotationPage })),
+  import('@features/quotations').then((module) => ({ default: module.CreateQuotationPage })),
 );
 const QuotationDetailsPage = lazy(() =>
-  import('@features/quotations/pages/QuotationDetailsPage').then((module) => ({ default: module.QuotationDetailsPage })),
+  import('@features/quotations').then((module) => ({ default: module.QuotationDetailsPage })),
 );
 const EditQuotationPage = lazy(() =>
-  import('@features/quotations/pages/EditQuotationPage').then((module) => ({ default: module.EditQuotationPage })),
+  import('@features/quotations').then((module) => ({ default: module.EditQuotationPage })),
 );
 
 function lazyPage(element: React.ReactNode) {

@@ -12,8 +12,8 @@ import { AppButton } from '@shared/ui/actions';
 import { AppDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { uploadQuotationAttachmentRequest } from '../api/quotation-attachments.api';
-import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
-import { formatFileSize } from '../quotation-attachments.utils';
+import { quotationAttachmentsQueryKeys } from '../model/quotation-attachments.query-keys';
+import { formatFileSize } from '../model/quotation-attachments.utils';
 
 interface QuotationAttachmentUploadDialogProps {
   open: boolean;

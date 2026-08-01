@@ -17,13 +17,13 @@ import { useEffect, useState } from 'react';
 import { AppButton } from '@shared/ui/actions';
 import { AppDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
-import { getQuotationAttachmentsRequest } from '../api/quotation-attachments.api';
-import { sendQuotationEmailRequest } from '../api/quotation-documents.api';
+import { getQuotationAttachmentsRequest } from '../../attachments/api/quotation-attachments.api';
+import { sendQuotationEmailRequest } from '../../documents/api/quotation-documents.api';
 import { toApiError } from '@shared/api/apiClient';
-import type { GeneratedDocumentHistoryItem } from '../quotation-documents.types';
-import type { QuotationDetail } from '../quotations.types';
-import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
-import { formatFileSize } from '../quotation-attachments.utils';
+import type { GeneratedDocumentHistoryItem } from '../../documents/model/quotation-documents.types';
+import type { QuotationDetail } from '../../model/quotations.types';
+import { quotationAttachmentsQueryKeys } from '../../attachments/model/quotation-attachments.query-keys';
+import { formatFileSize } from '../../attachments/model/quotation-attachments.utils';
 
 interface QuotationEmailDialogProps {
   open: boolean;

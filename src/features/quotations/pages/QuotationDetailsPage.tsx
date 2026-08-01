@@ -43,20 +43,20 @@ import {
   getQuotationRequest,
   updateQuotationStatusRequest,
 } from '../api/quotations.api';
-import { QuotationAttachmentsSection } from '../components/QuotationAttachmentsSection';
+import { QuotationAttachmentsSection } from '../attachments/components/QuotationAttachmentsSection';
 import { QuotationDeleteDialog } from '../components/QuotationDeleteDialog';
-import { QuotationDocumentsSection } from '../components/QuotationDocumentsSection';
-import { QuotationPdfPreviewDialog } from '../components/QuotationPdfPreviewDialog';
+import { QuotationDocumentsSection } from '../documents/components/QuotationDocumentsSection';
+import { QuotationPdfPreviewDialog } from '../documents/components/QuotationPdfPreviewDialog';
 import { QuotationStatusChip } from '../components/QuotationStatusChip';
 import { QuotationStatusDialog } from '../components/QuotationStatusDialog';
-import { quotationsQueryKeys } from '../quotations.query-keys';
-import type { QuotationStatus } from '../quotations.types';
+import { quotationsQueryKeys } from '../model/quotations.query-keys';
+import type { QuotationStatus } from '../model/quotations.types';
 import {
   formatCurrency,
   formatDiscountTypeLabel,
   formatQuotationStatusLabel,
   formatTaxModeLabel,
-} from '../quotations.utils';
+} from '../model/quotations.utils';
 
 export function QuotationDetailsPage() {
   const { id } = useParams<{ id: string }>();

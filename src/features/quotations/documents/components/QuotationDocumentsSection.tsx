@@ -34,18 +34,18 @@ import {
   downloadQuotationPdfBlobRequest,
   generateQuotationPdfRequest,
   getQuotationPdfPreviewBlobRequest,
-} from '../api/quotations.api';
+} from '../../api/quotations.api';
 import {
   getGeneratedDocumentHistoryRequest,
   getQuotationCommunicationHistoryRequest,
 } from '../api/quotation-documents.api';
-import type { GeneratedDocumentHistoryItem, QuotationCommunicationHistoryItem } from '../quotation-documents.types';
-import type { QuotationDetail } from '../quotations.types';
-import { quotationDocumentsQueryKeys } from '../quotation-documents.query-keys';
-import { quotationsQueryKeys } from '../quotations.query-keys';
+import type { GeneratedDocumentHistoryItem, QuotationCommunicationHistoryItem } from '../model/quotation-documents.types';
+import type { QuotationDetail } from '../../model/quotations.types';
+import { quotationDocumentsQueryKeys } from '../model/quotation-documents.query-keys';
+import { quotationsQueryKeys } from '../../model/quotations.query-keys';
 import { dashboardQueryKeys } from '@features/dashboard';
 import { QuotationPdfPreviewDialog } from './QuotationPdfPreviewDialog';
-import { QuotationEmailDialog } from './QuotationEmailDialog';
+import { QuotationEmailDialog } from '../../email/components/QuotationEmailDialog';
 
 interface QuotationDocumentsSectionProps {
   quotation: QuotationDetail;

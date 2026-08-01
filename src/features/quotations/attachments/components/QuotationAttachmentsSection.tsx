@@ -34,9 +34,9 @@ import {
   downloadQuotationAttachmentBlobRequest,
   getQuotationAttachmentsRequest,
 } from '../api/quotation-attachments.api';
-import type { QuotationAttachment } from '../quotation-attachments.types';
-import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
-import { formatFileSize } from '../quotation-attachments.utils';
+import type { QuotationAttachment } from '../model/quotation-attachments.types';
+import { quotationAttachmentsQueryKeys } from '../model/quotation-attachments.query-keys';
+import { formatFileSize } from '../model/quotation-attachments.utils';
 import { QuotationAttachmentDeleteDialog } from './QuotationAttachmentDeleteDialog';
 import { QuotationAttachmentPreviewDialog } from './QuotationAttachmentPreviewDialog';
 import { QuotationAttachmentUploadDialog } from './QuotationAttachmentUploadDialog';

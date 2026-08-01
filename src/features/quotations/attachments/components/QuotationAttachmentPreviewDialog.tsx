@@ -16,8 +16,8 @@ import {
   getQuotationAttachmentPreviewBlobRequest,
 } from '../api/quotation-attachments.api';
 import { toApiError } from '@shared/api/apiClient';
-import type { QuotationAttachment } from '../quotation-attachments.types';
-import { formatFileSize } from '../quotation-attachments.utils';
+import type { QuotationAttachment } from '../model/quotation-attachments.types';
+import { formatFileSize } from '../model/quotation-attachments.utils';
 
 interface QuotationAttachmentPreviewDialogProps {
   open: boolean;

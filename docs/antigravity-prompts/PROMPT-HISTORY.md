@@ -21,3 +21,35 @@ Exceptions: pre-existing feature-to-app route helper imports remain outside FE-4
 Behavior preservation: query keys, API URLs, HTTP methods, payload mappings, schemas, validation, mutation behavior, cache invalidation, navigation, and upload/image behavior were preserved.
 
 Next phase: FE-45 - Quotations Domain Consolidation.
+
+## FE-45 - Quotations Domain Consolidation
+
+Scope: consolidate internal frontend ownership for the Quotations feature without changing behaviour or API contracts.
+
+Structural changes: core model files moved into `model`; Documents/PDF moved into `documents`; Attachments moved into `attachments`; Email moved into `email`; a narrow Quotations public API was added.
+
+Core Quotations: route pages, core API, form, list, detail, status, schema, query keys, payload mapping, dates, and calculation helpers remain Quotations-owned.
+
+Calculations: calculation preview input helpers remain feature-owned and unchanged.
+
+Revisions: revision API and route/page behaviour remain Quotations-owned and unchanged.
+
+Documents/PDF: document history, communication history, PDF generation, preview, download, and object URL lifecycle remain Quotations-owned.
+
+Attachments: attachment API, upload, preview/download, deletion, validation, progress, and object URL lifecycle remain Quotations-owned.
+
+Email: send dialog, recipients, selected document, selected attachments, payload, and lifecycle remain Quotations-owned.
+
+Communications: communication history remains document-capability-owned and revision-aware.
+
+Public boundaries: App and Dashboard now consume Quotations through `src/features/quotations/index.ts`.
+
+Cleanup: removed the obsolete Quotations `.gitkeep` placeholder.
+
+Validation: static source inspection and boundary searches were performed. Automated validation was not run by Codex because active instructions prohibit npm, lint, typecheck, tests, build, install, Docker, deployment, migrations, and git commands.
+
+Exceptions: pre-existing feature-to-app route helper imports remain outside FE-45 scope.
+
+Behaviour preservation: query keys, API URLs, HTTP methods, payload mapping, validation, calculations, revision behaviour, PDF behaviour, attachment behaviour, email behaviour, communication history, mutation invalidation, navigation, responsive JSX, and object URL cleanup were preserved.
+
+Next phase: FE-46 - Frontend Cleanup and Enforcement.

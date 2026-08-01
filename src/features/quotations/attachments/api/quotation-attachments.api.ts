@@ -1,6 +1,6 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
-import type { QuotationAttachment, QuotationAttachmentListResponse } from '../quotation-attachments.types';
-import { parseContentDispositionFilename } from '../quotation-attachments.utils';
+import type { QuotationAttachment, QuotationAttachmentListResponse } from '../model/quotation-attachments.types';
+import { parseContentDispositionFilename } from '../model/quotation-attachments.utils';
 
 export async function getQuotationAttachmentsRequest(
   quotationId: number,

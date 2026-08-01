@@ -8,8 +8,8 @@ import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { createQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
-import { quotationsQueryKeys } from '../quotations.query-keys';
-import type { QuotationFormSubmitValues } from '../quotations.schema';
+import { quotationsQueryKeys } from '../model/quotations.query-keys';
+import type { QuotationFormSubmitValues } from '../model/quotations.schema';
 
 export function CreateQuotationPage() {
   const navigate = useNavigate();

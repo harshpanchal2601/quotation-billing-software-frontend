@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
-import { formatCurrency } from '../../quotations/quotations.utils';
+import { formatCurrency } from '@features/quotations';
 import type { TopCustomerDto } from '../model/dashboard.types';
 
 type TopCustomersSectionProps = {

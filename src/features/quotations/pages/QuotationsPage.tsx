@@ -25,8 +25,8 @@ import { QuotationDeleteDialog } from '../components/QuotationDeleteDialog';
 import { QuotationFilters } from '../components/QuotationFilters';
 import { QuotationStatusDialog } from '../components/QuotationStatusDialog';
 import { QuotationTable } from '../components/QuotationTable';
-import { quotationsQueryKeys } from '../quotations.query-keys';
-import type { QuotationListItem, QuotationListParams, QuotationStatus } from '../quotations.types';
+import { quotationsQueryKeys } from '../model/quotations.query-keys';
+import type { QuotationListItem, QuotationListParams, QuotationStatus } from '../model/quotations.types';
 
 export function QuotationsPage() {
   const navigate = useNavigate();

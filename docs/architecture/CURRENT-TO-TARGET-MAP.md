@@ -34,3 +34,32 @@ The frontend repository did not contain pre-existing architecture documentation 
 ### Deferred Quotations Cleanup
 
 Quotations was not structurally migrated in FE-44. Its changes are limited to importing Companies, Items, and Settings through public feature entry points.
+
+## FE-45 Quotations
+
+### Before
+
+- Core Quotations types, schema, query keys, and helpers lived at the Quotations feature root.
+- Documents/PDF and attachments had separate API/type/query files but shared the root API and component folders.
+- Email UI lived in the generic Quotations component folder.
+- App and Dashboard deep-imported Quotations internals.
+
+### After
+
+- Core model ownership lives under `src/features/quotations/model`.
+- Core API ownership remains under `src/features/quotations/api`.
+- Documents/PDF and communication history live under `src/features/quotations/documents`.
+- Attachments live under `src/features/quotations/attachments`.
+- Email dialog ownership lives under `src/features/quotations/email`.
+- Route pages remain under `src/features/quotations/pages`.
+- Core form/list/status/table components remain under `src/features/quotations/components`.
+- The public API is `src/features/quotations/index.ts` and exports route pages plus the narrow Dashboard-consumed status/formatting exports.
+
+### Ownership Notes
+
+- Calculations, date helpers, status helpers, schemas, and payload types remain Quotations-owned in `model`.
+- Revision behaviour remains page/API/model-owned inside Quotations.
+- Document/PDF preview, download, history, and communication history remain Quotations-owned.
+- Attachment upload, preview, download, deletion, validation, and object URL handling remain Quotations-owned.
+- Email recipient, document, attachment, and send behaviour remain Quotations-owned.
+- App and Dashboard consume Quotations through the public feature boundary.

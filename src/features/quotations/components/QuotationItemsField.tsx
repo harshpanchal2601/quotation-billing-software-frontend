@@ -6,8 +6,8 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { AppButton } from '@shared/ui/actions';
 import type { ItemOption } from '@features/items';
-import type { CalculatedQuotationTotals } from '../quotations.types';
-import type { QuotationFormSubmitValues } from '../quotations.schema';
+import type { CalculatedQuotationTotals } from '../model/quotations.types';
+import type { QuotationFormSubmitValues } from '../model/quotations.schema';
 import { QuotationItemRow } from './QuotationItemRow';
 
 type QuotationItemsFieldProps = {

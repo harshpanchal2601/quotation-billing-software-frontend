@@ -7,9 +7,9 @@ import { toApiError } from '@shared/api/apiClient';
 import { DeleteConfirmDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { deleteQuotationAttachmentRequest } from '../api/quotation-attachments.api';
-import type { QuotationAttachment } from '../quotation-attachments.types';
-import { quotationAttachmentsQueryKeys } from '../quotation-attachments.query-keys';
-import { formatFileSize } from '../quotation-attachments.utils';
+import type { QuotationAttachment } from '../model/quotation-attachments.types';
+import { quotationAttachmentsQueryKeys } from '../model/quotation-attachments.query-keys';
+import { formatFileSize } from '../model/quotation-attachments.utils';
 
 interface QuotationAttachmentDeleteDialogProps {
   open: boolean;

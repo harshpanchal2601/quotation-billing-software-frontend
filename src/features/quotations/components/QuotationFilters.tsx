@@ -10,8 +10,8 @@ import TextField from '@mui/material/TextField';
 import { useEffect, useState } from 'react';
 
 import { AppButton } from '@shared/ui/actions';
-import type { QuotationListParams, QuotationStatus } from '../quotations.types';
-import { formatQuotationStatusLabel } from '../quotations.utils';
+import type { QuotationListParams, QuotationStatus } from '../model/quotations.types';
+import { formatQuotationStatusLabel } from '../model/quotations.utils';
 
 type QuotationFiltersProps = {
   params: QuotationListParams;

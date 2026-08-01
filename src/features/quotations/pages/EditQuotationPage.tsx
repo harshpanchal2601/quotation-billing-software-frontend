@@ -11,9 +11,9 @@ import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { getQuotationRequest, updateQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
-import { quotationsQueryKeys } from '../quotations.query-keys';
-import type { QuotationFormSubmitValues } from '../quotations.schema';
-import { formatQuotationStatusLabel } from '../quotations.utils';
+import { quotationsQueryKeys } from '../model/quotations.query-keys';
+import type { QuotationFormSubmitValues } from '../model/quotations.schema';
+import { formatQuotationStatusLabel } from '../model/quotations.utils';
 
 export function EditQuotationPage() {
   const { id } = useParams<{ id: string }>();

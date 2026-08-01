@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import { DataTableShell } from '@shared/ui/tables';
-import { formatCurrency } from '../../quotations/quotations.utils';
+import { formatCurrency } from '@features/quotations';
 import type { MonthlyTrendDto } from '../model/dashboard.types';
 
 type MonthlyQuotationTrendProps = {

@@ -14,8 +14,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { EmptyState } from '@shared/components/common/EmptyState';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
 import { DataTableShell } from '@shared/ui/tables';
-import { QuotationStatusChip } from '../../quotations/components/QuotationStatusChip';
-import { formatCurrency } from '../../quotations/quotations.utils';
+import { QuotationStatusChip, formatCurrency } from '@features/quotations';
 import type { RecentQuotationDto } from '../model/dashboard.types';
 
 type RecentQuotationsSectionProps = {
