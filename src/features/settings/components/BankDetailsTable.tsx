@@ -9,12 +9,12 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
 import { AppButton, AppIconButton } from '@shared/ui/actions';
+import { DataTableShell } from '@shared/ui/tables';
 import type { BankDetail } from '../settings.types';
 import { maskAccountNumber } from '../settings.utils';
 
@@ -29,7 +29,15 @@ type BankDetailsTableProps = {
 export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, busyBankDetailId }: BankDetailsTableProps) {
   return (
     <>
-      <TableContainer component={Paper} variant="outlined" sx={{ display: { xs: 'none', md: 'block' } }}>
+      <DataTableShell
+        isLoading={false}
+        isError={false}
+        isEmpty={false}
+        loadingContent={null}
+        errorContent={null}
+        emptyContent={null}
+        tableContainerProps={{ component: Paper, variant: 'outlined', sx: { display: { xs: 'none', md: 'block' } } }}
+      >
         <Table aria-label="Bank details">
           <TableHead>
             <TableRow>
@@ -80,7 +88,7 @@ export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, 
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
+      </DataTableShell>
       <Stack spacing={1.5} sx={{ display: { xs: 'flex', md: 'none' } }}>
         {bankDetails.map((bankDetail) => (
           <Paper key={bankDetail.id} variant="outlined" sx={{ p: 2 }}>

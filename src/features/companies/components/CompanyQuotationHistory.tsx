@@ -5,14 +5,11 @@ import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
-import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
-import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -24,6 +21,7 @@ import { useMemo, useState } from 'react';
 import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
+import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import { toApiError } from '@shared/api/apiClient';
 import { listCompanyQuotationsRequest } from '../api/companies.api';
 import { companiesQueryKeys } from '../companies.query-keys';
@@ -68,15 +66,20 @@ export function CompanyQuotationHistory({ companyId }: { companyId: number }) {
         <TextField label="Date to" type="date" value={dateTo} onChange={(event) => { setDateTo(event.target.value); setPage(0); }} InputLabelProps={{ shrink: true }} error={dateRangeInvalid} helperText={dateRangeInvalid ? 'Date from cannot be later than date to' : undefined} sx={{ width: { xs: '100%', md: 'auto' } }} />
       </Stack>
       {dateRangeInvalid ? <Alert severity="error">Fix the date range to load quotations.</Alert> : null}
-      {query.isPending ? <Stack spacing={1}>{Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack> : null}
-      {query.isError ? (
-        <Stack spacing={1}>
-          <ErrorState message={toApiError(query.error).message} />
-          <AppButton variant="outlined" onClick={() => void query.refetch()}>Retry</AppButton>
-        </Stack>
-      ) : null}
-      {query.data && query.data.quotations.length === 0 ? <EmptyState title="No quotation history" description="Quotations linked to this company will appear here." /> : null}
-      {query.data && query.data.quotations.length > 0 ? (
+      <DataTableShell
+        isLoading={query.isPending}
+        isError={query.isError}
+        isEmpty={Boolean(query.data && query.data.quotations.length === 0)}
+        loadingContent={<TableSkeleton rowCount={3} rowHeight={56} />}
+        errorContent={
+          <Stack spacing={1}>
+            <ErrorState message={toApiError(query.error).message} />
+            <AppButton variant="outlined" onClick={() => void query.refetch()}>Retry</AppButton>
+          </Stack>
+        }
+        emptyContent={<EmptyState title="No quotation history" description="Quotations linked to this company will appear here." />}
+      >
+        {query.data && query.data.quotations.length > 0 ? (
         <Paper variant="outlined">
           {isCompact ? (
             <Stack spacing={1.5} sx={{ p: 1.5 }} aria-label="Company quotation history cards">
@@ -108,7 +111,14 @@ export function CompanyQuotationHistory({ companyId }: { companyId: number }) {
               ))}
             </Stack>
           ) : (
-            <TableContainer>
+            <DataTableShell
+              isLoading={false}
+              isError={false}
+              isEmpty={false}
+              loadingContent={null}
+              errorContent={null}
+              emptyContent={null}
+            >
               <Table aria-label="Company quotation history" sx={{ minWidth: 840 }}>
                 <TableHead>
                   <TableRow>
@@ -135,19 +145,19 @@ export function CompanyQuotationHistory({ companyId }: { companyId: number }) {
                   ))}
                 </TableBody>
               </Table>
-            </TableContainer>
+            </DataTableShell>
           )}
-          <TablePagination
-            component="div"
+          <AppTablePagination
             count={query.data.pagination.total}
-            page={page}
+            page={page + 1}
             rowsPerPage={limit}
             rowsPerPageOptions={[10, 20, 50]}
-            onPageChange={(_event, nextPage) => setPage(nextPage)}
-            onRowsPerPageChange={(event) => { setLimit(Number(event.target.value)); setPage(0); }}
+            onPageChange={(nextPage) => setPage(nextPage - 1)}
+            onRowsPerPageChange={(nextLimit) => { setLimit(nextLimit); setPage(0); }}
           />
         </Paper>
-      ) : null}
+        ) : null}
+      </DataTableShell>
     </Stack>
   );
 }

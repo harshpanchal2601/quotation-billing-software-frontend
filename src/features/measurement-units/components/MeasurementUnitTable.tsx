@@ -6,14 +6,13 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 
-import { RowActionsMenu } from '@shared/ui/tables';
+import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
 import type { MeasurementUnitListItem } from '../model/measurement-units.types';
 import { formatQuantityTypeLabel } from '../model/measurement-units.utils';
 
@@ -107,8 +106,15 @@ export function MeasurementUnitTable({
   }
 
   return (
-    <>
-      <TableContainer component={Card} variant="outlined">
+    <DataTableShell
+      isLoading={false}
+      isError={false}
+      isEmpty={false}
+      loadingContent={null}
+      errorContent={null}
+      emptyContent={null}
+      tableContainerProps={{ component: Card, variant: 'outlined' }}
+    >
         <Table aria-label="Measurement unit table">
           <TableHead>
             <TableRow>
@@ -162,7 +168,6 @@ export function MeasurementUnitTable({
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
-    </>
+    </DataTableShell>
   );
 }

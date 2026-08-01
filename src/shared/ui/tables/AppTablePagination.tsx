@@ -1,4 +1,4 @@
-import TablePagination from '@mui/material/TablePagination';
+import TablePagination, { type TablePaginationProps } from '@mui/material/TablePagination';
 
 export type AppTablePaginationProps = {
   count: number;
@@ -7,6 +7,7 @@ export type AppTablePaginationProps = {
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
   rowsPerPageOptions?: number[];
+  sx?: TablePaginationProps['sx'];
 };
 
 export function AppTablePagination({
@@ -16,6 +17,7 @@ export function AppTablePagination({
   onPageChange,
   onRowsPerPageChange,
   rowsPerPageOptions = [10, 20, 50],
+  sx,
 }: AppTablePaginationProps) {
   return (
     <TablePagination
@@ -26,6 +28,7 @@ export function AppTablePagination({
       rowsPerPageOptions={rowsPerPageOptions}
       onPageChange={(_event, nextPage) => onPageChange(nextPage + 1)}
       onRowsPerPageChange={(event) => onRowsPerPageChange(Number(event.target.value))}
+      sx={sx}
     />
   );
 }

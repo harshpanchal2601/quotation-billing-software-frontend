@@ -7,7 +7,6 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
@@ -15,7 +14,7 @@ import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 
-import { RowActionsMenu } from '@shared/ui/tables';
+import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
 import type { CategoryListItem } from '../model/categories.types';
 import { isProtectedCategory } from '../model/categories.utils';
 
@@ -134,8 +133,15 @@ export function CategoryTable({
   }
 
   return (
-    <>
-      <TableContainer component={Card} variant="outlined">
+    <DataTableShell
+      isLoading={false}
+      isError={false}
+      isEmpty={false}
+      loadingContent={null}
+      errorContent={null}
+      emptyContent={null}
+      tableContainerProps={{ component: Card, variant: 'outlined' }}
+    >
         <Table aria-label="Category table">
           <TableHead>
             <TableRow>
@@ -203,7 +209,6 @@ export function CategoryTable({
             })}
           </TableBody>
         </Table>
-      </TableContainer>
-    </>
+    </DataTableShell>
   );
 }

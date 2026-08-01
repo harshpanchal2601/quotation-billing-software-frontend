@@ -1,7 +1,6 @@
 import NoteAddOutlinedIcon from '@mui/icons-material/NoteAddOutlined';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
-import TablePagination from '@mui/material/TablePagination';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
@@ -11,6 +10,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
+import { AppTablePagination, DataTableShell } from '@shared/ui/tables';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
@@ -138,12 +138,12 @@ export function QuotationsPage() {
     setSearchParams(new URLSearchParams());
   };
 
-  const handleChangePage = (_e: unknown, newPage: number) => {
-    handleFilterChange({ page: newPage + 1 });
+  const handleChangePage = (newPage: number) => {
+    handleFilterChange({ page: newPage });
   };
 
-  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFilterChange({ limit: Number(e.target.value), page: 1 });
+  const handleChangeRowsPerPage = (rowsPerPage: number) => {
+    handleFilterChange({ limit: rowsPerPage, page: 1 });
   };
 
   const quotations = data?.quotations || [];
@@ -182,17 +182,21 @@ export function QuotationsPage() {
       />
 
       {/* Content State */}
-      <RefreshIndicator show={showRefreshing} label="Refreshing quotations..." />
-
-      {isLoading ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Skeleton variant="rectangular" height={50} sx={{ borderRadius: 2 }} />
-          <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
-        </Box>
-      ) : isError ? (
-        <ErrorState message={toApiError(error).message} onRetry={refetch} />
-      ) : quotations.length === 0 ? (
-        <Box sx={{ p: 6, textAlign: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+      <DataTableShell
+        isLoading={isLoading}
+        isError={isError}
+        isEmpty={quotations.length === 0}
+        isRefreshing={showRefreshing}
+        refreshIndicator={<RefreshIndicator show={showRefreshing} label="Refreshing quotations..." />}
+        loadingContent={
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Skeleton variant="rectangular" height={50} sx={{ borderRadius: 2 }} />
+            <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
+          </Box>
+        }
+        errorContent={<ErrorState message={toApiError(error).message} onRetry={refetch} />}
+        emptyContent={
+          <Box sx={{ p: 6, textAlign: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
           <Typography variant="h6" fontWeight={600} gutterBottom>
             No Quotations Found
           </Typography>
@@ -211,29 +215,28 @@ export function QuotationsPage() {
             </AppButton>
           )}
         </Box>
-      ) : (
-        <Box aria-busy={isLoading || showRefreshing}>
-          <QuotationTable
-            quotations={quotations}
-            returnState={listReturnState}
-            onOpenStatusDialog={(quo) => setStatusDialogTarget(quo)}
-            onOpenDeleteDialog={(quo) => setDeleteDialogTarget(quo)}
-          />
-
-          {pagination ? (
-            <TablePagination
-              component="div"
+        }
+        pagination={
+          pagination ? (
+            <AppTablePagination
               count={pagination.total}
-              page={pagination.page - 1}
+              page={pagination.page}
               onPageChange={handleChangePage}
               rowsPerPage={pagination.limit}
               onRowsPerPageChange={handleChangeRowsPerPage}
               rowsPerPageOptions={[10, 20, 50]}
               sx={{ mt: 2 }}
             />
-          ) : null}
-        </Box>
-      )}
+          ) : null
+        }
+      >
+          <QuotationTable
+            quotations={quotations}
+            returnState={listReturnState}
+            onOpenStatusDialog={(quo) => setStatusDialogTarget(quo)}
+            onOpenDeleteDialog={(quo) => setDeleteDialogTarget(quo)}
+          />
+      </DataTableShell>
 
       {/* Status Transition Dialog */}
       {statusDialogTarget ? (

@@ -57,4 +57,15 @@ describe('DataTableShell', () => {
       'true',
     );
   });
+
+  it('can wrap loaded table content in the standard table container', () => {
+    renderShell({
+      tableContainerProps: { 'aria-label': 'Customers table shell' },
+    });
+
+    expect(screen.getByLabelText('Customers table shell')).toContainElement(
+      screen.getByText('Loaded rows'),
+    );
+    expect(screen.getByText('Pagination')).toBeInTheDocument();
+  });
 });

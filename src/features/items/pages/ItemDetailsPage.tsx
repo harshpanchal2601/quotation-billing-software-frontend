@@ -12,7 +12,6 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
@@ -24,6 +23,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { SafeImage } from '@shared/components/common/SafeImage';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { DataTableShell } from '@shared/ui/tables';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -293,7 +293,15 @@ export function ItemDetailsPage() {
                   Technical Specifications ({item.specifications.length})
                 </Typography>
 
-                <TableContainer component={Paper} variant="outlined">
+                <DataTableShell
+                  isLoading={false}
+                  isError={false}
+                  isEmpty={false}
+                  loadingContent={null}
+                  errorContent={null}
+                  emptyContent={null}
+                  tableContainerProps={{ component: Paper, variant: 'outlined' }}
+                >
                   <Table size="small" aria-label="Item specifications table">
                     <TableHead>
                       <TableRow>
@@ -312,7 +320,7 @@ export function ItemDetailsPage() {
                       ))}
                     </TableBody>
                   </Table>
-                </TableContainer>
+                </DataTableShell>
               </CardContent>
             </Card>
           ) : null}

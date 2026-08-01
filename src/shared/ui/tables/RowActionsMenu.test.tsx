@@ -55,4 +55,22 @@ describe('RowActionsMenu', () => {
     );
     expect(onDelete).not.toHaveBeenCalled();
   });
+
+  it('can stop trigger clicks from bubbling to a row handler', async () => {
+    const onRowClick = vi.fn();
+
+    render(
+      <div onClick={onRowClick}>
+        <RowActionsMenu
+          triggerLabel="Actions for Row A"
+          stopPropagationOnTrigger
+          actions={[{ key: 'view', label: 'View Details', onSelect: vi.fn() }]}
+        />
+      </div>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Actions for Row A' }));
+
+    expect(onRowClick).not.toHaveBeenCalled();
+  });
 });

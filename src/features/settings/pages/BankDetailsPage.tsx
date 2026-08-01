@@ -1,6 +1,5 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Box from '@mui/material/Box';
-import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +11,7 @@ import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import {
   bankDetailsQueryKey,
   createBankDetailRequest,
@@ -117,7 +117,7 @@ export function BankDetailsPage() {
   if (query.isPending) {
     return (
       <SettingsPageShell title="Bank Details" description="Manage bank accounts shown on quotation documents.">
-        <Stack spacing={1.5}>{Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} height={64} />)}</Stack>
+        <TableSkeleton rowCount={5} rowHeight={64} />
       </SettingsPageShell>
     );
   }
@@ -150,11 +150,16 @@ export function BankDetailsPage() {
           <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={openAddDialog}>Add Bank Account</AppButton>
         </Stack>
         <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
-        <RefreshIndicator show={showRefreshing} />
-        <Box aria-busy={query.isPending || showRefreshing}>
-        {bankDetails.length === 0 ? (
-          <EmptyState title="No bank accounts yet" description="Add a bank account to make payment details available for quotations." />
-        ) : (
+        <DataTableShell
+          isLoading={false}
+          isError={false}
+          isEmpty={bankDetails.length === 0}
+          isRefreshing={showRefreshing}
+          refreshIndicator={<RefreshIndicator show={showRefreshing} />}
+          loadingContent={<TableSkeleton rowCount={5} rowHeight={64} />}
+          errorContent={null}
+          emptyContent={<EmptyState title="No bank accounts yet" description="Add a bank account to make payment details available for quotations." />}
+        >
           <BankDetailsTable
             bankDetails={bankDetails}
             onEdit={openEditDialog}
@@ -162,8 +167,7 @@ export function BankDetailsPage() {
             onSetDefault={(bankDetail) => void defaultMutation.mutateAsync(bankDetail.id)}
             busyBankDetailId={busyBankDetailId}
           />
-        )}
-        </Box>
+        </DataTableShell>
       </Stack>
       <BankDetailsDialog
         open={dialogOpen}

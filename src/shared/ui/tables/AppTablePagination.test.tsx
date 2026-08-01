@@ -41,4 +41,19 @@ describe('AppTablePagination', () => {
 
     expect(onRowsPerPageChange).toHaveBeenCalledWith(20);
   });
+
+  it('accepts business-neutral style overrides for existing pagination spacing', () => {
+    const { container } = render(
+      <AppTablePagination
+        count={45}
+        page={1}
+        rowsPerPage={10}
+        onPageChange={vi.fn()}
+        onRowsPerPageChange={vi.fn()}
+        sx={{ mt: 2 }}
+      />,
+    );
+
+    expect(container.firstElementChild).toBeInTheDocument();
+  });
 });

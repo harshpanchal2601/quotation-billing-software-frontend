@@ -12,12 +12,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Collapse from '@mui/material/Collapse';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
-import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
@@ -31,6 +29,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
+import { DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import {
   downloadQuotationPdfBlobRequest,
   generateQuotationPdfRequest,
@@ -192,10 +191,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
       {/* Content */}
       <RefreshIndicator show={showRefreshing} label="Refreshing document history..." />
       {isLoading ? (
-        <Stack spacing={1}>
-          <Skeleton variant="rectangular" height={48} />
-          <Skeleton variant="rectangular" height={48} />
-        </Stack>
+        <TableSkeleton rowCount={2} rowHeight={48} />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={() => void refetch()} />
       ) : documents.length === 0 ? (
@@ -218,7 +214,15 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
       ) : (
         <>
           {/* Desktop Table View */}
-          <TableContainer sx={{ display: { xs: 'none', md: 'block' } }}>
+          <DataTableShell
+            isLoading={false}
+            isError={false}
+            isEmpty={false}
+            loadingContent={null}
+            errorContent={null}
+            emptyContent={null}
+            tableContainerProps={{ sx: { display: { xs: 'none', md: 'block' } } }}
+          >
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -299,7 +303,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </DataTableShell>
 
           {/* Mobile Cards View */}
           <Stack spacing={1.5} sx={{ display: { xs: 'flex', md: 'none' } }}>
@@ -444,10 +448,7 @@ function CommunicationHistorySection({
       <RefreshIndicator show={isRefreshing} label="Refreshing communication history..." />
 
       {isLoading ? (
-        <Stack spacing={1}>
-          <Skeleton variant="rectangular" height={48} />
-          <Skeleton variant="rectangular" height={48} />
-        </Stack>
+        <TableSkeleton rowCount={2} rowHeight={48} />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={onRetry} />
       ) : communications.length === 0 ? (
@@ -518,7 +519,14 @@ function CommunicationHistorySection({
             })}
           </Stack>
         ) : (
-        <TableContainer>
+        <DataTableShell
+          isLoading={false}
+          isError={false}
+          isEmpty={false}
+          loadingContent={null}
+          errorContent={null}
+          emptyContent={null}
+        >
           <Table size="small" sx={{ minWidth: 1120 }}>
             <TableHead>
               <TableRow>
@@ -606,7 +614,7 @@ function CommunicationHistorySection({
               })}
             </TableBody>
           </Table>
-        </TableContainer>
+        </DataTableShell>
         )
       )}
     </Box>

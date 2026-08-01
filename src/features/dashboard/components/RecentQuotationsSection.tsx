@@ -6,7 +6,6 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
@@ -14,6 +13,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
+import { DataTableShell } from '@shared/ui/tables';
 import { QuotationStatusChip } from '../../quotations/components/QuotationStatusChip';
 import { formatCurrency } from '../../quotations/quotations.utils';
 import type { RecentQuotationDto } from '../model/dashboard.types';
@@ -54,7 +54,14 @@ export function RecentQuotationsSection({ recentQuotations, currency = 'INR' }: 
 
         {/* Desktop Table View */}
         <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-          <TableContainer>
+          <DataTableShell
+            isLoading={false}
+            isError={false}
+            isEmpty={false}
+            loadingContent={null}
+            errorContent={null}
+            emptyContent={null}
+          >
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -91,7 +98,7 @@ export function RecentQuotationsSection({ recentQuotations, currency = 'INR' }: 
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </DataTableShell>
         </Box>
 
         {/* Mobile Stacked Card View */}

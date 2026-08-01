@@ -18,6 +18,7 @@ export type RowActionsMenuProps = {
   actions: RowAction[];
   disabled?: boolean;
   triggerSize?: AppIconButtonProps['size'];
+  stopPropagationOnTrigger?: boolean;
 };
 
 export function RowActionsMenu({
@@ -25,10 +26,12 @@ export function RowActionsMenu({
   actions,
   disabled = false,
   triggerSize = 'small',
+  stopPropagationOnTrigger = false,
 }: RowActionsMenuProps) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   function handleOpenMenu(event: MouseEvent<HTMLElement>) {
+    if (stopPropagationOnTrigger) event.stopPropagation();
     setAnchorEl(event.currentTarget);
   }
 

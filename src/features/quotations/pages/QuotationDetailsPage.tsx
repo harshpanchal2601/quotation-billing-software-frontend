@@ -17,7 +17,6 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
@@ -30,6 +29,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
+import { DataTableShell } from '@shared/ui/tables';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -496,7 +496,15 @@ export function QuotationDetailsPage() {
               ))}
             </Stack>
           ) : (
-            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+            <DataTableShell
+              isLoading={false}
+              isError={false}
+              isEmpty={false}
+              loadingContent={null}
+              errorContent={null}
+              emptyContent={null}
+              tableContainerProps={{ component: Paper, variant: 'outlined', sx: { borderRadius: 2 } }}
+            >
               <Table size="small" sx={{ minWidth: 980 }}>
                 <TableHead sx={{ bgcolor: 'grey.50' }}>
                   <TableRow>
@@ -543,7 +551,7 @@ export function QuotationDetailsPage() {
                   ))}
                 </TableBody>
               </Table>
-            </TableContainer>
+            </DataTableShell>
           )}
         </Grid>
 

@@ -5,12 +5,12 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
+import { DataTableShell } from '@shared/ui/tables';
 import { formatCurrency } from '../../quotations/quotations.utils';
 import type { MonthlyTrendDto } from '../model/dashboard.types';
 
@@ -52,7 +52,15 @@ export function MonthlyQuotationTrend({ monthlyTrend, currency = 'INR' }: Monthl
         </Box>
 
         {showTable ? (
-          <TableContainer sx={{ flexGrow: 1, maxHeight: 300 }}>
+          <DataTableShell
+            isLoading={false}
+            isError={false}
+            isEmpty={false}
+            loadingContent={null}
+            errorContent={null}
+            emptyContent={null}
+            tableContainerProps={{ sx: { flexGrow: 1, maxHeight: 300 } }}
+          >
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -73,7 +81,7 @@ export function MonthlyQuotationTrend({ monthlyTrend, currency = 'INR' }: Monthl
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </DataTableShell>
         ) : (
           <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', pt: 2 }}>
             <Stack direction="row" spacing={1.5} alignItems="flex-end" sx={{ height: 200, width: '100%', overflowX: 'auto', pb: 1 }}>

@@ -1,9 +1,7 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
-import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +13,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -280,38 +279,46 @@ export function ItemsPage() {
         </Stack>
       </Stack>
 
-      <RefreshIndicator show={showRefreshing} />
-      <Box aria-busy={query.isPending || showRefreshing}>
-      {query.isPending ? (
-        <Stack spacing={1}>
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} height={64} />
-          ))}
-        </Stack>
-      ) : null}
-
-      {query.isError ? (
-        <Stack spacing={1}>
-          <ErrorState message={toApiError(query.error).message} />
-          <AppButton variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
-            Retry
-          </AppButton>
-        </Stack>
-      ) : null}
-
-      {query.data && query.data.items.length === 0 ? (
-        <EmptyState
-          title={isFiltered ? 'No items match the active filters' : 'No items created yet'}
-          description={
-            isFiltered
-              ? 'Adjust search text, category, unit, rate or status filters to view items.'
-              : 'Add product or service items to start building quotation catalog.'
-          }
-        />
-      ) : null}
-
-      {query.data && query.data.items.length > 0 ? (
-        <>
+      <DataTableShell
+        isLoading={query.isPending}
+        isError={query.isError}
+        isEmpty={Boolean(query.data && query.data.items.length === 0)}
+        isRefreshing={showRefreshing}
+        refreshIndicator={<RefreshIndicator show={showRefreshing} />}
+        loadingContent={<TableSkeleton />}
+        errorContent={
+          <Stack spacing={1}>
+            <ErrorState message={toApiError(query.error).message} />
+            <AppButton variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
+              Retry
+            </AppButton>
+          </Stack>
+        }
+        emptyContent={
+          <EmptyState
+            title={isFiltered ? 'No items match the active filters' : 'No items created yet'}
+            description={
+              isFiltered
+                ? 'Adjust search text, category, unit, rate or status filters to view items.'
+                : 'Add product or service items to start building quotation catalog.'
+            }
+          />
+        }
+        pagination={
+          query.data && query.data.items.length > 0 ? (
+            <AppTablePagination
+              count={query.data.pagination.total}
+              page={params.page}
+              rowsPerPage={params.limit}
+              rowsPerPageOptions={[10, 20, 50]}
+              onPageChange={(page) => updateSearchParams(setSearchParams, { page })}
+              onRowsPerPageChange={(limit) => updateSearchParams(setSearchParams, { limit, page: 1 })}
+            />
+          ) : null
+        }
+      >
+        {query.data && query.data.items.length > 0 ? (
+          <>
           <Typography color="text.secondary">
             {query.data.pagination.total} item(s) found
           </Typography>
@@ -324,21 +331,9 @@ export function ItemsPage() {
             onStatusChange={(itm) => setStatusTarget(itm)}
             onDelete={(itm) => setDeleteTarget(itm)}
           />
-
-          <TablePagination
-            component="div"
-            count={query.data.pagination.total}
-            page={params.page - 1}
-            rowsPerPage={params.limit}
-            rowsPerPageOptions={[10, 20, 50]}
-            onPageChange={(_event, nextPage) => updateSearchParams(setSearchParams, { page: nextPage + 1 })}
-            onRowsPerPageChange={(event) =>
-              updateSearchParams(setSearchParams, { limit: Number(event.target.value), page: 1 })
-            }
-          />
-        </>
-      ) : null}
-      </Box>
+          </>
+        ) : null}
+      </DataTableShell>
 
       <ItemStatusDialog
         item={statusTarget}

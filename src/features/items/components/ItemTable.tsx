@@ -1,24 +1,19 @@
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { useState, type MouseEvent } from 'react';
 
 import { SafeImage } from '@shared/components/common/SafeImage';
-import { AppIconButton } from '@shared/ui/actions';
+import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
 import type { ItemListItem } from '../items.types';
 import {
   formatCurrencyRate,
@@ -47,18 +42,6 @@ export function ItemTable({
 }: ItemTableProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [activeItem, setActiveItem] = useState<ItemListItem | null>(null);
-
-  function handleOpenMenu(event: MouseEvent<HTMLElement>, item: ItemListItem) {
-    setAnchorEl(event.currentTarget);
-    setActiveItem(item);
-  }
-
-  function handleCloseMenu() {
-    setAnchorEl(null);
-    setActiveItem(null);
-  }
 
   if (!isDesktop) {
     return (
@@ -131,28 +114,28 @@ export function ItemTable({
                     <Typography variant="body2" color="text.secondary">
                       Quotations: <strong>{item.quotationUsageCount}</strong>
                     </Typography>
-                    <AppIconButton
-                      size="small"
-                      label={`Actions for ${item.name}`}
-                      onClick={(e) => handleOpenMenu(e, item)}
-                      disabled={busyItemId === item.id}
-                    >
-                      <MoreVertIcon fontSize="small" />
-                    </AppIconButton>
+                    {renderActionMenu(item)}
                   </Stack>
                 </Stack>
               </CardContent>
             </Card>
           );
         })}
-        {renderActionMenu()}
       </Stack>
     );
   }
 
   return (
     <>
-      <TableContainer component={Card} variant="outlined">
+      <DataTableShell
+        isLoading={false}
+        isError={false}
+        isEmpty={false}
+        loadingContent={null}
+        errorContent={null}
+        emptyContent={null}
+        tableContainerProps={{ component: Card, variant: 'outlined' }}
+      >
         <Table aria-label="Item table">
           <TableHead>
             <TableRow>
@@ -247,74 +230,29 @@ export function ItemTable({
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
-                    <AppIconButton
-                      size="small"
-                      label={`Actions for ${item.name}`}
-                      onClick={(e) => handleOpenMenu(e, item)}
-                      disabled={busyItemId === item.id}
-                    >
-                      <MoreVertIcon fontSize="small" />
-                    </AppIconButton>
+                    {renderActionMenu(item)}
                   </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
-      </TableContainer>
-      {renderActionMenu()}
+      </DataTableShell>
     </>
   );
 
-  function renderActionMenu() {
-    if (!activeItem) return null;
-
+  function renderActionMenu(item: ItemListItem) {
     return (
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleCloseMenu}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <MenuItem
-          onClick={() => {
-            const itm = activeItem;
-            handleCloseMenu();
-            onView(itm);
-          }}
-        >
-          View Details
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const itm = activeItem;
-            handleCloseMenu();
-            onEdit(itm);
-          }}
-        >
-          Edit Item
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const itm = activeItem;
-            handleCloseMenu();
-            onStatusChange(itm);
-          }}
-        >
-          {activeItem.isActive ? 'Deactivate' : 'Activate'}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const itm = activeItem;
-            handleCloseMenu();
-            onDelete(itm);
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          Delete Item
-        </MenuItem>
-      </Menu>
+      <RowActionsMenu
+        triggerLabel={`Actions for ${item.name}`}
+        disabled={busyItemId === item.id}
+        actions={[
+          { key: 'view', label: 'View Details', onSelect: () => onView(item) },
+          { key: 'edit', label: 'Edit Item', onSelect: () => onEdit(item) },
+          { key: 'status', label: item.isActive ? 'Deactivate' : 'Activate', onSelect: () => onStatusChange(item) },
+          { key: 'delete', label: 'Delete Item', destructive: true, onSelect: () => onDelete(item) },
+        ]}
+      />
     );
   }
 }
