@@ -1,5 +1,4 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -13,6 +12,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
@@ -92,14 +92,12 @@ export function CompaniesPage() {
   const listReturnState = getCurrentListReturnState(location.pathname, location.search);
 
   return (
-    <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Typography component="h1" variant="h1">Companies</Typography>
-          <Typography color="text.secondary">Manage customer companies, contacts, addresses and quotation history.</Typography>
-        </Box>
-        <AppButton component={RouterLink} to={paths.newCompany} variant="contained" startIcon={<AddOutlinedIcon />}>Add Company</AppButton>
-      </Stack>
+    <PageContainer>
+      <PageHeader
+        title="Companies"
+        description="Manage customer companies, contacts, addresses and quotation history."
+        actions={<AppButton component={RouterLink} to={paths.newCompany} variant="contained" startIcon={<AddOutlinedIcon />}>Add Company</AppButton>}
+      />
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
         <TextField label="Search companies" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} fullWidth />
@@ -160,7 +158,7 @@ export function CompaniesPage() {
       <CompanyStatusDialog company={statusTarget} isSubmitting={statusMutation.isPending} onClose={() => setStatusTarget(null)} onConfirm={async () => { if (statusTarget) await statusMutation.mutateAsync(statusTarget); }} />
       <DeleteCompanyDialog company={deleteTarget} isDeleting={deleteMutation.isPending} onClose={() => setDeleteTarget(null)} onConfirm={async () => { if (deleteTarget) await deleteMutation.mutateAsync(deleteTarget); }} />
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </Stack>
+    </PageContainer>
   );
 }
 

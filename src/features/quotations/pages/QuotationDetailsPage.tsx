@@ -29,6 +29,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer } from '@shared/ui/layout';
 import { DataTableShell } from '@shared/ui/tables';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
@@ -190,10 +191,10 @@ export function QuotationDetailsPage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ p: { xs: 0, sm: 3 }, maxWidth: 1200, mx: 'auto' }}>
+      <PageContainer maxWidth={1200} sx={{ p: { xs: 0, sm: 3 }, mx: 'auto' }}>
         <Skeleton variant="text" width={300} height={40} />
         <Skeleton variant="rectangular" height={500} sx={{ mt: 2, borderRadius: 2 }} />
-      </Box>
+      </PageContainer>
     );
   }
 
@@ -208,7 +209,7 @@ export function QuotationDetailsPage() {
   const canChangeStatus = quotation.isLatestRevision;
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
+    <PageContainer maxWidth={1200} sx={{ mx: 'auto' }}>
       {!quotation.isLatestRevision && quotation.latestRevision ? (
         <Alert
           severity="info"
@@ -766,7 +767,7 @@ export function QuotationDetailsPage() {
         severity={feedback.severity}
         onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
       />
-    </Box>
+    </PageContainer>
   );
 }
 

@@ -22,7 +22,9 @@ import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-r
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { SafeImage } from '@shared/components/common/SafeImage';
 import { AppButton } from '@shared/ui/actions';
+import { AppStatusChip } from '@shared/ui/display';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer } from '@shared/ui/layout';
 import { DataTableShell } from '@shared/ui/tables';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
@@ -84,10 +86,10 @@ export function ItemDetailsPage() {
 
   if (query.isPending) {
     return (
-      <Stack spacing={3}>
+      <PageContainer>
         <Skeleton height={40} width="40%" />
         <Skeleton height={300} />
-      </Stack>
+      </PageContainer>
     );
   }
 
@@ -108,15 +110,15 @@ export function ItemDetailsPage() {
   const returnPath = getSafeListReturnPath(location, paths.items);
 
   return (
-    <Stack spacing={3}>
+    <PageContainer>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ sm: 'center' }}>
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Typography component="h1" variant="h1">
             {item.name}
           </Typography>
-          <Chip
+          <AppStatusChip
             label={item.isActive ? 'Active' : 'Inactive'}
-            color={item.isActive ? 'success' : 'default'}
+            variant={item.isActive ? 'success' : 'neutral'}
           />
         </Stack>
 
@@ -370,6 +372,6 @@ export function ItemDetailsPage() {
       />
 
       <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </Stack>
+    </PageContainer>
   );
 }

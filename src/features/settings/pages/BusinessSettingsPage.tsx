@@ -14,6 +14,7 @@ import { FormActions } from '@shared/forms';
 import { ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import {
   businessProfileQueryKey,
   deleteBrandingAssetRequest,
@@ -88,10 +89,11 @@ export function BusinessSettingsPage() {
 
   if (query.isError) {
     return (
-      <SettingsPageHeader title="Business Settings" description="Manage company identity, contact details and branding assets.">
+      <PageContainer maxWidth={1120}>
+        <PageHeader title="Business Settings" description="Manage company identity, contact details and branding assets." />
         <ErrorState message={toApiError(query.error).message} />
         <AppButton onClick={() => void query.refetch()} variant="outlined">Retry</AppButton>
-      </SettingsPageHeader>
+      </PageContainer>
     );
   }
 
@@ -104,7 +106,8 @@ export function BusinessSettingsPage() {
   const isFormBusy = updateMutation.isPending;
 
   return (
-    <SettingsPageHeader title="Business Settings" description="Manage company identity, contact details and branding assets.">
+    <PageContainer maxWidth={1120}>
+      <PageHeader title="Business Settings" description="Manage company identity, contact details and branding assets." />
       <Stack component="form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isFormBusy}>
         <ServerErrorAlert message={serverError} />
         {form.formState.isDirty ? <Alert severity="info">You have unsaved changes.</Alert> : null}
@@ -173,7 +176,7 @@ export function BusinessSettingsPage() {
         />
       </Stack>
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </SettingsPageHeader>
+    </PageContainer>
   );
 }
 
@@ -199,29 +202,18 @@ function ProfileTextField({ form, name, label, required, disabled, autoComplete 
   );
 }
 
-function SettingsPageHeader({ title, description, children }: React.PropsWithChildren<{ title: string; description: string }>) {
-  return (
-    <Stack spacing={3} maxWidth={1120}>
-      <Box>
-        <Typography component="h1" variant="h1">{title}</Typography>
-        <Typography color="text.secondary">{description}</Typography>
-      </Box>
-      {children}
-    </Stack>
-  );
-}
-
 function TwoColumnGrid({ children }: React.PropsWithChildren) {
   return <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }} gap={2}>{children}</Box>;
 }
 
 function SettingsSkeleton({ title, description }: { title: string; description: string }) {
   return (
-    <SettingsPageHeader title={title} description={description}>
+    <PageContainer maxWidth={1120}>
+      <PageHeader title={title} description={description} />
       <Stack spacing={2}>
         {Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}
       </Stack>
-    </SettingsPageHeader>
+    </PageContainer>
   );
 }
 

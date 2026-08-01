@@ -11,6 +11,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
 import { AppDialog } from '@shared/ui/dialogs';
+import { AppStatusChip } from '@shared/ui/display';
 import { getCategoryRequest } from '../api/categories.api';
 import { categoriesQueryKeys } from '../model/categories.query-keys';
 import type { CategoryListItem } from '../model/categories.types';
@@ -106,9 +107,9 @@ export function CategoryDetailsDialog({ categoryId, onClose, onEdit }: CategoryD
               </Typography>
             </Stack>
 
-            <Chip
+            <AppStatusChip
               label={category.isActive ? 'Active' : 'Inactive'}
-              color={category.isActive ? 'success' : 'default'}
+              variant={category.isActive ? 'success' : 'neutral'}
             />
           </Stack>
 

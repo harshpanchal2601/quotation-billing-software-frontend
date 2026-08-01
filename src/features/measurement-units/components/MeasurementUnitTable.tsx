@@ -13,6 +13,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 
 import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
+import { AppStatusChip } from '@shared/ui/display';
 import type { MeasurementUnitListItem } from '../model/measurement-units.types';
 import { formatQuantityTypeLabel } from '../model/measurement-units.utils';
 
@@ -80,9 +81,9 @@ export function MeasurementUnitTable({
                       Symbol: <strong>{unit.symbol}</strong>
                     </Typography>
                   </Box>
-                  <Chip
+                  <AppStatusChip
                     label={unit.isActive ? 'Active' : 'Inactive'}
-                    color={unit.isActive ? 'success' : 'default'}
+                    variant={unit.isActive ? 'success' : 'neutral'}
                     size="small"
                   />
                 </Stack>
@@ -150,9 +151,9 @@ export function MeasurementUnitTable({
                   <Typography fontWeight={600}>{unit.linkedItemCount}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Chip
+                  <AppStatusChip
                     label={unit.isActive ? 'Active' : 'Inactive'}
-                    color={unit.isActive ? 'success' : 'default'}
+                    variant={unit.isActive ? 'success' : 'neutral'}
                     size="small"
                   />
                 </TableCell>

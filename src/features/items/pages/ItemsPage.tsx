@@ -1,5 +1,4 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -13,6 +12,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import { paths } from '@app/router/routeConfig';
 import { getCurrentListReturnState } from '@app/router/returnNavigation';
@@ -121,24 +121,20 @@ export function ItemsPage() {
   const listReturnState = getCurrentListReturnState(location.pathname, location.search);
 
   return (
-    <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ sm: 'center' }}>
-        <Box>
-          <Typography component="h1" variant="h1">
-            Items
-          </Typography>
-          <Typography color="text.secondary">
-            Manage equipment, products and services for quotation line items.
-          </Typography>
-        </Box>
-        <AppButton
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={() => navigate(paths.newCompany ? `${paths.items}/new` : `${paths.items}/new`)}
-        >
-          Add Item
-        </AppButton>
-      </Stack>
+    <PageContainer>
+      <PageHeader
+        title="Items"
+        description="Manage equipment, products and services for quotation line items."
+        actions={
+          <AppButton
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => navigate(paths.newCompany ? `${paths.items}/new` : `${paths.items}/new`)}
+          >
+            Add Item
+          </AppButton>
+        }
+      />
 
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
 
@@ -354,7 +350,7 @@ export function ItemsPage() {
       />
 
       <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </Stack>
+    </PageContainer>
   );
 }
 

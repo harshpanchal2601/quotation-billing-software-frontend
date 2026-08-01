@@ -6,16 +6,14 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
-import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Skeleton from '@mui/material/Skeleton';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@app/router/routeConfig';
 import { useAuth } from '@features/auth';
@@ -71,7 +69,7 @@ export function DashboardPage() {
 
   if (isLoading) {
     return (
-      <Stack spacing={3}>
+      <PageContainer>
         <Skeleton variant="text" width={250} height={40} />
         <Grid container spacing={2}>
           {[1, 2, 3, 4, 5, 6, 7].map((k) => (
@@ -88,7 +86,7 @@ export function DashboardPage() {
             <Skeleton variant="rectangular" height={320} sx={{ borderRadius: 2 }} />
           </Grid>
         </Grid>
-      </Stack>
+      </PageContainer>
     );
   }
 
@@ -115,22 +113,18 @@ export function DashboardPage() {
   } = data;
 
   return (
-    <Stack spacing={3}>
-      {/* Header Bar */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2}>
-        <Box>
-          <Typography component="h1" variant="h4" fontWeight={700}>
-            Dashboard
-          </Typography>
-          <Typography color="text.secondary" variant="body2">
-            Welcome back, {firstName}. Commercial quotation proposals & operational metrics overview.
-          </Typography>
-        </Box>
-
-        <AppButton component={RouterLink} to={paths.newQuotation} variant="contained" startIcon={<AddOutlinedIcon />}>
-          Create Quotation
-        </AppButton>
-      </Stack>
+    <PageContainer>
+      <PageHeader
+        title="Dashboard"
+        titleTypographyProps={{ variant: 'h4', fontWeight: 700 }}
+        description={`Welcome back, ${firstName}. Commercial quotation proposals & operational metrics overview.`}
+        descriptionTypographyProps={{ variant: 'body2' }}
+        actions={
+          <AppButton component={RouterLink} to={paths.newQuotation} variant="contained" startIcon={<AddOutlinedIcon />}>
+            Create Quotation
+          </AppButton>
+        }
+      />
 
       {/* Period Filter */}
       <DashboardPeriodFilter
@@ -250,6 +244,6 @@ export function DashboardPage() {
           <TopCustomersSection topCustomers={topCustomers} currency={currency} />
         </Grid>
       </Grid>
-    </Stack>
+    </PageContainer>
   );
 }

@@ -1,4 +1,3 @@
-import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
@@ -9,6 +8,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
 import { AppDialog } from '@shared/ui/dialogs';
+import { AppStatusChip } from '@shared/ui/display';
 import { getMeasurementUnitRequest } from '../api/measurement-units.api';
 import { measurementUnitsQueryKeys } from '../model/measurement-units.query-keys';
 import type { MeasurementUnitListItem } from '../model/measurement-units.types';
@@ -90,9 +90,9 @@ export function MeasurementUnitDetailsDialog({ unitId, onClose, onEdit }: Detail
               </Typography>
             </Stack>
 
-            <Chip
+            <AppStatusChip
               label={unit.isActive ? 'Active' : 'Inactive'}
-              color={unit.isActive ? 'success' : 'default'}
+              variant={unit.isActive ? 'success' : 'neutral'}
             />
           </Stack>
 

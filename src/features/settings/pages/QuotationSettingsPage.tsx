@@ -5,7 +5,6 @@ import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -16,6 +15,7 @@ import { FormActions } from '@shared/forms';
 import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import {
   getQuotationSettingsRequest,
   quotationSettingsQueryKey,
@@ -66,22 +66,29 @@ export function QuotationSettingsPage() {
   }
 
   if (query.isPending) {
-    return <SettingsPageShell title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences."><Stack spacing={2}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack></SettingsPageShell>;
+    return (
+      <PageContainer maxWidth={1120}>
+        <PageHeader title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences." />
+        <Stack spacing={2}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack>
+      </PageContainer>
+    );
   }
 
   if (query.isError) {
     return (
-      <SettingsPageShell title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences.">
+      <PageContainer maxWidth={1120}>
+        <PageHeader title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences." />
         <ErrorState message={toApiError(query.error).message} />
         <AppButton onClick={() => void query.refetch()} variant="outlined">Retry</AppButton>
-      </SettingsPageShell>
+      </PageContainer>
     );
   }
 
   const isBusy = updateMutation.isPending;
 
   return (
-    <SettingsPageShell title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences.">
+    <PageContainer maxWidth={1120}>
+      <PageHeader title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences." />
       <Stack component="form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate>
         <ServerErrorAlert message={serverError} />
         {form.formState.isDirty ? <Alert severity="info">You have unsaved changes.</Alert> : null}
@@ -148,7 +155,7 @@ export function QuotationSettingsPage() {
         />
       </Stack>
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </SettingsPageShell>
+    </PageContainer>
   );
 }
 
@@ -170,18 +177,6 @@ function QuotationTextField({ form, name, children, helperText, ...props }: {
         </TextField>
       )}
     />
-  );
-}
-
-function SettingsPageShell({ title, description, children }: PropsWithChildren<{ title: string; description: string }>) {
-  return (
-    <Stack spacing={3} maxWidth={1120}>
-      <Box>
-        <Typography component="h1" variant="h1">{title}</Typography>
-        <Typography color="text.secondary">{description}</Typography>
-      </Box>
-      {children}
-    </Stack>
   );
 }
 

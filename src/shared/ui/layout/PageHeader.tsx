@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
+import Typography, { type TypographyProps } from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
@@ -8,11 +8,20 @@ type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 export type PageHeaderProps = {
   actions?: ReactNode;
   description?: ReactNode;
+  descriptionTypographyProps?: Omit<TypographyProps, 'children'>;
   headingLevel?: HeadingLevel;
   title: ReactNode;
+  titleTypographyProps?: Omit<TypographyProps, 'children' | 'component'>;
 };
 
-export function PageHeader({ actions, description, headingLevel = 1, title }: PageHeaderProps) {
+export function PageHeader({
+  actions,
+  description,
+  descriptionTypographyProps,
+  headingLevel = 1,
+  title,
+  titleTypographyProps,
+}: PageHeaderProps) {
   const headingComponent = `h${headingLevel}` as const;
 
   return (
@@ -23,10 +32,10 @@ export function PageHeader({ actions, description, headingLevel = 1, title }: Pa
       alignItems={{ xs: 'stretch', sm: 'center' }}
     >
       <Box>
-        <Typography component={headingComponent} variant={headingLevel === 1 ? 'h1' : 'h2'}>
+        <Typography component={headingComponent} variant={headingLevel === 1 ? 'h1' : 'h2'} {...titleTypographyProps}>
           {title}
         </Typography>
-        {description ? <Typography color="text.secondary">{description}</Typography> : null}
+        {description ? <Typography color="text.secondary" {...descriptionTypographyProps}>{description}</Typography> : null}
       </Box>
 
       {actions ? <Box sx={{ display: 'flex', justifyContent: { sm: 'flex-end' } }}>{actions}</Box> : null}

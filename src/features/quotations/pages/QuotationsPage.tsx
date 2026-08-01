@@ -10,6 +10,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { AppTablePagination, DataTableShell } from '@shared/ui/tables';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@app/router/routeConfig';
@@ -152,26 +153,22 @@ export function QuotationsPage() {
   const listReturnState = getCurrentListReturnState(location.pathname, location.search);
 
   return (
-    <Box sx={{ width: '100%', maxWidth: '100%' }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography component="h1" variant="h1">
-            Quotations
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage quotation generation, calculation preview, draft updates, and status transitions.
-          </Typography>
-        </Box>
-        <AppButton
-          variant="contained"
-          color="primary"
-          startIcon={<NoteAddOutlinedIcon />}
-          onClick={() => navigate(paths.newQuotation)}
-        >
-          Create Quotation
-        </AppButton>
-      </Box>
+    <PageContainer>
+      <PageHeader
+        title="Quotations"
+        description="Manage quotation generation, calculation preview, draft updates, and status transitions."
+        descriptionTypographyProps={{ variant: 'body2' }}
+        actions={
+          <AppButton
+            variant="contained"
+            color="primary"
+            startIcon={<NoteAddOutlinedIcon />}
+            onClick={() => navigate(paths.newQuotation)}
+          >
+            Create Quotation
+          </AppButton>
+        }
+      />
 
       {/* Filters */}
       <QuotationFilters
@@ -274,6 +271,6 @@ export function QuotationsPage() {
         severity={feedback.severity}
         onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
       />
-    </Box>
+    </PageContainer>
   );
 }

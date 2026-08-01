@@ -18,6 +18,7 @@ import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParam
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer } from '@shared/ui/layout';
 import { paths } from '@app/router/routeConfig';
 import { getSafeListReturnPath } from '@app/router/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -123,7 +124,7 @@ export function CompanyDetailsPage() {
   });
 
   if (!Number.isFinite(companyId)) return <ErrorState message="Company not found" />;
-  if (query.isPending) return <Stack spacing={1}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack>;
+  if (query.isPending) return <PageContainer spacing={1}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</PageContainer>;
   if (query.isError) return <Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><AppButton onClick={() => void query.refetch()}>Retry</AppButton></Stack>;
 
   const company = query.data;
@@ -147,7 +148,7 @@ export function CompanyDetailsPage() {
   }
 
   return (
-    <Stack spacing={3}>
+    <PageContainer>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
         <Box>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
@@ -224,6 +225,6 @@ export function CompanyDetailsPage() {
       <CompanyStatusDialog company={statusOpen ? company : null} isSubmitting={statusMutation.isPending} onClose={() => setStatusOpen(false)} onConfirm={async () => { await statusMutation.mutateAsync(); }} />
       <DeleteCompanyDialog company={deleteOpen ? company : null} isDeleting={deleteMutation.isPending} onClose={() => setDeleteOpen(false)} onConfirm={() => deleteMutation.mutateAsync()} />
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </Stack>
+    </PageContainer>
   );
 }

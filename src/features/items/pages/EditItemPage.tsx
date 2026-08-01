@@ -1,7 +1,5 @@
-import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -9,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
 import { getItemRequest, updateItemRequest } from '../api/items.api';
@@ -68,11 +67,11 @@ export function EditItemPage() {
 
   if (query.isPending) {
     return (
-      <Stack spacing={3}>
+      <PageContainer>
         <Skeleton height={40} width="30%" />
         <Skeleton height={200} />
         <Skeleton height={300} />
-      </Stack>
+      </PageContainer>
     );
   }
 
@@ -90,15 +89,11 @@ export function EditItemPage() {
   const item = query.data;
 
   return (
-    <Stack spacing={3}>
-      <Box>
-        <Typography component="h1" variant="h1">
-          Edit {item.name}
-        </Typography>
-        <Typography color="text.secondary">
-          Update item details, pricing, specifications or product image. Code: {item.itemCode}
-        </Typography>
-      </Box>
+    <PageContainer>
+      <PageHeader
+        title={`Edit ${item.name}`}
+        description={`Update item details, pricing, specifications or product image. Code: ${item.itemCode}`}
+      />
 
       <ItemImageSection item={item} onSuccess={(msg) => setSuccessMessage(msg)} />
 
@@ -111,6 +106,6 @@ export function EditItemPage() {
       />
 
       <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </Stack>
+    </PageContainer>
   );
 }

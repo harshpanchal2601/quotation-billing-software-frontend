@@ -13,6 +13,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 
 import { SafeImage } from '@shared/components/common/SafeImage';
+import { AppStatusChip } from '@shared/ui/display';
 import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
 import type { ItemListItem } from '../items.types';
 import {
@@ -78,9 +79,9 @@ export function ItemTable({
                       </Typography>
                     </Box>
 
-                    <Chip
+                    <AppStatusChip
                       label={item.isActive ? 'Active' : 'Inactive'}
-                      color={item.isActive ? 'success' : 'default'}
+                      variant={item.isActive ? 'success' : 'neutral'}
                       size="small"
                     />
                   </Stack>
@@ -218,9 +219,9 @@ export function ItemTable({
                     <Typography fontWeight={600}>{item.quotationUsageCount}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Chip
+                    <AppStatusChip
                       label={item.isActive ? 'Active' : 'Inactive'}
-                      color={item.isActive ? 'success' : 'default'}
+                      variant={item.isActive ? 'success' : 'neutral'}
                       size="small"
                     />
                   </TableCell>

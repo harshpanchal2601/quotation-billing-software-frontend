@@ -1,5 +1,3 @@
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
 import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { createCompanyRequest } from '../api/companies.api';
 import { companiesQueryKeys } from '../companies.query-keys';
 import { CompanyForm } from '../components/CompanyForm';
@@ -33,13 +32,10 @@ export function CreateCompanyPage() {
   }
 
   return (
-    <Stack spacing={3} maxWidth={1040}>
-      <Stack>
-        <Typography component="h1" variant="h1">Add Company</Typography>
-        <Typography color="text.secondary">Create a company with an optional primary contact and addresses.</Typography>
-      </Stack>
+    <PageContainer maxWidth={1040}>
+      <PageHeader title="Add Company" description="Create a company with an optional primary contact and addresses." />
       <CompanyForm mode="create" isSubmitting={mutation.isPending} errorMessage={errorMessage} onSubmit={handleSubmit} onCancel={() => navigate(paths.companies)} />
       <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </Stack>
+    </PageContainer>
   );
 }

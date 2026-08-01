@@ -1,6 +1,5 @@
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -8,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
 import { getCompanyRequest, updateCompanyRequest } from '../api/companies.api';
@@ -34,17 +34,14 @@ export function EditCompanyPage() {
   });
 
   if (!Number.isFinite(companyId)) return <ErrorState message="Company not found" />;
-  if (query.isPending) return <Stack spacing={1}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack>;
+  if (query.isPending) return <PageContainer spacing={1}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</PageContainer>;
   if (query.isError) return <Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><AppButton onClick={() => void query.refetch()}>Retry</AppButton></Stack>;
 
   return (
-    <Stack spacing={3} maxWidth={1040}>
-      <Stack>
-        <Typography component="h1" variant="h1">Edit {query.data.name}</Typography>
-        <Typography color="text.secondary">Company contacts and addresses are managed from the details page.</Typography>
-      </Stack>
+    <PageContainer maxWidth={1040}>
+      <PageHeader title={`Edit ${query.data.name}`} description="Company contacts and addresses are managed from the details page." />
       <CompanyForm mode="edit" company={query.data} isSubmitting={mutation.isPending} errorMessage={errorMessage} onSubmit={async (values) => { setErrorMessage(null); await mutation.mutateAsync(values); }} onCancel={() => navigate(`${paths.companies}/${companyId}`)} />
       <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </Stack>
+    </PageContainer>
   );
 }

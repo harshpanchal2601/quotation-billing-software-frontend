@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type PropsWithChildren } from 'react';
+import { useState } from 'react';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
@@ -11,6 +11,7 @@ import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import {
   bankDetailsQueryKey,
@@ -116,18 +117,20 @@ export function BankDetailsPage() {
 
   if (query.isPending) {
     return (
-      <SettingsPageShell title="Bank Details" description="Manage bank accounts shown on quotation documents.">
+      <PageContainer maxWidth={1120}>
+        <PageHeader title="Bank Details" description="Manage bank accounts shown on quotation documents." />
         <TableSkeleton rowCount={5} rowHeight={64} />
-      </SettingsPageShell>
+      </PageContainer>
     );
   }
 
   if (query.isError) {
     return (
-      <SettingsPageShell title="Bank Details" description="Manage bank accounts shown on quotation documents.">
+      <PageContainer maxWidth={1120}>
+        <PageHeader title="Bank Details" description="Manage bank accounts shown on quotation documents." />
         <ErrorState message={toApiError(query.error).message} />
         <AppButton onClick={() => void query.refetch()} variant="outlined">Retry</AppButton>
-      </SettingsPageShell>
+      </PageContainer>
     );
   }
 
@@ -140,7 +143,8 @@ export function BankDetailsPage() {
   const bankDetails = query.data;
 
   return (
-    <SettingsPageShell title="Bank Details" description="Manage bank accounts shown on quotation documents.">
+    <PageContainer maxWidth={1120}>
+      <PageHeader title="Bank Details" description="Manage bank accounts shown on quotation documents." />
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
           <Box>
@@ -187,18 +191,6 @@ export function BankDetailsPage() {
         }}
       />
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
-    </SettingsPageShell>
-  );
-}
-
-function SettingsPageShell({ title, description, children }: PropsWithChildren<{ title: string; description: string }>) {
-  return (
-    <Stack spacing={3} maxWidth={1120}>
-      <Box>
-        <Typography component="h1" variant="h1">{title}</Typography>
-        <Typography color="text.secondary">{description}</Typography>
-      </Box>
-      {children}
-    </Stack>
+    </PageContainer>
   );
 }

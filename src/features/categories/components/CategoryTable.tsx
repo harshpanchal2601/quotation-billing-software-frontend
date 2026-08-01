@@ -15,6 +15,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 
 import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
+import { AppStatusChip } from '@shared/ui/display';
 import type { CategoryListItem } from '../model/categories.types';
 import { isProtectedCategory } from '../model/categories.utils';
 
@@ -102,9 +103,9 @@ export function CategoryTable({
                         slug: {cat.slug}
                       </Typography>
                     </Box>
-                    <Chip
+                    <AppStatusChip
                       label={cat.isActive ? 'Active' : 'Inactive'}
-                      color={cat.isActive ? 'success' : 'default'}
+                      variant={cat.isActive ? 'success' : 'neutral'}
                       size="small"
                     />
                   </Stack>
@@ -190,9 +191,9 @@ export function CategoryTable({
                     <Typography fontWeight={600}>{cat.linkedItemCount}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Chip
+                    <AppStatusChip
                       label={cat.isActive ? 'Active' : 'Inactive'}
-                      color={cat.isActive ? 'success' : 'default'}
+                      variant={cat.isActive ? 'success' : 'neutral'}
                       size="small"
                     />
                   </TableCell>

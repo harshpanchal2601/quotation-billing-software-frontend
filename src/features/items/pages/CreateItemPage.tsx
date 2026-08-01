@@ -1,6 +1,3 @@
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { paths } from '@app/router/routeConfig';
 import { toApiError } from '@shared/api/apiClient';
 import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { createItemRequest } from '../api/items.api';
 
 import { ItemForm } from '../components/ItemForm';
@@ -54,15 +52,8 @@ export function CreateItemPage() {
   }
 
   return (
-    <Stack spacing={3}>
-      <Box>
-        <Typography component="h1" variant="h1">
-          Add Item
-        </Typography>
-        <Typography color="text.secondary">
-          Create a new product or service item for quotations.
-        </Typography>
-      </Box>
+    <PageContainer>
+      <PageHeader title="Add Item" description="Create a new product or service item for quotations." />
 
       <ItemForm
         isSubmitting={mutation.isPending}
@@ -72,6 +63,6 @@ export function CreateItemPage() {
       />
 
       <AppSnackbar open={snackbarMessage !== null} autoHideDuration={4000} message={snackbarMessage} onClose={() => setSnackbarMessage(null)} />
-    </Stack>
+    </PageContainer>
   );
 }
