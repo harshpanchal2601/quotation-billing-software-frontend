@@ -1,0 +1,109 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: erp-frontend-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Validate and Deploy Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Verify frontend build
+        run: npm run build
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/erp-key.pem"
+          chmod 600 "$HOME/.ssh/erp-key.pem"
+
+      - name: Deploy frontend to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -i "$HOME/.ssh/erp-key.pem" \
+            -p "${EC2_PORT:-22}" \
+            "${EC2_USER}@${EC2_HOST}" <<'REMOTE_SCRIPT'
+
+          set -e
+
+          APP_NAME="erp-system-frontend"
+          APP_PATH="/var/www/erp-system-frontend"
+          APP_PORT="4173"
+
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+          cd "$APP_PATH"
+
+          echo "Pulling frontend code..."
+          git pull --ff-only origin main
+
+          echo "Installing frontend dependencies..."
+          npm ci
+
+          echo "Building frontend..."
+          npm run build
+
+          if [ ! -f "$APP_PATH/dist/index.html" ]; then
+            echo "Frontend build failed: dist/index.html not found."
+            exit 1
+          fi
+
+          command -v pm2 >/dev/null 2>&1 || npm install -g pm2
+
+          if pm2 describe "$APP_NAME" >/dev/null 2>&1; then
+            echo "Restarting frontend PM2 process..."
+            pm2 restart "$APP_NAME"
+          else
+            echo "Creating frontend PM2 process..."
+            pm2 serve "$APP_PATH/dist" "$APP_PORT" \
+              --name "$APP_NAME" \
+              --spa
+          fi
+
+          pm2 save
+          pm2 status "$APP_NAME"
+
+          echo "Frontend deployment completed."
+          REMOTE_SCRIPT
