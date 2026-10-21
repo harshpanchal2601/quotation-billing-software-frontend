@@ -18,7 +18,7 @@ import { getItemOptionsRequest } from '@features/items';
 import { listBankDetailsRequest } from '@features/settings';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { FormActions } from '@shared/forms';
-import { ControlledTextField } from '@shared/forms/controlled';
+import { ControlledCurrencyField, ControlledTextField } from '@shared/forms/controlled';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { calculatePreviewRequest } from '../api/quotations.api';
@@ -214,6 +214,7 @@ export function QuotationForm({
     const [items, taxMode, quotationDiscountType, quotationDiscountValue, freightAmount, otherCharges] =
       watchedCalculationValues;
     const payload = buildCalculationPreviewInput({
+      currency: watchedCurrency,
       items,
       taxMode,
       quotationDiscountType,
@@ -254,6 +255,7 @@ export function QuotationForm({
     return () => clearTimeout(timer);
   }, [
     watchedCalculationValues,
+    watchedCurrency,
     calculatePreview,
     calculatedTotals,
   ]);
@@ -324,13 +326,11 @@ export function QuotationForm({
                   )}
                 />
 
-                <ControlledTextField
+                <ControlledCurrencyField
                   control={control}
                   name="currency"
                   size="small"
-                  label="Currency Code"
-                  placeholder="INR"
-                  inputProps={{ maxLength: 3 }}
+                  currentCurrency={watchedCurrency}
                 />
 
                 <Controller

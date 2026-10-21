@@ -23,6 +23,7 @@ import { Link as RouterLink, NavLink, Outlet, useLocation, useNavigate } from 'r
 
 import { useAuth } from '@features/auth';
 import { AppBrand } from '@shared/components/brand/AppBrand';
+import { productBrand } from '@shared/components/brand/brand';
 import { UserAvatar } from '@shared/components/common/UserAvatar';
 import { AppIconButton } from '@shared/ui/actions';
 
@@ -48,7 +49,7 @@ export function AppLayout() {
     ?? navigationItems.find((item) => location.pathname.startsWith(`${item.path}/`))?.path;
 
   useEffect(() => {
-    document.title = `${getRouteTitle(location.pathname)} | Quotient`;
+    document.title = `${getRouteTitle(location.pathname)} | ${productBrand.name}`;
   }, [location.pathname]);
   const hasFirmContext = user !== null && (user.accountType !== 'SUPER_ADMIN' || selectedFirm !== null);
   const brandingQuery = useQuery({
@@ -165,7 +166,7 @@ export function AppLayout() {
       >
         Skip to content
       </Box>
-      <AppBar color="inherit" position="fixed" sx={{ width: { lg: `calc(100% - ${designTokens.layout.drawerWidth}px)` }, ml: { lg: `${designTokens.layout.drawerWidth}px` } }}>
+      <AppBar className="mui-fixed" color="inherit" position="fixed" sx={{ width: { lg: `calc(100% - ${designTokens.layout.drawerWidth}px)` }, ml: { lg: `${designTokens.layout.drawerWidth}px` } }}>
         <Toolbar sx={{ minHeight: designTokens.layout.headerHeight, px: { xs: 1.5, sm: 3 } }}>
           {!isDesktop ? (
             <AppIconButton label="Open navigation menu" onClick={() => setMobileOpen(true)} edge="start" sx={{ mr: 1 }}>

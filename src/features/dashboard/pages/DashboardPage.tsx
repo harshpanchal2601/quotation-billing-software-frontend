@@ -8,6 +8,10 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
 import Grid from '@mui/material/Grid';
 import Skeleton from '@mui/material/Skeleton';
+import MenuItem from '@mui/material/MenuItem';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
@@ -40,6 +44,7 @@ export function DashboardPage() {
   const dateToParam = searchParams.get('dateTo') || undefined;
 
   const queryParams: DashboardOverviewQuery = {
+    currency: searchParams.get('currency') || undefined,
     period: periodParam,
     dateFrom: dateFromParam,
     dateTo: dateToParam,
@@ -136,6 +141,28 @@ export function DashboardPage() {
         onRefresh={refetch}
       />
 
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
+        <TextField
+          select
+          size="small"
+          label="Value currency"
+          value={currency}
+          disabled={isFetching}
+          sx={{ minWidth: 160 }}
+          onChange={(event) => {
+            const params = new URLSearchParams(searchParams);
+            params.set('currency', event.target.value);
+            setSearchParams(params, { replace: true });
+          }}
+        >
+          {Array.from(new Set([currency, ...data.currencyTotals.map((total) => total.currency)]))
+            .sort().map((code) => <MenuItem key={code} value={code}>{code}</MenuItem>)}
+        </TextField>
+        <Typography variant="body2" color="text.secondary">
+          Values and customer rankings use {currency}. Overall quotation counts include all currencies.
+        </Typography>
+      </Stack>
+
       {/* Primary Metric Cards Grid */}
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6} md={4} lg={3}>
@@ -176,7 +203,7 @@ export function DashboardPage() {
           <DashboardMetricCard
             title="Average Quotation Value"
             value={formatCurrency(quotationMetrics.averageQuotationValue, currency)}
-            caption="Average value per quotation in period"
+            caption={`Average per ${currency} quotation in period`}
             icon={<CalculateOutlinedIcon />}
             iconBgColor="action.hover"
             iconColor="info.main"

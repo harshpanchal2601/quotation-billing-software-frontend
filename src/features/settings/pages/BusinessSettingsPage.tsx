@@ -11,7 +11,7 @@ import { useWatch, useForm, type FieldPath } from 'react-hook-form';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
 import { FormActions } from '@shared/forms';
-import { ControlledTextField } from '@shared/forms/controlled';
+import { ControlledCurrencyField, ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
@@ -78,6 +78,7 @@ export function BusinessSettingsPage() {
 
   const primaryColour = useWatch({ control: form.control, name: 'primaryColour' });
   const secondaryColour = useWatch({ control: form.control, name: 'secondaryColour' });
+  const defaultCurrency = useWatch({ control: form.control, name: 'defaultCurrency' });
 
   async function onSubmit(values: BusinessProfileSubmitValues) {
     await updateMutation.mutateAsync(values);
@@ -116,7 +117,14 @@ export function BusinessSettingsPage() {
             <ProfileTextField form={form} name="legalName" label="Legal name" required autoComplete="organization" disabled={isFormBusy} />
             <ProfileTextField form={form} name="displayName" label="Display name" required autoComplete="organization" disabled={isFormBusy} />
             <ProfileTextField form={form} name="website" label="Website" autoComplete="url" disabled={isFormBusy} />
-            <ProfileTextField form={form} name="defaultCurrency" label="Default currency" required disabled={isFormBusy} />
+            <ControlledCurrencyField
+              control={form.control}
+              name="defaultCurrency"
+              label="Default currency"
+              currentCurrency={defaultCurrency}
+              required
+              disabled={isFormBusy}
+            />
           </TwoColumnGrid>
         </SettingsSection>
         <SettingsSection title="Legal and tax information">

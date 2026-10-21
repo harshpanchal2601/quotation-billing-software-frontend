@@ -60,6 +60,6 @@ describe('AppLayout', () => {
       expect(link).toHaveClass('Mui-selected');
       expect(link).toHaveAttribute('aria-current', 'page');
     }
-    expect(document.title).toBe('Create Quotation | Quotient');
+    expect(document.title).toBe('Create Quotation | QuoteMerit');
   });
 });

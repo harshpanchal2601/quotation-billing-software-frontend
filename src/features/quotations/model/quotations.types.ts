@@ -188,6 +188,7 @@ export type QuotationItemInput = {
 };
 
 export type CalculationPreviewInput = {
+  currency?: string;
   taxMode?: TaxMode;
   quotationDiscountType?: DiscountType;
   quotationDiscountValue?: number | string;

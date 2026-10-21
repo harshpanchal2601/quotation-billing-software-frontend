@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -15,6 +15,10 @@ vi.mock('@features/auth', () => ({
 
 const mockDashboardData: DashboardOverviewData = {
   currency: 'INR',
+  currencyTotals: [
+    { currency: 'INR', quotationCount: 12, totalQuotationValue: '1250000.00' },
+    { currency: 'USD', quotationCount: 1, totalQuotationValue: '100.00' },
+  ],
   range: {
     period: 'CURRENT_FINANCIAL_YEAR',
     dateFrom: '2026-04-01',
@@ -115,6 +119,18 @@ function renderDashboardPage() {
 }
 
 describe('Dashboard Frontend Feature', () => {
+  it('requests the selected value currency and explains firm-wide counts', async () => {
+    const request = vi.spyOn(dashboardApi, 'getDashboardOverviewRequest').mockImplementation(async (params) => ({
+      ...mockDashboardData,
+      currency: params?.currency ?? 'INR',
+    }));
+    renderDashboardPage();
+    const selector = await screen.findByLabelText('Value currency');
+    fireEvent.mouseDown(selector);
+    fireEvent.click(await screen.findByRole('option', { name: 'USD' }));
+    await waitFor(() => expect(request).toHaveBeenLastCalledWith(expect.objectContaining({ currency: 'USD' })));
+    expect(await screen.findByText('Values and customer rankings use USD. Overall quotation counts include all currencies.')).toBeInTheDocument();
+  });
   it('shows dashboard skeletons instead of false zero values during initial load', () => {
     const pendingDashboard = deferred<DashboardOverviewData>();
     vi.spyOn(dashboardApi, 'getDashboardOverviewRequest').mockReturnValue(pendingDashboard.promise);

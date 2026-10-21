@@ -146,6 +146,7 @@ export function toInputDateOnly(value: string | null | undefined): string | null
 }
 
 export function buildCalculationPreviewInput(input: {
+  currency?: string;
   taxMode?: TaxMode;
   quotationDiscountType?: DiscountType;
   quotationDiscountValue?: number | string;
@@ -176,6 +177,7 @@ export function buildCalculationPreviewInput(input: {
   if (validItems.length === 0) return null;
 
   return {
+    currency: input.currency,
     taxMode: input.taxMode,
     quotationDiscountType: input.quotationDiscountType,
     quotationDiscountValue: input.quotationDiscountValue ?? 0,

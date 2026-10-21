@@ -14,6 +14,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { toApiError } from '@shared/api/apiClient';
 import { AppBrand } from '@shared/components/brand/AppBrand';
+import { productBrand } from '@shared/components/brand/brand';
 import { PasswordField } from '@shared/components/common/PasswordField';
 import { ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
@@ -38,7 +39,7 @@ export function LoginPage() {
   const location = useLocation();
   const { login, authError, clearAuthError, isLoggingIn, sessionMessage, clearSessionMessage } = useAuth();
   const [isErrorToastOpen, setIsErrorToastOpen] = useState(false);
-  const logoUrl = new URL(`${import.meta.env.BASE_URL}logo/quotient-mark.svg`, window.location.origin).href;
+  const logoUrl = new URL(productBrand.logoPath, window.location.origin).href;
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { identifier: '', password: '' },
@@ -50,7 +51,7 @@ export function LoginPage() {
 
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = 'Sign in | Quotient';
+    document.title = `Sign in | ${productBrand.name}`;
     return () => { document.title = previousTitle; };
   }, []);
 
@@ -96,7 +97,7 @@ export function LoginPage() {
       >
         <Stack
           component="section"
-          aria-label="About Quotient"
+          aria-label={`About ${productBrand.name}`}
           sx={{
             position: 'relative', overflow: 'hidden', justifyContent: 'space-between',
             p: { xs: 3, sm: 4, md: 6 }, gap: { xs: 3, md: 6 },
@@ -109,7 +110,7 @@ export function LoginPage() {
           }}
         >
           <Box sx={{ '& .MuiTypography-h4': { color: '#FFFFFF', fontSize: 24, fontWeight: 700, letterSpacing: '-0.7px' }, '& .MuiTypography-body2': { color: '#B5CCC2' } }}>
-            <AppBrand name="Quotient" logoUrl={logoUrl} />
+            <AppBrand logoUrl={logoUrl} />
           </Box>
           <Box>
             <Typography sx={{ display: { xs: 'none', md: 'block' }, color: '#B6E8C8', fontSize: 11, fontWeight: 700, letterSpacing: '2px', mb: 2 }}>
@@ -145,7 +146,7 @@ export function LoginPage() {
               <Box>
                 <Typography sx={{ color: 'primary.dark', fontSize: 11, fontWeight: 700, letterSpacing: '1.8px', mb: 1.5 }}>LET’S GET TO WORK</Typography>
                 <Typography id="login-heading" component="h1" sx={{ fontSize: { xs: 28, md: 34 }, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.2, mb: 1.5 }}>Welcome back</Typography>
-                <Typography color="text.secondary">Sign in to your Quotient workspace to pick up where you left off.</Typography>
+                <Typography color="text.secondary">Sign in to your {productBrand.name} workspace to pick up where you left off.</Typography>
               </Box>
               {sessionMessage ? <Alert severity="info" onClose={clearSessionMessage}>{sessionMessage}</Alert> : null}
               <ServerErrorAlert message={authError?.message} />

@@ -426,9 +426,24 @@ describe('quotation frontend management', () => {
     expect(quotationsApi.calculatePreviewRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         items: [expect.objectContaining({ itemName: 'SS Reactor Tank', quantity: 1, unitRate: 1000 })],
+        currency: 'INR',
       }),
     );
     expect(await screen.findByText(/One Thousand One Hundred Eighty Rupees Only/i)).toBeInTheDocument();
+  });
+
+  it('recalculates wording when the currency changes', async () => {
+    const user = userEvent.setup();
+    vi.mocked(quotationsApi.calculatePreviewRequest)
+      .mockResolvedValueOnce(mockTotals('1180.00'))
+      .mockResolvedValueOnce(mockTotals('1180.00', 'One Thousand One Hundred Eighty US Dollars Only'));
+    renderQuotationForm();
+    await waitForPreviewCalls(1);
+    await user.click(screen.getByRole('combobox', { name: 'Currency' }));
+    await user.click(await screen.findByRole('option', { name: 'USD (US Dollar)' }));
+    await waitForPreviewCalls(2);
+    expect(quotationsApi.calculatePreviewRequest).toHaveBeenLastCalledWith(expect.objectContaining({ currency: 'USD' }));
+    expect(await screen.findByText('One Thousand One Hundred Eighty US Dollars Only')).toBeInTheDocument();
   });
 
   it('recalculates when quantity changes without another interaction', async () => {

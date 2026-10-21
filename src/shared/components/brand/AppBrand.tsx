@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { resolveAssetUrl } from '@shared/api/assetUrl';
+import { productBrand } from './brand';
 
 type AppBrandProps = {
   variant?: 'full' | 'compact';
@@ -10,7 +11,7 @@ type AppBrandProps = {
   logoUrl?: string | null;
 };
 
-export function AppBrand({ variant = 'full', name = 'ERP Workspace', logoUrl }: AppBrandProps) {
+export function AppBrand({ variant = 'full', name = productBrand.name, logoUrl }: AppBrandProps) {
   const resolvedLogoUrl = resolveAssetUrl(logoUrl);
 
   return (

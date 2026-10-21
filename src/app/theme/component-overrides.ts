@@ -10,6 +10,9 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
       html: {
         maxWidth: '100%',
         overflowX: 'hidden',
+        // MUI must lock the root scrollbar rather than padding a body that
+        // leaves the viewport scrollbar visible when menus or dialogs open.
+        overflowY: 'scroll',
       },
       body: {
         backgroundColor: colours.pageBackground,
