@@ -52,7 +52,14 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
         minHeight: 40,
         textTransform: 'none',
         '&:hover': { boxShadow: 'none' },
+        '@media (max-width: 599.95px), (pointer: coarse)': { minHeight: 44 },
       },
+      sizeSmall: {
+        minHeight: 36,
+        paddingInline: 12,
+        '@media (max-width: 599.95px), (pointer: coarse)': { minHeight: 44 },
+      },
+      sizeLarge: { minHeight: 48 },
     },
   },
   MuiTextField: { defaultProps: { size: 'small', variant: 'outlined' } },
@@ -73,6 +80,7 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
       root: {
         borderRadius: radii.medium,
         backgroundColor: colours.cardBackground,
+        minWidth: 0,
         '&.MuiInputBase-multiline': {
           alignItems: 'flex-start',
           paddingTop: 8,
@@ -81,6 +89,11 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
       },
       input: {
         minWidth: 0,
+        '@media (max-width: 599.95px)': { fontSize: 16 },
+      },
+      sizeSmall: {
+        minHeight: 40,
+        '@media (max-width: 599.95px), (pointer: coarse)': { minHeight: 44 },
       },
       notchedOutline: {
         borderColor: colours.border,
@@ -124,6 +137,9 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
         maxHeight: 'calc(100% - 16px)',
         margin: 8,
       },
+      paperFullWidth: {
+        '@media (max-width: 599.95px)': { width: 'calc(100% - 16px)' },
+      },
     },
   },
   MuiDialogActions: {
@@ -135,15 +151,26 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
         '& > :not(style) ~ :not(style)': {
           marginLeft: 0,
         },
+        '@media (max-width: 599.95px)': {
+          flexDirection: 'column-reverse',
+          alignItems: 'stretch',
+          '& > .MuiButton-root': { width: '100%' },
+        },
       },
     },
   },
   MuiTableContainer: {
     styleOverrides: {
       root: {
+        minWidth: 0,
         maxWidth: '100%',
         overflowX: 'auto',
       },
+    },
+  },
+  MuiTableCell: {
+    styleOverrides: {
+      root: { '& .MuiButton-root': { whiteSpace: 'nowrap' } },
     },
   },
   MuiChip: {
@@ -165,6 +192,8 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
         borderRadius: radii.medium,
         minHeight: 40,
         minWidth: 40,
+        flexShrink: 0,
+        '@media (max-width: 599.95px), (pointer: coarse)': { minHeight: 44, minWidth: 44 },
       },
     },
   },
@@ -174,6 +203,19 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
         boxShadow: 'none',
         borderBottom: `1px solid ${colours.border}`,
       },
+    },
+  },
+  MuiMenuItem: {
+    styleOverrides: {
+      root: {
+        minHeight: 40,
+        '@media (max-width: 599.95px), (pointer: coarse)': { minHeight: 44 },
+      },
+    },
+  },
+  MuiFormControlLabel: {
+    styleOverrides: {
+      root: { minHeight: 44 },
     },
   },
   MuiDrawer: {

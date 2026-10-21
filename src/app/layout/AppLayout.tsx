@@ -17,7 +17,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { useState, type MouseEvent } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
@@ -26,7 +26,7 @@ import { AppBrand } from '@shared/components/brand/AppBrand';
 import { UserAvatar } from '@shared/components/common/UserAvatar';
 import { AppIconButton } from '@shared/ui/actions';
 
-import { canAccessNavigationItem, navigationItems, paths } from '../router/routeConfig';
+import { canAccessNavigationItem, getRouteTitle, navigationItems, paths } from '../router/routeConfig';
 import { designTokens } from '../theme/tokens';
 import { AppBreadcrumbs } from './AppBreadcrumbs';
 import { setSelectedFirm, useSelectedFirm } from '@shared/tenancy/selectedFirm';
@@ -44,6 +44,12 @@ export function AppLayout() {
   const selectedFirm = useSelectedFirm();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const activeNavigationPath = navigationItems.find((item) => item.path === location.pathname)?.path
+    ?? navigationItems.find((item) => location.pathname.startsWith(`${item.path}/`))?.path;
+
+  useEffect(() => {
+    document.title = `${getRouteTitle(location.pathname)} | Quotient`;
+  }, [location.pathname]);
   const hasFirmContext = user !== null && (user.accountType !== 'SUPER_ADMIN' || selectedFirm !== null);
   const brandingQuery = useQuery({
     queryKey: ['firm-branding', user?.firmId, selectedFirm?.id],
@@ -108,10 +114,8 @@ export function AppLayout() {
                     key={item.path}
                     component={NavLink}
                     to={item.path}
-                    selected={
-                      location.pathname === item.path ||
-                      (item.path !== paths.dashboard && location.pathname.startsWith(`${item.path}`))
-                    }
+                    end
+                    selected={activeNavigationPath === item.path}
                     onClick={() => setMobileOpen(false)}
                     sx={{ mx: 1, my: 0.25, borderRadius: 2 }}
                   >
@@ -220,6 +224,7 @@ export function AppLayout() {
       <Box
         component="main"
         id="main-content"
+        tabIndex={-1}
         sx={{
           flex: 1,
           minWidth: 0,

@@ -142,7 +142,7 @@ export function RolesPage() {
         emptyContent={<EmptyState title="No roles created" description="Create a role before adding basic firm users." />}
       >
         {rolesQuery.data?.length ? (
-          <Table>
+          <Table aria-label="Firm roles" sx={{ minWidth: 560 }}>
             <TableHead><TableRow><TableCell>Role</TableCell><TableCell>Permissions</TableCell><TableCell>Users</TableCell><TableCell align="right">Actions</TableCell></TableRow></TableHead>
             <TableBody>{rolesQuery.data.map((role) => (
               <TableRow key={role.id} hover>

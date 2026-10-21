@@ -113,8 +113,8 @@ export function ItemDetailsPage() {
 
   return (
     <PageContainer>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ sm: 'center' }}>
-        <Stack direction="row" spacing={1.5} alignItems="center">
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} useFlexGap flexWrap="wrap" justifyContent="space-between" alignItems={{ sm: 'center' }}>
+        <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" alignItems="center" sx={{ minWidth: 0, flex: { sm: '1 1 240px' }, overflowWrap: 'anywhere' }}>
           <Typography component="h1" variant="h1">
             {item.name}
           </Typography>
@@ -124,7 +124,7 @@ export function ItemDetailsPage() {
           />
         </Stack>
 
-        <Stack direction="row" spacing={1.5}>
+        <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap">
           <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
             Back to Items
           </AppButton>
@@ -162,7 +162,7 @@ export function ItemDetailsPage() {
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
         <Card variant="outlined" sx={{ width: { xs: '100%', md: 280 }, flexShrink: 0 }}>
-          <CardContent sx={{ p: 3, textCenter: 'center' }}>
+          <CardContent sx={{ p: 3, textAlign: 'center' }}>
             <Stack spacing={2} alignItems="center">
               <Box
                 sx={{
@@ -210,7 +210,7 @@ export function ItemDetailsPage() {
           </CardContent>
         </Card>
 
-        <Stack spacing={3} flex={1}>
+        <Stack spacing={3} flex={1} minWidth={0}>
           <Card variant="outlined">
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" fontWeight={600} mb={2}>

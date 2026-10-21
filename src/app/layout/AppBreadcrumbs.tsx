@@ -1,4 +1,5 @@
 import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
@@ -12,51 +13,42 @@ export function AppBreadcrumbs() {
   const isItemChild = location.pathname.startsWith(`${paths.items}/`);
   const isQuotationChild = location.pathname.startsWith(`${paths.quotations}/`);
   const navItem = navigationItems.find((item) => item.path === location.pathname);
-  const sectionName = navItem?.section && navItem.section !== 'Main' ? navItem.section : undefined;
+  const sectionName = isItemChild ? 'Master Management'
+    : isQuotationChild ? 'Quotation Management'
+      : navItem?.section && navItem.section !== 'Main' ? navItem.section : undefined;
+  const parentPath = isCompanyChild ? paths.companies : isItemChild ? paths.items : isQuotationChild ? paths.quotations : undefined;
+  const parentTitle = navigationItems.find((item) => item.path === parentPath)?.title;
 
   return (
-    <Breadcrumbs
-      aria-label="Breadcrumbs"
-      sx={{
-        fontSize: 13,
-        minWidth: 0,
-        '& .MuiBreadcrumbs-ol': { flexWrap: 'nowrap', minWidth: 0 },
-        '& .MuiBreadcrumbs-li': { minWidth: 0, maxWidth: '100%' },
-      }}
-    >
-      <Link component={RouterLink} to={paths.dashboard} underline="hover" color="text.secondary" noWrap>
-        Dashboard
-      </Link>
-      {isCompanyChild ? (
-        <Link component={RouterLink} to={paths.companies} underline="hover" color="text.secondary" noWrap>
-          Companies
+    <Box minWidth={0}>
+      <Typography sx={{ display: { xs: 'block', sm: 'none' }, fontWeight: 600 }} noWrap title={title}>
+        {title}
+      </Typography>
+      <Breadcrumbs
+        aria-label="Breadcrumbs"
+        sx={{
+          fontSize: 13,
+          display: { xs: 'none', sm: 'block' },
+          minWidth: 0,
+          '& .MuiBreadcrumbs-ol': { flexWrap: 'nowrap', minWidth: 0 },
+          '& .MuiBreadcrumbs-li': { minWidth: 0, maxWidth: '100%' },
+        }}
+      >
+        <Link component={RouterLink} to={paths.dashboard} underline="hover" color="text.secondary" noWrap>
+          Dashboard
         </Link>
-      ) : isItemChild ? (
-        <>
-          <Typography color="text.secondary" fontSize={13} noWrap>
-            Master Management
-          </Typography>
-          <Link component={RouterLink} to={paths.items} underline="hover" color="text.secondary" noWrap>
-            Items
+        {sectionName ? (
+          <Typography color="text.secondary" fontSize={13} noWrap>{sectionName}</Typography>
+        ) : null}
+        {parentPath ? (
+          <Link component={RouterLink} to={parentPath} underline="hover" color="text.secondary" noWrap>
+            {parentTitle}
           </Link>
-        </>
-      ) : isQuotationChild ? (
-        <>
-          <Typography color="text.secondary" fontSize={13} noWrap>
-            Quotation Management
-          </Typography>
-          <Link component={RouterLink} to={paths.quotations} underline="hover" color="text.secondary" noWrap>
-            Quotations
-          </Link>
-        </>
-      ) : sectionName ? (
-        <Typography color="text.secondary" fontSize={13} noWrap>
-          {sectionName}
-        </Typography>
-      ) : null}
-      {location.pathname !== paths.dashboard ? (
-        <Typography color="text.primary" fontSize={13} noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</Typography>
-      ) : null}
-    </Breadcrumbs>
+        ) : null}
+        {location.pathname !== paths.dashboard ? (
+          <Typography color="text.primary" fontSize={13} noWrap>{title}</Typography>
+        ) : null}
+      </Breadcrumbs>
+    </Box>
   );
 }

@@ -49,4 +49,17 @@ describe('AppLayout', () => {
     expect(screen.getAllByText('admin@example.com').length).toBeGreaterThan(0);
     expect(screen.getByRole('menuitem', { name: /change password/i })).toBeInTheDocument();
   });
+
+  it('selects only Create Quotation on its own route', () => {
+    renderWithProviders(<AppLayout />, { route: '/quotations/new' });
+    for (const link of screen.getAllByRole('menuitem', { name: /^quotations$/i })) {
+      expect(link).not.toHaveClass('Mui-selected');
+      expect(link).not.toHaveAttribute('aria-current');
+    }
+    for (const link of screen.getAllByRole('menuitem', { name: /^create quotation$/i })) {
+      expect(link).toHaveClass('Mui-selected');
+      expect(link).toHaveAttribute('aria-current', 'page');
+    }
+    expect(document.title).toBe('Create Quotation | Quotient');
+  });
 });

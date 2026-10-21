@@ -73,6 +73,7 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled();
     expect(screen.getByLabelText(/email or username/i)).toBeDisabled();
     expect(screen.getByLabelText(/^password$/i)).toBeDisabled();
+    expect(screen.getByRole('button', { name: /show password/i })).toBeDisabled();
     expect(container.querySelector('form')).toHaveAttribute('aria-busy', 'true');
   });
 });

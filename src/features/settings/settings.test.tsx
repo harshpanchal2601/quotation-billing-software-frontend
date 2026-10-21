@@ -257,7 +257,7 @@ describe('BankDetailsPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /save account/i })).toBeEnabled());
     await userEvent.click(screen.getByRole('button', { name: /save account/i }));
 
-    expect(await screen.findByText('Validation failed')).toBeInTheDocument();
+    expect(await screen.findByText('Account number: Account number already exists.')).toBeInTheDocument();
     expect(await screen.findByText('Account number already exists.')).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: /add bank account/i })).toBeInTheDocument();
   });

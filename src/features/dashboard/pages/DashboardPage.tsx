@@ -116,8 +116,7 @@ export function DashboardPage() {
     <PageContainer>
       <PageHeader
         title="Dashboard"
-        titleTypographyProps={{ variant: 'h4', fontWeight: 700 }}
-        description={`Welcome back, ${firstName}. Commercial quotation proposals & operational metrics overview.`}
+        description={`Welcome back, ${firstName}. Here’s your quotation activity at a glance.`}
         descriptionTypographyProps={{ variant: 'body2' }}
         actions={
           <AppButton component={RouterLink} to={paths.newQuotation} variant="contained" startIcon={<AddOutlinedIcon />}>
@@ -145,7 +144,7 @@ export function DashboardPage() {
             value={quotationMetrics.totalQuotations}
             caption="Quotations created in period"
             icon={<DescriptionOutlinedIcon />}
-            iconBgColor="primary.50"
+            iconBgColor="primary.light"
             iconColor="primary.main"
             linkTo="/quotations"
           />
@@ -157,7 +156,7 @@ export function DashboardPage() {
             value={formatCurrency(quotationMetrics.totalQuotationValue, currency)}
             caption="Value of quotations created in this period"
             icon={<RequestQuoteOutlinedIcon />}
-            iconBgColor="success.50"
+            iconBgColor="primary.light"
             iconColor="success.main"
           />
         </Grid>
@@ -168,7 +167,7 @@ export function DashboardPage() {
             value={formatCurrency(quotationMetrics.acceptedQuotationValue, currency)}
             caption="Accepted and completed quotation value"
             icon={<CheckCircleOutlinedIcon />}
-            iconBgColor="success.50"
+            iconBgColor="primary.light"
             iconColor="success.main"
           />
         </Grid>
@@ -179,7 +178,7 @@ export function DashboardPage() {
             value={formatCurrency(quotationMetrics.averageQuotationValue, currency)}
             caption="Average value per quotation in period"
             icon={<CalculateOutlinedIcon />}
-            iconBgColor="info.50"
+            iconBgColor="action.hover"
             iconColor="info.main"
           />
         </Grid>
@@ -214,7 +213,7 @@ export function DashboardPage() {
             value={operationalMetrics.expiringSoonCount}
             caption="Open quotations expiring within 7 days"
             icon={<HourglassEmptyOutlinedIcon />}
-            iconBgColor="warning.50"
+            iconBgColor="action.hover"
             iconColor="warning.main"
           />
         </Grid>

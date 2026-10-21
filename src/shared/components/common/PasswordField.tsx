@@ -26,6 +26,8 @@ export const PasswordField = forwardRef<HTMLDivElement, PasswordFieldProps>(func
             <AppIconButton
               label={visible ? 'Hide password' : 'Show password'}
               edge="end"
+              disabled={props.disabled}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => setVisible((current) => !current)}
             >
               {visible ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}

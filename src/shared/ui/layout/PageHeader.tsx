@@ -28,17 +28,19 @@ export function PageHeader({
     <Stack
       direction={{ xs: 'column', sm: 'row' }}
       spacing={2}
+      useFlexGap
+      flexWrap="wrap"
       justifyContent="space-between"
       alignItems={{ xs: 'stretch', sm: 'center' }}
     >
-      <Box>
+      <Box sx={{ flex: { sm: '1 1 240px' }, minWidth: 0, overflowWrap: 'anywhere', width: { xs: '100%', sm: 'auto' } }}>
         <Typography component={headingComponent} variant={headingLevel === 1 ? 'h1' : 'h2'} {...titleTypographyProps}>
           {title}
         </Typography>
         {description ? <Typography color="text.secondary" {...descriptionTypographyProps}>{description}</Typography> : null}
       </Box>
 
-      {actions ? <Box sx={{ display: 'flex', justifyContent: { sm: 'flex-end' } }}>{actions}</Box> : null}
+      {actions ? <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, flexShrink: 0, maxWidth: '100%', width: { xs: '100%', sm: 'auto' }, justifyContent: { sm: 'flex-end' }, '& > .MuiButton-root': { width: { xs: '100%', sm: 'auto' } } }}>{actions}</Box> : null}
     </Stack>
   );
 }

@@ -61,7 +61,7 @@ export const AppDialog = forwardRef<HTMLDivElement, AppDialogProps>(function App
     >
       <DialogTitle {...titleProps} id={titleId}>
         <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
-          <Box component="span">{title}</Box>
+          <Box component="span" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>{title}</Box>
           {showCloseButton ? (
             <AppIconButton
               label={closeButtonLabel}

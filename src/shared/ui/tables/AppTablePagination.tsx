@@ -28,7 +28,16 @@ export function AppTablePagination({
       rowsPerPageOptions={rowsPerPageOptions}
       onPageChange={(_event, nextPage) => onPageChange(nextPage + 1)}
       onRowsPerPageChange={(event) => onRowsPerPageChange(Number(event.target.value))}
-      sx={sx}
+      sx={[
+        {
+          '& .MuiTablePagination-toolbar': { flexWrap: 'wrap', justifyContent: 'flex-end', columnGap: 1, px: { xs: 1, sm: 2 } },
+          '& .MuiTablePagination-spacer': { display: { xs: 'none', sm: 'block' } },
+          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { my: 1 },
+          '& .MuiTablePagination-input': { mr: { xs: 1, sm: 4 }, ml: 0 },
+          '& .MuiTablePagination-actions': { ml: { xs: 0, sm: 2 } },
+        },
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
     />
   );
 }

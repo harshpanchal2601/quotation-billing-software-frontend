@@ -34,16 +34,14 @@ export function DataTableShell({
   isRefreshing = false,
   tableContainerProps,
 }: DataTableShellProps) {
-  const loadedContent = tableContainerProps ? (
+  const loadedContent = (
     <TableContainer {...tableContainerProps}>{children}</TableContainer>
-  ) : (
-    children
   );
 
   return (
     <>
       {refreshIndicator}
-      <Stack aria-busy={isLoading || isRefreshing}>
+      <Stack aria-busy={isLoading || isRefreshing} sx={{ minWidth: 0, width: '100%' }}>
         {isLoading ? loadingContent : null}
         {!isLoading && isError ? errorContent : null}
         {!isLoading && !isError && isEmpty ? emptyContent : null}

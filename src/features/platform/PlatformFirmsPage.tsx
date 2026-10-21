@@ -201,7 +201,7 @@ export function PlatformFirmsPage() {
         emptyContent={<EmptyState title="No firms registered" description="Register the first client firm to create its workspace and administrator." />}
       >
         {query.data?.firms.length ? (
-          <Table>
+          <Table aria-label="Firms" sx={{ minWidth: 860 }}>
             <TableHead><TableRow><TableCell>Firm</TableCell><TableCell>Administrator email</TableCell><TableCell>Users</TableCell><TableCell>Status</TableCell><TableCell align="right">Actions</TableCell></TableRow></TableHead>
             <TableBody>
               {query.data.firms.map((firm) => (

@@ -151,15 +151,15 @@ export function CompanyDetailsPage() {
 
   return (
     <PageContainer>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} useFlexGap flexWrap="wrap" justifyContent="space-between">
+        <Box sx={{ minWidth: 0, flex: { sm: '1 1 240px' }, overflowWrap: 'anywhere' }}>
+          <Stack direction="row" spacing={1} useFlexGap alignItems="center" flexWrap="wrap">
             <Typography component="h1" variant="h1">{company.name}</Typography>
             <CompanyStatusChip isActive={company.isActive} />
           </Stack>
           <Typography color="text.secondary">{company.companyCode}</Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
           <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
             Back to Companies
           </AppButton>

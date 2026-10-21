@@ -174,7 +174,7 @@ export function UsersPage() {
         emptyContent={<EmptyState title="No users found" description="The firm administrator account should appear here." />}
       >
         {usersQuery.data?.users.length ? (
-          <Table>
+          <Table aria-label="Firm users" sx={{ minWidth: 960 }}>
             <TableHead><TableRow><TableCell>User</TableCell><TableCell>Username</TableCell><TableCell>Role</TableCell><TableCell>Status</TableCell><TableCell align="right">Actions</TableCell></TableRow></TableHead>
             <TableBody>{usersQuery.data.users.map((user) => (
               <TableRow key={user.id} hover>

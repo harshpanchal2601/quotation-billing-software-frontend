@@ -17,6 +17,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
   const [authError, setAuthError] = useState<ApiError | null>(null);
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+  const clearAuthError = useCallback(() => setAuthError(null), []);
+  const clearSessionMessage = useCallback(() => setSessionMessage(null), []);
 
   const currentUserQuery = useQuery({
     queryKey: authQueryKey,
@@ -51,7 +53,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setSessionMessage(null);
       queryClient.setQueryData(authQueryKey, user);
     },
-    onError: (error) => setAuthError(toApiError(error)),
+    onError: (error) => {
+      const apiError = toApiError(error);
+      setAuthError(apiError.cancelled ? null : {
+        ...apiError,
+        message: apiError.statusCode === 401
+          ? 'Email, username or password is incorrect. Please try again.'
+          : apiError.message,
+      });
+    },
   });
 
   const logoutMutation = useMutation({
@@ -84,11 +94,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       login: loginMutation.mutateAsync,
       logout: logoutMutation.mutateAsync,
       changePassword: changePasswordMutation.mutateAsync,
-      clearAuthError: () => setAuthError(null),
-      clearSessionMessage: () => setSessionMessage(null),
+      clearAuthError,
+      clearSessionMessage,
     }),
     [
       authError,
+      clearAuthError,
+      clearSessionMessage,
       changePasswordMutation.isPending,
       changePasswordMutation.mutateAsync,
       currentUserQuery.data,

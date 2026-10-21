@@ -58,6 +58,7 @@ export function canAccessNavigationItem(
 }
 
 export function getRouteTitle(pathname: string) {
+  if (pathname === paths.accessDenied) return 'Access Denied';
   if (pathname === paths.changePassword) return 'Change Password';
   if (pathname === paths.newCompany) return 'Add Company';
   if (/^\/companies\/\d+\/edit$/.test(pathname)) return 'Edit Company';

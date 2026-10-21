@@ -90,7 +90,7 @@ export function CompanyTable({ companies, busyCompanyId, returnState, onStatusCh
               </Stack>
               <PrimaryContactSummary company={company} />
               <Typography color="text.secondary">Quotations: {company.quotationCount}</Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 <AppButton component={RouterLink} to={`${paths.companies}/${company.id}`} state={returnState} size="small" startIcon={<VisibilityOutlinedIcon />}>View</AppButton>
                 {canManage ? <><AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={returnState} size="small" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
                 <AppButton size="small" startIcon={<PowerSettingsNewOutlinedIcon />} onClick={() => onStatusChange(company)} isLoading={busyCompanyId === company.id}>{company.isActive ? 'Deactivate' : 'Activate'}</AppButton>

@@ -38,7 +38,7 @@ export function AuditLogsPage() {
         pagination={query.data && query.data.auditLogs.length > 0 ? <AppTablePagination count={query.data.pagination.total} page={page} rowsPerPage={limit} onPageChange={setPage} onRowsPerPageChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }} /> : null}
       >
         {query.data?.auditLogs.length ? (
-          <Table>
+          <Table aria-label="Audit logs" sx={{ minWidth: 960 }}>
             <TableHead><TableRow><TableCell>Date</TableCell><TableCell>User</TableCell><TableCell>Action</TableCell><TableCell>Record</TableCell><TableCell>Changes</TableCell></TableRow></TableHead>
             <TableBody>{query.data.auditLogs.map((entry) => (
               <TableRow key={entry.id} hover>
