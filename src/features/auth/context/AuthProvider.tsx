@@ -11,6 +11,7 @@ import {
 } from '../api/auth.api';
 import { AuthContext, type AuthContextValue } from './auth-context';
 import type { AuthUser } from '../model/auth.types';
+import { setSelectedFirm } from '@shared/tenancy/selectedFirm';
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
@@ -28,8 +29,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
   });
 
   const clearAuthenticatedState = useCallback(() => {
+    setSelectedFirm(null);
     queryClient.setQueryData<AuthUser | null>(authQueryKey, null);
-    void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
   }, [queryClient]);
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const loginMutation = useMutation({
     mutationFn: loginRequest,
     onSuccess: (user) => {
+      setSelectedFirm(null);
       setAuthError(null);
       setSessionMessage(null);
       queryClient.setQueryData(authQueryKey, user);

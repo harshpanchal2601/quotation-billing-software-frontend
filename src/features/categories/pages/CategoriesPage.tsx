@@ -26,6 +26,7 @@ import { CategoryDeleteDialog, CategoryStatusDialog } from '../components/Catego
 import { CategoryDetailsDialog } from '../components/CategoryDetailsDialog';
 import { CategoryFormDialog } from '../components/CategoryFormDialog';
 import { CategoryTable } from '../components/CategoryTable';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
 
 const sortOptions = [
   { value: 'name:asc', label: 'Name A–Z' },
@@ -38,6 +39,7 @@ const sortOptions = [
 ] as const;
 
 export function CategoriesPage() {
+  const canManage = useHasPermission(PERMISSIONS.CATALOG_MANAGE);
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get('search') ?? '');
@@ -114,11 +116,11 @@ export function CategoriesPage() {
       <PageHeader
         title="Categories"
         description="Manage product categories for organizing items in quotations."
-        actions={
+        actions={canManage ? (
           <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={handleOpenCreate}>
             Add Category
           </AppButton>
-        }
+        ) : undefined}
       />
 
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
@@ -216,6 +218,7 @@ export function CategoriesPage() {
           <CategoryTable
             categories={query.data.categories}
             busyCategoryId={busyCategoryId}
+            canManage={canManage}
             onView={(cat) => setDetailsCategoryId(cat.id)}
             onEdit={handleOpenEdit}
             onStatusChange={(cat) => setStatusTarget(cat)}

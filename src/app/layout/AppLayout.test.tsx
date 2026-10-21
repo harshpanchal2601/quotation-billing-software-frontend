@@ -8,7 +8,24 @@ import { AppLayout } from './AppLayout';
 vi.mock('@features/auth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@features/auth')>()),
   useAuth: () => ({
-    user: { id: 1, name: 'Admin User', email: 'admin@example.com', username: 'admin', role: 'ADMIN', status: 'ACTIVE' },
+    user: {
+      id: 1,
+      name: 'Admin User',
+      email: 'admin@example.com',
+      username: 'admin',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      accountType: 'FIRM_ADMIN',
+      firmId: 1,
+      firm: { id: 1, name: 'Example Firm', slug: 'example-firm' },
+      firmRole: null,
+      permissions: [
+        'dashboard.view', 'companies.view', 'items.view', 'catalog.view', 'quotations.view',
+        'quotations.create', 'firm.profile.manage', 'firm.quotation-settings.manage',
+        'firm.bank-details.manage', 'firm.users.manage', 'firm.roles.manage', 'audit.view',
+      ],
+      mustChangePassword: false,
+    },
     logout: vi.fn().mockResolvedValue(undefined),
     isLoggingOut: false,
   }),

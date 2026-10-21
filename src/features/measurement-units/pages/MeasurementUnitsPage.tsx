@@ -32,6 +32,7 @@ import {
 import { MeasurementUnitDetailsDialog } from '../components/MeasurementUnitDetailsDialog';
 import { MeasurementUnitFormDialog } from '../components/MeasurementUnitFormDialog';
 import { MeasurementUnitTable } from '../components/MeasurementUnitTable';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
 
 const sortOptions = [
   { value: 'name:asc', label: 'Name A–Z' },
@@ -44,6 +45,7 @@ const sortOptions = [
 ] as const;
 
 export function MeasurementUnitsPage() {
+  const canManage = useHasPermission(PERMISSIONS.CATALOG_MANAGE);
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get('search') ?? '');
@@ -122,11 +124,11 @@ export function MeasurementUnitsPage() {
       <PageHeader
         title="Measurement Units"
         description="Manage units of measurement for item pricing and quantities."
-        actions={
+        actions={canManage ? (
           <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={handleOpenCreate}>
             Add Measurement Unit
           </AppButton>
-        }
+        ) : undefined}
       />
 
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
@@ -241,6 +243,7 @@ export function MeasurementUnitsPage() {
           <MeasurementUnitTable
             units={query.data.measurementUnits}
             busyUnitId={busyUnitId}
+            canManage={canManage}
             onView={(u) => setDetailsUnitId(u.id)}
             onEdit={handleOpenEdit}
             onStatusChange={(u) => setStatusTarget(u)}

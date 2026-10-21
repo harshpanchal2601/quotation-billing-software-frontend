@@ -47,7 +47,7 @@ export function QuotationEmailDialog({
   open,
   quotation,
   document: selectedDocument,
-  businessName = 'Buminex Pharmtech Solutions',
+  businessName = 'Your Company',
   onClose,
   onSuccess,
 }: QuotationEmailDialogProps) {

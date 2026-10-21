@@ -34,6 +34,7 @@ import { DataTableShell } from '@shared/ui/tables';
 import { paths } from '@shared/routing/paths';
 import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
 import {
   createQuotationRevisionRequest,
   deleteQuotationRequest,
@@ -67,6 +68,12 @@ export function QuotationDetailsPage() {
   const theme = useTheme();
   const isCompact = useMediaQuery(theme.breakpoints.down('md'));
   const returnPath = getSafeListReturnPath(location, paths.quotations);
+  const canEditQuotations = useHasPermission(PERMISSIONS.QUOTATIONS_EDIT);
+  const canUpdateQuotationStatus = useHasPermission(PERMISSIONS.QUOTATIONS_STATUS);
+  const canDeleteQuotations = useHasPermission(PERMISSIONS.QUOTATIONS_DELETE);
+  const canManageDocuments = useHasPermission(PERMISSIONS.QUOTATIONS_DOCUMENTS);
+  const canEmailQuotations = useHasPermission(PERMISSIONS.QUOTATIONS_EMAIL);
+  const canManageAttachments = useHasPermission(PERMISSIONS.QUOTATIONS_ATTACHMENTS);
 
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -204,9 +211,10 @@ export function QuotationDetailsPage() {
     );
   }
 
-  const canEdit = quotation.canEdit;
-  const canCreateRevision = quotation.canCreateRevision;
-  const canChangeStatus = quotation.isLatestRevision;
+  const canEdit = canEditQuotations && quotation.canEdit;
+  const canCreateRevision = canEditQuotations && quotation.canCreateRevision;
+  const canChangeStatus = canUpdateQuotationStatus && quotation.isLatestRevision;
+  const canDelete = canDeleteQuotations && quotation.canEdit;
 
   return (
     <PageContainer maxWidth={1200} sx={{ mx: 'auto' }}>
@@ -249,27 +257,31 @@ export function QuotationDetailsPage() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' }, '& .MuiButton-root': { flex: { xs: '1 1 150px', md: '0 0 auto' } } }}>
-          <AppButton
-            variant="contained"
-            color="primary"
-            startIcon={<PictureAsPdfOutlinedIcon />}
-            onClick={handlePreviewPdf}
-            isLoading={pdfLoading}
-            loadingPosition="start"
-          >
-            {pdfLoading ? 'Generating...' : 'Preview PDF'}
-          </AppButton>
+          {canManageDocuments ? (
+            <>
+              <AppButton
+                variant="contained"
+                color="primary"
+                startIcon={<PictureAsPdfOutlinedIcon />}
+                onClick={handlePreviewPdf}
+                isLoading={pdfLoading}
+                loadingPosition="start"
+              >
+                {pdfLoading ? 'Generating...' : 'Preview PDF'}
+              </AppButton>
 
-          <AppButton
-            variant="outlined"
-            color="primary"
-            startIcon={<DownloadOutlinedIcon />}
-            onClick={handleDownloadPdf}
-            isLoading={pdfDownloading}
-            loadingPosition="start"
-          >
-            {pdfDownloading ? 'Downloading...' : 'Download PDF'}
-          </AppButton>
+              <AppButton
+                variant="outlined"
+                color="primary"
+                startIcon={<DownloadOutlinedIcon />}
+                onClick={handleDownloadPdf}
+                isLoading={pdfDownloading}
+                loadingPosition="start"
+              >
+                {pdfDownloading ? 'Downloading...' : 'Download PDF'}
+              </AppButton>
+            </>
+          ) : null}
 
           {canEdit ? (
             <AppButton
@@ -295,7 +307,7 @@ export function QuotationDetailsPage() {
             </AppButton>
           ) : null}
 
-          <AppButton
+          {canUpdateQuotationStatus ? <AppButton
             variant="outlined"
             color="inherit"
             startIcon={<SwapHorizOutlinedIcon />}
@@ -303,9 +315,9 @@ export function QuotationDetailsPage() {
             disabled={statusMutation.isPending || !canChangeStatus}
           >
             Change Status
-          </AppButton>
+          </AppButton> : null}
 
-          {canEdit ? (
+          {canDelete ? (
             <AppButton
               variant="outlined"
               color="error"
@@ -706,23 +718,29 @@ export function QuotationDetailsPage() {
       </Grid>
 
       {/* Generated Documents History Section */}
-      <QuotationDocumentsSection
-        quotation={quotation}
-        onFeedback={(msg, sev) =>
-          setFeedback({ open: true, message: msg, severity: sev || 'success' })
-        }
-      />
+      {canManageDocuments || canEmailQuotations ? (
+        <QuotationDocumentsSection
+          quotation={quotation}
+          canManageDocuments={canManageDocuments}
+          canEmail={canEmailQuotations}
+          onFeedback={(msg, sev) =>
+            setFeedback({ open: true, message: msg, severity: sev || 'success' })
+          }
+        />
+      ) : null}
 
       {/* Supporting Attachments Section */}
-      <QuotationAttachmentsSection
-        quotationId={quotationId}
-        onFeedback={(msg, sev) =>
-          setFeedback({ open: true, message: msg, severity: sev || 'success' })
-        }
-      />
+      {canManageAttachments ? (
+        <QuotationAttachmentsSection
+          quotationId={quotationId}
+          onFeedback={(msg, sev) =>
+            setFeedback({ open: true, message: msg, severity: sev || 'success' })
+          }
+        />
+      ) : null}
 
       {/* Modals */}
-      {statusDialogOpen ? (
+      {canUpdateQuotationStatus && statusDialogOpen ? (
         <QuotationStatusDialog
           open={statusDialogOpen}
           quotationNumber={quotation.quotationNumber}
@@ -735,7 +753,7 @@ export function QuotationDetailsPage() {
         />
       ) : null}
 
-      {deleteDialogOpen ? (
+      {canDeleteQuotations && deleteDialogOpen ? (
         <QuotationDeleteDialog
           open={deleteDialogOpen}
           quotationNumber={quotation.quotationNumber}
@@ -749,7 +767,7 @@ export function QuotationDetailsPage() {
       ) : null}
 
       {/* PDF Preview Dialog */}
-      <QuotationPdfPreviewDialog
+      {canManageDocuments ? <QuotationPdfPreviewDialog
         open={pdfPreviewOpen}
         quotationNumber={quotation.quotationNumber}
         pdfBlob={pdfBlob}
@@ -757,7 +775,7 @@ export function QuotationDetailsPage() {
         error={pdfError}
         onClose={() => setPdfPreviewOpen(false)}
         onDownload={handleDownloadPdf}
-      />
+      /> : null}
 
       {/* Feedback Snackbar */}
       <AppSnackbar

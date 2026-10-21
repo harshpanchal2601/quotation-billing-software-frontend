@@ -31,6 +31,7 @@ type ItemTableProps = {
   onEdit: (item: ItemListItem) => void;
   onStatusChange: (item: ItemListItem) => void;
   onDelete: (item: ItemListItem) => void;
+  canManage?: boolean;
 };
 
 export function ItemTable({
@@ -40,6 +41,7 @@ export function ItemTable({
   onEdit,
   onStatusChange,
   onDelete,
+  canManage = false,
 }: ItemTableProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
@@ -249,9 +251,11 @@ export function ItemTable({
         disabled={busyItemId === item.id}
         actions={[
           { key: 'view', label: 'View Details', onSelect: () => onView(item) },
-          { key: 'edit', label: 'Edit Item', onSelect: () => onEdit(item) },
-          { key: 'status', label: item.isActive ? 'Deactivate' : 'Activate', onSelect: () => onStatusChange(item) },
-          { key: 'delete', label: 'Delete Item', destructive: true, onSelect: () => onDelete(item) },
+          ...(canManage ? [
+            { key: 'edit', label: 'Edit Item', onSelect: () => onEdit(item) },
+            { key: 'status', label: item.isActive ? 'Deactivate' : 'Activate', onSelect: () => onStatusChange(item) },
+            { key: 'delete', label: 'Delete Item', destructive: true, onSelect: () => onDelete(item) },
+          ] : []),
         ]}
       />
     );

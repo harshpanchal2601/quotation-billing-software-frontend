@@ -29,6 +29,7 @@ import { DataTableShell } from '@shared/ui/tables';
 import { paths } from '@shared/routing/paths';
 import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
 import { deleteItemRequest, getItemRequest, updateItemStatusRequest } from '../api/items.api';
 import { ItemDeleteDialog, ItemStatusDialog } from '../components/ItemConfirmDialogs';
 import { itemsQueryKeys } from '../model/items.query-keys';
@@ -46,6 +47,7 @@ export function ItemDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const canManage = useHasPermission(PERMISSIONS.ITEMS_MANAGE);
 
   const [statusTarget, setStatusTarget] = useState<boolean | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -126,29 +128,33 @@ export function ItemDetailsPage() {
           <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
             Back to Items
           </AppButton>
-          <AppButton
-            variant="outlined"
-            onClick={() => setStatusTarget(!item.isActive)}
-            disabled={isMutating}
-          >
-            {item.isActive ? 'Deactivate' : 'Activate'}
-          </AppButton>
-          <AppButton
-            variant="contained"
-            startIcon={<EditOutlinedIcon />}
-            onClick={() => navigate(`${paths.items}/${itemId}/edit`, { state: { from: returnPath } })}
-            disabled={isMutating}
-          >
-            Edit Item
-          </AppButton>
-          <AppButton
-            variant="outlined"
-            color="error"
-            onClick={() => setDeleteDialogOpen(true)}
-            disabled={isMutating}
-          >
-            Delete
-          </AppButton>
+          {canManage ? (
+            <>
+              <AppButton
+                variant="outlined"
+                onClick={() => setStatusTarget(!item.isActive)}
+                disabled={isMutating}
+              >
+                {item.isActive ? 'Deactivate' : 'Activate'}
+              </AppButton>
+              <AppButton
+                variant="contained"
+                startIcon={<EditOutlinedIcon />}
+                onClick={() => navigate(`${paths.items}/${itemId}/edit`, { state: { from: returnPath } })}
+                disabled={isMutating}
+              >
+                Edit Item
+              </AppButton>
+              <AppButton
+                variant="outlined"
+                color="error"
+                onClick={() => setDeleteDialogOpen(true)}
+                disabled={isMutating}
+              >
+                Delete
+              </AppButton>
+            </>
+          ) : null}
         </Stack>
       </Stack>
 
@@ -353,23 +359,23 @@ export function ItemDetailsPage() {
         </Stack>
       </Stack>
 
-      <ItemStatusDialog
+      {canManage ? <ItemStatusDialog
         item={statusTarget !== null ? item : null}
         isSubmitting={statusMutation.isPending}
         onClose={() => setStatusTarget(null)}
         onConfirm={() => {
           if (statusTarget !== null) statusMutation.mutate(statusTarget);
         }}
-      />
+      /> : null}
 
-      <ItemDeleteDialog
+      {canManage ? <ItemDeleteDialog
         item={deleteDialogOpen ? item : null}
         isDeleting={deleteMutation.isPending}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={() => {
           deleteMutation.mutate();
         }}
-      />
+      /> : null}
 
       <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </PageContainer>

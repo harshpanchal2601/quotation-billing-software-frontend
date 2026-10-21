@@ -22,6 +22,7 @@ import { PageContainer } from '@shared/ui/layout';
 import { paths } from '@shared/routing/paths';
 import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
 import { createCompanyAddressRequest, deleteCompanyAddressRequest, setPrimaryCompanyAddressRequest, updateCompanyAddressRequest } from '../api/addresses.api';
 import { deleteCompanyRequest, getCompanyRequest, updateCompanyStatusRequest } from '../api/companies.api';
 import { createCompanyContactRequest, deleteCompanyContactRequest, setPrimaryCompanyContactRequest, updateCompanyContactRequest } from '../api/contacts.api';
@@ -44,6 +45,7 @@ export function CompanyDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const canManage = useHasPermission(PERMISSIONS.COMPANIES_MANAGE);
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') as CompanyTab | null;
   const selectedTab = tabParam !== null && tabs.includes(tabParam) ? tabParam : 'overview';
@@ -161,12 +163,16 @@ export function CompanyDetailsPage() {
           <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
             Back to Companies
           </AppButton>
-          <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
-          <AppIconButton label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></AppIconButton>
-          <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
-            <MenuItem onClick={() => { setMenuAnchor(null); setStatusOpen(true); }}><PowerSettingsNewOutlinedIcon fontSize="small" sx={{ mr: 1 }} />{company.isActive ? 'Deactivate' : 'Activate'}</MenuItem>
-            <MenuItem onClick={() => { setMenuAnchor(null); setDeleteOpen(true); }} sx={{ color: 'error.main' }}><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Delete</MenuItem>
-          </Menu>
+          {canManage ? (
+            <>
+              <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
+              <AppIconButton label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></AppIconButton>
+              <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
+                <MenuItem onClick={() => { setMenuAnchor(null); setStatusOpen(true); }}><PowerSettingsNewOutlinedIcon fontSize="small" sx={{ mr: 1 }} />{company.isActive ? 'Deactivate' : 'Activate'}</MenuItem>
+                <MenuItem onClick={() => { setMenuAnchor(null); setDeleteOpen(true); }} sx={{ color: 'error.main' }}><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Delete</MenuItem>
+              </Menu>
+            </>
+          ) : null}
         </Stack>
       </Stack>
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
@@ -180,6 +186,7 @@ export function CompanyDetailsPage() {
       {selectedTab === 'contacts' ? (
         <ContactsSection
           contacts={company.contacts}
+          canManage={canManage}
           disabled={isMutating}
           errorMessage={pageError}
           onAdd={() => { setEditingContact(null); setDialogError(null); setContactDialogOpen(true); }}
@@ -191,6 +198,7 @@ export function CompanyDetailsPage() {
       {selectedTab === 'addresses' ? (
         <AddressesSection
           addresses={company.addresses}
+          canManage={canManage}
           disabled={isMutating}
           errorMessage={pageError}
           onAdd={() => { setEditingAddress(null); setDialogError(null); setAddressDialogOpen(true); }}
@@ -200,7 +208,7 @@ export function CompanyDetailsPage() {
         />
       ) : null}
       {selectedTab === 'quotations' ? <CompanyQuotationHistory companyId={company.id} /> : null}
-      <ContactDialog
+      {canManage ? <ContactDialog
         open={contactDialogOpen}
         contact={editingContact}
         isSubmitting={createContactMutation.isPending || updateContactMutation.isPending}
@@ -210,8 +218,8 @@ export function CompanyDetailsPage() {
           if (editingContact) await updateContactMutation.mutateAsync({ contactId: editingContact.id, values });
           else await createContactMutation.mutateAsync(values);
         }}
-      />
-      <AddressDialog
+      /> : null}
+      {canManage ? <AddressDialog
         open={addressDialogOpen}
         address={editingAddress}
         isSubmitting={createAddressMutation.isPending || updateAddressMutation.isPending}
@@ -221,9 +229,9 @@ export function CompanyDetailsPage() {
           if (editingAddress) await updateAddressMutation.mutateAsync({ addressId: editingAddress.id, values });
           else await createAddressMutation.mutateAsync(values);
         }}
-      />
-      <CompanyStatusDialog company={statusOpen ? company : null} isSubmitting={statusMutation.isPending} onClose={() => setStatusOpen(false)} onConfirm={async () => { await statusMutation.mutateAsync(); }} />
-      <DeleteCompanyDialog company={deleteOpen ? company : null} isDeleting={deleteMutation.isPending} onClose={() => setDeleteOpen(false)} onConfirm={() => deleteMutation.mutateAsync()} />
+      /> : null}
+      {canManage ? <CompanyStatusDialog company={statusOpen ? company : null} isSubmitting={statusMutation.isPending} onClose={() => setStatusOpen(false)} onConfirm={async () => { await statusMutation.mutateAsync(); }} /> : null}
+      {canManage ? <DeleteCompanyDialog company={deleteOpen ? company : null} isDeleting={deleteMutation.isPending} onClose={() => setDeleteOpen(false)} onConfirm={() => deleteMutation.mutateAsync()} /> : null}
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </PageContainer>
   );

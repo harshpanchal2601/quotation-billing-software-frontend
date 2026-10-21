@@ -26,6 +26,7 @@ type CategoryTableProps = {
   onEdit: (category: CategoryListItem) => void;
   onStatusChange: (category: CategoryListItem) => void;
   onDelete: (category: CategoryListItem) => void;
+  canManage?: boolean;
 };
 
 export function CategoryTable({
@@ -35,6 +36,7 @@ export function CategoryTable({
   onEdit,
   onStatusChange,
   onDelete,
+  canManage = false,
 }: CategoryTableProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
@@ -52,7 +54,7 @@ export function CategoryTable({
         disabled={busyCategoryId === category.id}
         actions={[
           { key: 'view', label: 'View Details', onSelect: () => onView(category) },
-          { key: 'edit', label: 'Edit Category', onSelect: () => onEdit(category) },
+          ...(canManage ? [{ key: 'edit', label: 'Edit Category', onSelect: () => onEdit(category) },
           {
             key: 'status',
             label: category.isActive ? 'Deactivate' : 'Activate',
@@ -65,7 +67,7 @@ export function CategoryTable({
             disabled: isProtected,
             destructive: true,
             onSelect: () => onDelete(category),
-          },
+          }] : []),
         ]}
       />
     );

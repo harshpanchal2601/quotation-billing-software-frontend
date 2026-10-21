@@ -29,7 +29,7 @@ export function HomePage() {
       >
         <Stack spacing={1.5}>
           <Typography component="h1" variant="h4" fontWeight={700} color="text.primary">
-            Buminex Quotation Management System
+            Multi-firm Quotation Management System
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Frontend foundation is ready.

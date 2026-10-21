@@ -18,6 +18,10 @@ const categoriesApi = vi.hoisted(() => ({
 }));
 
 vi.mock('./api/categories.api', () => categoriesApi);
+vi.mock('@features/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@features/auth')>()),
+  useHasPermission: () => true,
+}));
 
 afterEach(() => {
   vi.clearAllMocks();

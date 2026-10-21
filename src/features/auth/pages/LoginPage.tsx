@@ -15,6 +15,7 @@ import { ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { paths } from '@shared/routing/paths';
+import { getDefaultAuthenticatedPath } from '../model/auth-routing';
 import { useAuth } from '../hooks/useAuth';
 import { loginSchema, type LoginFormValues } from '../model/auth.schema';
 
@@ -26,7 +27,6 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, authError, clearAuthError, isLoggingIn, sessionMessage, clearSessionMessage } = useAuth();
-  const redirectTo = (location.state as LocationState | null)?.from?.pathname ?? paths.dashboard;
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { identifier: '', password: '' },
@@ -38,18 +38,22 @@ export function LoginPage() {
 
   async function onSubmit(values: LoginFormValues) {
     clearSessionMessage();
-    await login(values);
+    const user = await login(values);
     form.reset({ identifier: '', password: '' });
-    navigate(redirectTo, { replace: true });
+    const requestedPath = (location.state as LocationState | null)?.from?.pathname;
+    const destination = user.mustChangePassword
+      ? paths.changePassword
+      : requestedPath ?? getDefaultAuthenticatedPath(user);
+    navigate(destination, { replace: true });
   }
 
   return (
     <Box component="main" minHeight="100vh" display="grid" sx={{ placeItems: 'center', px: 2, py: 4, bgcolor: 'background.default' }}>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 3, md: 8 }} alignItems="center" width="100%" maxWidth={980}>
         <Stack spacing={2} flex={1} alignItems={{ xs: 'center', md: 'flex-start' }} textAlign={{ xs: 'center', md: 'left' }}>
-          <AppBrand />
-          <Typography component="p" variant="h1" color="secondary.main">Buminex Quotation Management System</Typography>
-          <Typography color="text.secondary" maxWidth={420}>Clean, controlled quotation workflows for pharmaceutical and industrial operations.</Typography>
+          <AppBrand name="ERP Workspace" />
+          <Typography component="p" variant="h1" color="secondary.main">Multi-firm Quotation Management</Typography>
+          <Typography color="text.secondary" maxWidth={420}>Secure, controlled quotation workflows for each client firm.</Typography>
         </Stack>
         <Card sx={{ width: '100%', maxWidth: 420 }}>
           <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
@@ -87,7 +91,7 @@ export function LoginPage() {
                 {isLoggingIn ? 'Signing in...' : 'Sign in'}
               </AppButton>
               <Typography variant="body2" color="text.secondary" textAlign="center">
-                Buminex Pharmtech Solutions Pvt. Ltd.
+                Secure ERP access
               </Typography>
             </Stack>
           </CardContent>

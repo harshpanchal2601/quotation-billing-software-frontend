@@ -49,10 +49,17 @@ import { QuotationEmailDialog } from '../../email/components/QuotationEmailDialo
 
 interface QuotationDocumentsSectionProps {
   quotation: QuotationDetail;
+  canManageDocuments: boolean;
+  canEmail: boolean;
   onFeedback: (message: string, severity?: 'success' | 'error') => void;
 }
 
-export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDocumentsSectionProps) {
+export function QuotationDocumentsSection({
+  quotation,
+  canManageDocuments,
+  canEmail,
+  onFeedback,
+}: QuotationDocumentsSectionProps) {
   const queryClient = useQueryClient();
 
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
@@ -86,7 +93,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
   } = useQuery({
     queryKey: quotationDocumentsQueryKeys.communications(quotation.id),
     queryFn: () => getQuotationCommunicationHistoryRequest(quotation.id),
-    enabled: Boolean(quotation.id && quotation.id > 0),
+    enabled: canEmail && Boolean(quotation.id && quotation.id > 0),
     staleTime: 30000,
   });
 
@@ -174,7 +181,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           </Typography>
         </Box>
 
-        <AppButton
+        {canManageDocuments ? <AppButton
           variant="contained"
           size="small"
           startIcon={<PictureAsPdfOutlinedIcon />}
@@ -183,7 +190,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           loadingPosition="start"
         >
           {generatePdfMutation.isPending ? 'Generating PDF...' : 'Generate New PDF'}
-        </AppButton>
+        </AppButton> : null}
       </Stack>
 
       <Divider sx={{ mb: 2 }} />
@@ -200,7 +207,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           <Typography variant="subtitle2" color="text.secondary">
             No generated PDF documents yet.
           </Typography>
-          <AppButton
+          {canManageDocuments ? <AppButton
             size="small"
             variant="outlined"
             sx={{ mt: 1.5 }}
@@ -209,7 +216,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
             loadingPosition="start"
           >
             {generatePdfMutation.isPending ? 'Generating...' : 'Generate Initial Quotation PDF'}
-          </AppButton>
+          </AppButton> : null}
         </Box>
       ) : (
         <>
@@ -254,7 +261,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                     </TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                        <Tooltip title={doc.isAvailable ? 'Preview PDF' : 'File missing from storage'}>
+                        {canManageDocuments ? <Tooltip title={doc.isAvailable ? 'Preview PDF' : 'File missing from storage'}>
                           <span>
                             <AppIconButton
                               size="small"
@@ -266,9 +273,9 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                               {pdfLoading && activeDocId === doc.id ? <CircularProgress size={18} aria-label={`Loading preview for ${doc.displayFilename}`} /> : <VisibilityOutlinedIcon fontSize="small" />}
                             </AppIconButton>
                           </span>
-                        </Tooltip>
+                        </Tooltip> : null}
 
-                        <Tooltip title={doc.isAvailable ? 'Download PDF' : 'File missing from storage'}>
+                        {canManageDocuments ? <Tooltip title={doc.isAvailable ? 'Download PDF' : 'File missing from storage'}>
                           <span>
                             <AppIconButton
                               size="small"
@@ -280,9 +287,9 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                               {downloadingId === doc.id ? <CircularProgress size={18} aria-label={`Downloading ${doc.displayFilename}`} /> : <DownloadOutlinedIcon fontSize="small" />}
                             </AppIconButton>
                           </span>
-                        </Tooltip>
+                        </Tooltip> : null}
 
-                        <Tooltip title={doc.isAvailable ? 'Send via Email' : 'File missing from storage'}>
+                        {canEmail ? <Tooltip title={doc.isAvailable ? 'Send via Email' : 'File missing from storage'}>
                           <span>
                             <AppButton
                               size="small"
@@ -296,7 +303,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                               Send Email
                             </AppButton>
                           </span>
-                        </Tooltip>
+                        </Tooltip> : null}
                       </Stack>
                     </TableCell>
                   </TableRow>
@@ -329,7 +336,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                   <Divider sx={{ my: 1.5 }} />
 
                   <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1}>
-                    <AppButton
+                    {canManageDocuments ? <AppButton
                       size="small"
                       variant="outlined"
                       disabled={!doc.isAvailable || (pdfLoading && activeDocId === doc.id)}
@@ -339,8 +346,8 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                       onClick={() => handlePreviewPdf(doc)}
                     >
                       {pdfLoading && activeDocId === doc.id ? 'Loading...' : 'Preview'}
-                    </AppButton>
-                    <AppButton
+                    </AppButton> : null}
+                    {canManageDocuments ? <AppButton
                       size="small"
                       variant="outlined"
                       disabled={!doc.isAvailable}
@@ -350,8 +357,8 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                       onClick={() => handleDownloadPdf(doc)}
                     >
                       {downloadingId === doc.id ? 'Downloading...' : 'Download'}
-                    </AppButton>
-                    <AppButton
+                    </AppButton> : null}
+                    {canEmail ? <AppButton
                       size="small"
                       variant="contained"
                       disabled={!doc.isAvailable || generatePdfMutation.isPending || downloadingId === doc.id || (pdfLoading && activeDocId === doc.id)}
@@ -359,7 +366,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
                       onClick={() => handleOpenEmailDialog(doc)}
                     >
                       Email
-                    </AppButton>
+                    </AppButton> : null}
                   </Stack>
                 </CardContent>
               </Card>
@@ -369,7 +376,7 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
       )}
 
       {/* PDF Preview Dialog */}
-      <QuotationPdfPreviewDialog
+      {canManageDocuments ? <QuotationPdfPreviewDialog
         open={pdfPreviewOpen}
         quotationNumber={activeDocNumber}
         pdfBlob={pdfBlob}
@@ -380,10 +387,10 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           const activeDocument = documents.find((doc) => doc.id === activeDocId);
           if (activeDocument) handleDownloadPdf(activeDocument);
         }}
-      />
+      /> : null}
 
       {/* Email Dialog */}
-      <QuotationEmailDialog
+      {canEmail ? <QuotationEmailDialog
         open={emailDialogOpen}
         quotation={quotation}
         document={selectedDocForEmail}
@@ -398,16 +405,16 @@ export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDo
           queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.lists() });
           queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
         }}
-      />
+      /> : null}
 
-      <CommunicationHistorySection
+      {canEmail ? <CommunicationHistorySection
         communications={communications}
         isLoading={communicationsLoading}
         isRefreshing={communicationsFetching && !communicationsLoading}
         isError={communicationsIsError}
         error={communicationsError}
         onRetry={refetchCommunications}
-      />
+      /> : null}
     </Paper>
   );
 }

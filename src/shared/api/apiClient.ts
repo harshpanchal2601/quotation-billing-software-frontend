@@ -6,6 +6,7 @@ import axios, {
 } from 'axios';
 
 import { resolveApiBaseUrl } from './apiBaseUrl';
+import { getSelectedFirm } from '../tenancy/selectedFirm';
 
 export type ApiSuccessResponse<TData> = {
   success: true;
@@ -55,6 +56,13 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
+apiClient.interceptors.request.use((config) => {
+  const selectedFirm = getSelectedFirm();
+  if (selectedFirm !== null) config.headers.set('x-firm-id', String(selectedFirm.id));
+  else config.headers.delete('x-firm-id');
+  return config;
+});
+
 export function createSkipAuthRefreshConfig(config: AxiosRequestConfig = {}): AxiosRequestConfig {
   return {
     ...config,
@@ -68,10 +76,13 @@ export function toApiError(error: unknown): ApiError {
     const responseData = error.response?.data;
     const fieldErrors = extractFieldErrors(responseData?.errors);
     const cancelled = axios.isCancel(error) || error.code === AxiosError.ERR_CANCELED;
+    const validationMessage = statusCode === 400 || statusCode === 422
+      ? firstFieldErrorMessage(fieldErrors)
+      : null;
 
     return {
       statusCode,
-      message: normaliseApiErrorMessage(statusCode, responseData?.message, error),
+      message: validationMessage ?? normaliseApiErrorMessage(statusCode, responseData?.message, error),
       errors: responseData?.errors,
       fieldErrors,
       retryable: !cancelled && isRetryableStatus(statusCode),
@@ -192,6 +203,25 @@ function messageFromFieldErrorValue(value: unknown) {
   }
 
   return null;
+}
+
+function firstFieldErrorMessage(fieldErrors: ApiFieldErrors) {
+  const firstError = Object.entries(fieldErrors)[0];
+  if (firstError === undefined) return null;
+
+  const [field, message] = firstError;
+  return `${formatFieldName(field)}: ${message}`;
+}
+
+function formatFieldName(field: string) {
+  const fieldSegments = field.split('.').filter(Boolean);
+  const fieldName = fieldSegments[fieldSegments.length - 1] ?? field;
+  const words = fieldName
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .trim();
+  if (words.length === 0) return 'Field';
+  return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -13,6 +13,10 @@ export const paths = {
   quotationSettings: '/settings/quotation',
   bankDetails: '/settings/bank-details',
   auditLogs: '/audit-logs',
+  platformFirms: '/platform/firms',
+  firmUsers: '/administration/users',
+  firmRoles: '/administration/roles',
+  accessDenied: '/access-denied',
 } as const;
 
 export type AppRoutePath = (typeof paths)[keyof typeof paths];

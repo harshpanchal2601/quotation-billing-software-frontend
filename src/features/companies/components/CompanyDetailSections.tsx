@@ -62,6 +62,7 @@ export function CompanyOverview({ company }: OverviewProps) {
 
 export function ContactsSection({
   contacts,
+  canManage,
   disabled,
   errorMessage,
   onAdd,
@@ -70,6 +71,7 @@ export function ContactsSection({
   onSetPrimary,
 }: {
   contacts: CompanyContact[];
+  canManage: boolean;
   disabled?: boolean;
   errorMessage: string | null;
   onAdd: () => void;
@@ -80,7 +82,7 @@ export function ContactsSection({
   const [deleting, setDeleting] = useState<CompanyContact | null>(null);
   return (
     <Stack spacing={2}>
-      <SectionHeader title="Contacts" actionLabel="Add contact" onAction={onAdd} />
+      <SectionHeader title="Contacts" actionLabel={canManage ? 'Add contact' : undefined} onAction={canManage ? onAdd : undefined} />
       <ServerErrorAlert message={errorMessage} />
       {contacts.length === 0 ? <EmptyState title="No contacts yet" description="Add contacts for quotation communication." /> : (
         <Stack spacing={1.5}>
@@ -96,17 +98,17 @@ export function ContactsSection({
                   <Typography>{contact.email ?? unavailable}</Typography>
                   <Typography color="text.secondary">Phone: {contact.phone ?? unavailable} · Alternate: {contact.alternatePhone ?? unavailable}</Typography>
                 </Box>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
+                {canManage ? <Stack direction="row" spacing={1} flexWrap="wrap">
                   <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(contact)} disabled={disabled}>Edit</AppButton>
                   {!contact.isPrimary ? <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(contact)} disabled={disabled}>Set primary</AppButton> : null}
                   <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(contact)} disabled={disabled}>Delete</AppButton>
-                </Stack>
+                </Stack> : null}
               </Stack>
             </Paper>
           ))}
         </Stack>
       )}
-      <DeleteChildDialog
+      {canManage ? <DeleteChildDialog
         open={deleting !== null}
         title="Delete contact?"
         description={deleting ? `${deleting.name} will be removed. Another contact may become primary automatically.` : ''}
@@ -116,13 +118,14 @@ export function ContactsSection({
           if (deleting) await onDelete(deleting);
           setDeleting(null);
         }}
-      />
+      /> : null}
     </Stack>
   );
 }
 
 export function AddressesSection({
   addresses,
+  canManage,
   disabled,
   errorMessage,
   onAdd,
@@ -131,6 +134,7 @@ export function AddressesSection({
   onSetPrimary,
 }: {
   addresses: CompanyAddress[];
+  canManage: boolean;
   disabled?: boolean;
   errorMessage: string | null;
   onAdd: () => void;
@@ -141,7 +145,7 @@ export function AddressesSection({
   const [deleting, setDeleting] = useState<CompanyAddress | null>(null);
   return (
     <Stack spacing={2}>
-      <SectionHeader title="Addresses" actionLabel="Add address" onAction={onAdd} />
+      <SectionHeader title="Addresses" actionLabel={canManage ? 'Add address' : undefined} onAction={canManage ? onAdd : undefined} />
       <ServerErrorAlert message={errorMessage} />
       {addresses.length === 0 ? <EmptyState title="No addresses yet" description="Add billing and shipping addresses for quotation snapshots." /> : (
         <Stack spacing={1.5}>
@@ -155,17 +159,17 @@ export function AddressesSection({
                   </Stack>
                   <Typography color="text.secondary">{formatAddress(address)}</Typography>
                 </Box>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
+                {canManage ? <Stack direction="row" spacing={1} flexWrap="wrap">
                   <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(address)} disabled={disabled}>Edit</AppButton>
                   {!address.isPrimary ? <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(address)} disabled={disabled}>Set primary</AppButton> : null}
                   <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(address)} disabled={disabled}>Delete</AppButton>
-                </Stack>
+                </Stack> : null}
               </Stack>
             </Paper>
           ))}
         </Stack>
       )}
-      <DeleteChildDialog
+      {canManage ? <DeleteChildDialog
         open={deleting !== null}
         title="Delete address?"
         description={deleting ? `${addressTypeLabel(deleting.addressType)} address will be removed. Another address of the same type may become primary automatically.` : ''}
@@ -175,7 +179,7 @@ export function AddressesSection({
           if (deleting) await onDelete(deleting);
           setDeleting(null);
         }}
-      />
+      /> : null}
     </Stack>
   );
 }
@@ -201,11 +205,11 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
   );
 }
 
-function SectionHeader({ title, actionLabel, onAction }: { title: string; actionLabel: string; onAction: () => void }) {
+function SectionHeader({ title, actionLabel, onAction }: { title: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
       <Typography component="h2" variant="h2">{title}</Typography>
-      <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={onAction}>{actionLabel}</AppButton>
+      {actionLabel && onAction ? <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={onAction}>{actionLabel}</AppButton> : null}
     </Stack>
   );
 }

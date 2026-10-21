@@ -1,0 +1,25 @@
+export const PERMISSIONS = {
+  DASHBOARD_VIEW: 'dashboard.view',
+  COMPANIES_VIEW: 'companies.view',
+  COMPANIES_MANAGE: 'companies.manage',
+  ITEMS_VIEW: 'items.view',
+  ITEMS_MANAGE: 'items.manage',
+  CATALOG_VIEW: 'catalog.view',
+  CATALOG_MANAGE: 'catalog.manage',
+  QUOTATIONS_VIEW: 'quotations.view',
+  QUOTATIONS_CREATE: 'quotations.create',
+  QUOTATIONS_EDIT: 'quotations.edit',
+  QUOTATIONS_STATUS: 'quotations.status',
+  QUOTATIONS_DELETE: 'quotations.delete',
+  QUOTATIONS_DOCUMENTS: 'quotations.documents',
+  QUOTATIONS_EMAIL: 'quotations.email',
+  QUOTATIONS_ATTACHMENTS: 'quotations.attachments',
+  AUDIT_VIEW: 'audit.view',
+  FIRM_PROFILE_MANAGE: 'firm.profile.manage',
+  QUOTATION_SETTINGS_MANAGE: 'firm.quotation-settings.manage',
+  BANK_DETAILS_MANAGE: 'firm.bank-details.manage',
+  USERS_MANAGE: 'firm.users.manage',
+  ROLES_MANAGE: 'firm.roles.manage',
+} as const;
+
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

@@ -14,6 +14,10 @@ import { quotationFormSchema, type QuotationFormSubmitValues } from './model/quo
 import type { CalculatedQuotationTotals, QuotationDetail, QuotationListItem } from './model/quotations.types';
 
 vi.mock('./api/quotations.api');
+vi.mock('@features/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@features/auth')>()),
+  useHasPermission: () => true,
+}));
 vi.mock('@features/companies', () => ({
   listCompaniesRequest: vi.fn().mockResolvedValue({ companies: [{ id: 1, name: 'Mankind Pharma' }] }),
   getCompanyRequest: vi.fn().mockResolvedValue({ id: 1, name: 'Mankind Pharma', contacts: [], addresses: [] }),

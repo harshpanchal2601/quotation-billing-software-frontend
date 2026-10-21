@@ -26,9 +26,10 @@ type CompanyTableProps = {
   returnState?: { from: string };
   onStatusChange: (company: CompanyListItem) => void;
   onDelete: (company: CompanyListItem) => void;
+  canManage?: boolean;
 };
 
-export function CompanyTable({ companies, busyCompanyId, returnState, onStatusChange, onDelete }: CompanyTableProps) {
+export function CompanyTable({ companies, busyCompanyId, returnState, onStatusChange, onDelete, canManage = false }: CompanyTableProps) {
   return (
     <>
       <DataTableShell
@@ -70,7 +71,7 @@ export function CompanyTable({ companies, busyCompanyId, returnState, onStatusCh
                 <TableCell>{company.quotationCount}</TableCell>
                 <TableCell><CompanyStatusChip isActive={company.isActive} /></TableCell>
                 <TableCell>{formatReadableDate(company.updatedAt)}</TableCell>
-                <TableCell align="right"><CompanyActions company={company} disabled={busyCompanyId === company.id} returnState={returnState} onStatusChange={onStatusChange} onDelete={onDelete} /></TableCell>
+                <TableCell align="right"><CompanyActions company={company} disabled={busyCompanyId === company.id} returnState={returnState} onStatusChange={onStatusChange} onDelete={onDelete} canManage={canManage} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -91,9 +92,9 @@ export function CompanyTable({ companies, busyCompanyId, returnState, onStatusCh
               <Typography color="text.secondary">Quotations: {company.quotationCount}</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap">
                 <AppButton component={RouterLink} to={`${paths.companies}/${company.id}`} state={returnState} size="small" startIcon={<VisibilityOutlinedIcon />}>View</AppButton>
-                <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={returnState} size="small" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
+                {canManage ? <><AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={returnState} size="small" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
                 <AppButton size="small" startIcon={<PowerSettingsNewOutlinedIcon />} onClick={() => onStatusChange(company)} isLoading={busyCompanyId === company.id}>{company.isActive ? 'Deactivate' : 'Activate'}</AppButton>
-                <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(company)} isLoading={busyCompanyId === company.id}>Delete</AppButton>
+                <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(company)} isLoading={busyCompanyId === company.id}>Delete</AppButton></> : null}
               </Stack>
             </Stack>
           </Paper>
@@ -120,12 +121,14 @@ function CompanyActions({
   returnState,
   onStatusChange,
   onDelete,
+  canManage,
 }: {
   company: CompanyListItem;
   disabled?: boolean;
   returnState?: { from: string };
   onStatusChange: (company: CompanyListItem) => void;
   onDelete: (company: CompanyListItem) => void;
+  canManage: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -139,7 +142,7 @@ function CompanyActions({
           label: <><VisibilityOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> View</>,
           onSelect: () => navigate(`${paths.companies}/${company.id}`, { state: returnState }),
         },
-        {
+        ...(canManage ? [{
           key: 'edit',
           label: <><EditOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> Edit</>,
           onSelect: () => navigate(`${paths.companies}/${company.id}/edit`, { state: returnState }),
@@ -154,7 +157,7 @@ function CompanyActions({
           label: <><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> Delete</>,
           destructive: true,
           onSelect: () => onDelete(company),
-        },
+        }] : []),
       ]}
     />
   );

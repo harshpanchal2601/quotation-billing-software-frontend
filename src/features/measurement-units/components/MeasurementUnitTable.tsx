@@ -24,6 +24,7 @@ type MeasurementUnitTableProps = {
   onEdit: (unit: MeasurementUnitListItem) => void;
   onStatusChange: (unit: MeasurementUnitListItem) => void;
   onDelete: (unit: MeasurementUnitListItem) => void;
+  canManage?: boolean;
 };
 
 export function MeasurementUnitTable({
@@ -33,6 +34,7 @@ export function MeasurementUnitTable({
   onEdit,
   onStatusChange,
   onDelete,
+  canManage = false,
 }: MeasurementUnitTableProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
@@ -48,7 +50,7 @@ export function MeasurementUnitTable({
         disabled={busyUnitId === unit.id}
         actions={[
           { key: 'view', label: 'View Details', onSelect: () => onView(unit) },
-          { key: 'edit', label: 'Edit Unit', onSelect: () => onEdit(unit) },
+          ...(canManage ? [{ key: 'edit', label: 'Edit Unit', onSelect: () => onEdit(unit) },
           {
             key: 'status',
             label: unit.isActive ? 'Deactivate' : 'Activate',
@@ -59,7 +61,7 @@ export function MeasurementUnitTable({
             label: 'Delete Unit',
             destructive: true,
             onSelect: () => onDelete(unit),
-          },
+          }] : []),
         ]}
       />
     );

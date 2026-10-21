@@ -27,8 +27,13 @@ import { QuotationStatusDialog } from '../components/QuotationStatusDialog';
 import { QuotationTable } from '../components/QuotationTable';
 import { quotationsQueryKeys } from '../model/quotations.query-keys';
 import type { QuotationListItem, QuotationListParams, QuotationStatus } from '../model/quotations.types';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
 
 export function QuotationsPage() {
+  const canCreate = useHasPermission(PERMISSIONS.QUOTATIONS_CREATE);
+  const canEdit = useHasPermission(PERMISSIONS.QUOTATIONS_EDIT);
+  const canUpdateStatus = useHasPermission(PERMISSIONS.QUOTATIONS_STATUS);
+  const canDelete = useHasPermission(PERMISSIONS.QUOTATIONS_DELETE);
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -158,7 +163,7 @@ export function QuotationsPage() {
         title="Quotations"
         description="Manage quotation generation, calculation preview, draft updates, and status transitions."
         descriptionTypographyProps={{ variant: 'body2' }}
-        actions={
+        actions={canCreate ? (
           <AppButton
             variant="contained"
             color="primary"
@@ -167,7 +172,7 @@ export function QuotationsPage() {
           >
             Create Quotation
           </AppButton>
-        }
+        ) : undefined}
       />
 
       {/* Filters */}
@@ -206,11 +211,11 @@ export function QuotationsPage() {
             <AppButton variant="outlined" size="small" onClick={handleClearFilters}>
               Clear Filters
             </AppButton>
-          ) : (
+          ) : canCreate ? (
             <AppButton variant="contained" size="small" startIcon={<NoteAddOutlinedIcon />} onClick={() => navigate(paths.newQuotation)}>
               Create First Quotation
             </AppButton>
-          )}
+          ) : null}
         </Box>
         }
         pagination={
@@ -232,6 +237,9 @@ export function QuotationsPage() {
             returnState={listReturnState}
             onOpenStatusDialog={(quo) => setStatusDialogTarget(quo)}
             onOpenDeleteDialog={(quo) => setDeleteDialogTarget(quo)}
+            canEdit={canEdit}
+            canUpdateStatus={canUpdateStatus}
+            canDelete={canDelete}
           />
       </DataTableShell>
 

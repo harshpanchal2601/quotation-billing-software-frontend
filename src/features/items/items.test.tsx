@@ -32,6 +32,10 @@ const unitsApi = vi.hoisted(() => ({
 }));
 
 vi.mock('./api/items.api', () => itemsApi);
+vi.mock('@features/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@features/auth')>()),
+  useHasPermission: () => true,
+}));
 vi.mock('@features/categories', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@features/categories')>()),
   ...categoriesApi,

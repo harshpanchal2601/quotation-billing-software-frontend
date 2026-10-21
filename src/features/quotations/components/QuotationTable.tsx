@@ -25,6 +25,9 @@ type QuotationTableProps = {
   returnState?: { from: string };
   onOpenStatusDialog: (quotation: QuotationListItem) => void;
   onOpenDeleteDialog: (quotation: QuotationListItem) => void;
+  canEdit?: boolean;
+  canUpdateStatus?: boolean;
+  canDelete?: boolean;
 };
 
 export function QuotationTable({
@@ -32,6 +35,9 @@ export function QuotationTable({
   returnState,
   onOpenStatusDialog,
   onOpenDeleteDialog,
+  canEdit = false,
+  canUpdateStatus = false,
+  canDelete = false,
 }: QuotationTableProps) {
   const theme = useTheme();
   const isCompact = useMediaQuery(theme.breakpoints.down('md'));
@@ -67,6 +73,9 @@ export function QuotationTable({
                     returnState={returnState}
                     onOpenStatusDialog={onOpenStatusDialog}
                     onOpenDeleteDialog={onOpenDeleteDialog}
+                    canEdit={canEdit}
+                    canUpdateStatus={canUpdateStatus}
+                    canDelete={canDelete}
                   />
                 </Box>
               </Box>
@@ -152,6 +161,9 @@ export function QuotationTable({
                   returnState={returnState}
                   onOpenStatusDialog={onOpenStatusDialog}
                   onOpenDeleteDialog={onOpenDeleteDialog}
+                  canEdit={canEdit}
+                  canUpdateStatus={canUpdateStatus}
+                  canDelete={canDelete}
                 />
               </TableCell>
             </TableRow>
@@ -167,6 +179,9 @@ type QuotationActionsMenuProps = {
   returnState?: { from: string };
   onOpenStatusDialog: (quotation: QuotationListItem) => void;
   onOpenDeleteDialog: (quotation: QuotationListItem) => void;
+  canEdit: boolean;
+  canUpdateStatus: boolean;
+  canDelete: boolean;
 };
 
 function QuotationActionsMenu({
@@ -174,11 +189,14 @@ function QuotationActionsMenu({
   returnState,
   onOpenStatusDialog,
   onOpenDeleteDialog,
+  canEdit: hasEditPermission,
+  canUpdateStatus,
+  canDelete,
 }: QuotationActionsMenuProps) {
   const navigate = useNavigate();
 
   if (!quotation) return null;
-  const canEdit = quotation.canEdit;
+  const canEdit = quotation.canEdit && hasEditPermission;
 
   return (
     <RowActionsMenu
@@ -197,12 +215,12 @@ function QuotationActionsMenu({
               onSelect: () => navigate(`/quotations/${quotation.id}/edit`, { state: returnState }),
             }]
           : []),
-        {
+        ...(canUpdateStatus ? [{
           key: 'status',
           label: <><SwapHorizOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> Update Status</>,
           onSelect: () => onOpenStatusDialog(quotation),
-        },
-        ...(canEdit
+        }] : []),
+        ...(quotation.canEdit && canDelete
           ? [{
               key: 'delete',
               label: <><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> Delete Draft</>,

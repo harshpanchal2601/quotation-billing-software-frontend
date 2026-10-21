@@ -22,6 +22,7 @@ import { companiesQueryKeys } from '../model/companies.query-keys';
 import type { CompanyListItem, CompanyListParams } from '../model/companies.types';
 import { CompanyStatusDialog, DeleteCompanyDialog } from '../components/CompanyConfirmDialogs';
 import { CompanyTable } from '../components/CompanyTable';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
 
 const sortOptions = [
   { value: 'createdAt:desc', label: 'Newest first' },
@@ -34,6 +35,7 @@ const sortOptions = [
 ] as const;
 
 export function CompaniesPage() {
+  const canManage = useHasPermission(PERMISSIONS.COMPANIES_MANAGE);
   const queryClient = useQueryClient();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -96,7 +98,7 @@ export function CompaniesPage() {
       <PageHeader
         title="Companies"
         description="Manage customer companies, contacts, addresses and quotation history."
-        actions={<AppButton component={RouterLink} to={paths.newCompany} variant="contained" startIcon={<AddOutlinedIcon />}>Add Company</AppButton>}
+        actions={canManage ? <AppButton component={RouterLink} to={paths.newCompany} variant="contained" startIcon={<AddOutlinedIcon />}>Add Company</AppButton> : undefined}
       />
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -149,6 +151,7 @@ export function CompaniesPage() {
             companies={query.data.companies}
             busyCompanyId={busyCompanyId}
             returnState={listReturnState}
+            canManage={canManage}
             onStatusChange={setStatusTarget}
             onDelete={setDeleteTarget}
           />

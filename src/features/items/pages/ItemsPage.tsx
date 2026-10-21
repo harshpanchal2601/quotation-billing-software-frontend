@@ -25,6 +25,7 @@ import { ItemDeleteDialog, ItemStatusDialog } from '../components/ItemConfirmDia
 import { ItemTable } from '../components/ItemTable';
 import { itemsQueryKeys } from '../model/items.query-keys';
 import type { ItemListItem, ItemListParams } from '../model/items.types';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
 
 const sortOptions = [
   { value: 'createdAt:desc', label: 'Newest first' },
@@ -41,6 +42,7 @@ const sortOptions = [
 ] as const;
 
 export function ItemsPage() {
+  const canManage = useHasPermission(PERMISSIONS.ITEMS_MANAGE);
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -125,15 +127,15 @@ export function ItemsPage() {
       <PageHeader
         title="Items"
         description="Manage equipment, products and services for quotation line items."
-        actions={
+        actions={canManage ? (
           <AppButton
             variant="contained"
             startIcon={<AddOutlinedIcon />}
-            onClick={() => navigate(paths.newCompany ? `${paths.items}/new` : `${paths.items}/new`)}
+            onClick={() => navigate(`${paths.items}/new`)}
           >
             Add Item
           </AppButton>
-        }
+        ) : undefined}
       />
 
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
@@ -322,6 +324,7 @@ export function ItemsPage() {
           <ItemTable
             items={query.data.items}
             busyItemId={busyItemId}
+            canManage={canManage}
             onView={(itm) => navigate(`${paths.items}/${itm.id}`, { state: listReturnState })}
             onEdit={(itm) => navigate(`${paths.items}/${itm.id}/edit`, { state: listReturnState })}
             onStatusChange={(itm) => setStatusTarget(itm)}

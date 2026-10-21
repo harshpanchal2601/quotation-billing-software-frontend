@@ -274,7 +274,7 @@ export function QuotationForm({
           ) : (
             <Card variant="outlined" sx={{ bgcolor: 'grey.50', p: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Quotation number will be generated automatically upon saving in <code>BUMINEX/2026-27/000001</code> format. Initial status will be set to <strong>Draft</strong>.
+                Quotation number will be generated automatically using your firm's configured prefix and financial year. Initial status will be set to <strong>Draft</strong>.
               </Typography>
             </Card>
           )}

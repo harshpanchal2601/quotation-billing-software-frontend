@@ -1,6 +1,7 @@
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
 import PasswordOutlinedIcon from '@mui/icons-material/PasswordOutlined';
+import CorporateFareOutlinedIcon from '@mui/icons-material/CorporateFareOutlined';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Divider from '@mui/material/Divider';
@@ -17,6 +18,7 @@ import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useState, type MouseEvent } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@features/auth';
@@ -24,20 +26,36 @@ import { AppBrand } from '@shared/components/brand/AppBrand';
 import { UserAvatar } from '@shared/components/common/UserAvatar';
 import { AppIconButton } from '@shared/ui/actions';
 
-import { navigationItems, paths } from '../router/routeConfig';
+import { canAccessNavigationItem, navigationItems, paths } from '../router/routeConfig';
 import { designTokens } from '../theme/tokens';
 import { AppBreadcrumbs } from './AppBreadcrumbs';
+import { setSelectedFirm, useSelectedFirm } from '@shared/tenancy/selectedFirm';
+import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 
-const sections = ['Main', 'Quotation Management', 'Master Management', 'Configuration', 'System'] as const;
+const sections = ['Platform', 'Main', 'Quotation Management', 'Master Management', 'Configuration', 'System'] as const;
 
 export function AppLayout() {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, logout, isLoggingOut } = useAuth();
+  const selectedFirm = useSelectedFirm();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const hasFirmContext = user !== null && (user.accountType !== 'SUPER_ADMIN' || selectedFirm !== null);
+  const brandingQuery = useQuery({
+    queryKey: ['firm-branding', user?.firmId, selectedFirm?.id],
+    queryFn: async () => {
+      const response = await apiClient.get<ApiSuccessResponse<{
+        branding: { displayName: string; logoUrl: string | null };
+      }>>('/settings/branding');
+      return response.data.data.branding;
+    },
+    enabled: hasFirmContext && user?.mustChangePassword !== true,
+    staleTime: 5 * 60 * 1000,
+  });
 
   async function handleLogout() {
     setMenuAnchor(null);
@@ -49,15 +67,28 @@ export function AppLayout() {
     setMenuAnchor(event.currentTarget);
   }
 
+  function exitFirmWorkspace() {
+    setMenuAnchor(null);
+    setSelectedFirm(null);
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' && query.queryKey[0] !== 'platform' });
+    navigate(paths.platformFirms);
+  }
+
   const drawer = (
     <Stack height="100%">
       <Box px={2.5} py={2}>
-        <AppBrand />
+        <AppBrand
+          name={brandingQuery.data?.displayName ?? selectedFirm?.name ?? user?.firm?.name}
+          logoUrl={brandingQuery.data?.logoUrl}
+        />
       </Box>
       <Divider />
       <Box component="nav" flex={1} py={1.5} overflow="auto">
         {sections.map((section) => {
-          const items = navigationItems.filter((item) => item.section === section);
+          const items = navigationItems.filter(
+            (item) => item.section === section && user !== null && canAccessNavigationItem(item, user, selectedFirm !== null),
+          );
+          if (items.length === 0) return null;
           return (
             <List
               key={section}
@@ -100,6 +131,9 @@ export function AppLayout() {
             <Box minWidth={0}>
               <Typography fontWeight={700} noWrap>{user.name}</Typography>
               <Typography variant="body2" color="text.secondary" noWrap>{user.email}</Typography>
+              {user.accountType === 'SUPER_ADMIN' && selectedFirm ? (
+                <Typography variant="caption" color="text.secondary" noWrap>{selectedFirm.name}</Typography>
+              ) : null}
             </Box>
           </Stack>
         </Box>
@@ -146,6 +180,12 @@ export function AppLayout() {
               <Typography variant="body2" color="text.secondary">{user?.email ?? user?.username}</Typography>
             </Box>
             <Divider />
+            {user?.accountType === 'SUPER_ADMIN' && selectedFirm ? (
+              <MenuItem onClick={exitFirmWorkspace}>
+                <ListItemIcon><CorporateFareOutlinedIcon fontSize="small" /></ListItemIcon>
+                Exit Firm Workspace
+              </MenuItem>
+            ) : null}
             <MenuItem component={RouterLink} to={paths.changePassword} onClick={() => setMenuAnchor(null)}>
               <ListItemIcon><PasswordOutlinedIcon fontSize="small" /></ListItemIcon>
               Change Password
