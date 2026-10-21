@@ -1,72 +1,54 @@
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import IconButton from '@mui/material/IconButton';
-import MenuItem from '@mui/material/MenuItem';
-import MenuList from '@mui/material/MenuList';
-import Popover from '@mui/material/Popover';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import type { QuotationListItem } from '../quotations.types';
-import { formatCurrency } from '../quotations.utils';
+import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
+import type { QuotationListItem } from '../model/quotations.types';
+import { formatCurrency } from '../model/quotations.utils';
 import { QuotationStatusChip } from './QuotationStatusChip';
 
 type QuotationTableProps = {
   quotations: QuotationListItem[];
+  returnState?: { from: string };
   onOpenStatusDialog: (quotation: QuotationListItem) => void;
   onOpenDeleteDialog: (quotation: QuotationListItem) => void;
 };
 
 export function QuotationTable({
   quotations,
+  returnState,
   onOpenStatusDialog,
   onOpenDeleteDialog,
 }: QuotationTableProps) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
 
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [selectedQuotation, setSelectedQuotation] = useState<QuotationListItem | null>(null);
-
-  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, quotation: QuotationListItem) => {
-    event.stopPropagation();
-    setAnchorEl(event.currentTarget);
-    setSelectedQuotation(quotation);
-  };
-
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-    setSelectedQuotation(null);
-  };
-
-  if (isMobile) {
+  if (isCompact) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {quotations.map((quo) => (
           <Card
             key={quo.id}
             variant="outlined"
-            onClick={() => navigate(`/quotations/${quo.id}`)}
+            onClick={() => navigate(`/quotations/${quo.id}`, { state: returnState })}
             sx={{ cursor: 'pointer', '&:hover': { borderColor: 'primary.main' } }}
           >
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, gap: 1 }}>
                 <Box sx={{ minWidth: 0, flex: 1, pr: 1 }}>
                   <Typography variant="subtitle1" fontWeight={700} color="primary.main" sx={{ wordBreak: 'break-word' }}>
                     {quo.quotationNumber}
@@ -78,44 +60,43 @@ export function QuotationTable({
                     {quo.companyNameSnapshot}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
                   <QuotationStatusChip status={quo.status} />
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleOpenMenu(e, quo)}
-                    aria-label={`Actions for ${quo.quotationNumber}`}
-                  >
-                    <MoreVertIcon fontSize="small" />
-                  </IconButton>
+                  <QuotationActionsMenu
+                    quotation={quo}
+                    returnState={returnState}
+                    onOpenStatusDialog={onOpenStatusDialog}
+                    onOpenDeleteDialog={onOpenDeleteDialog}
+                  />
                 </Box>
               </Box>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                <Typography variant="caption" color="text.secondary">
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mt: 2, gap: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 0 }}>
                   {new Date(quo.quotationDate).toLocaleDateString()} • {quo.itemCount} items
                 </Typography>
-                <Typography variant="subtitle2" fontWeight={700}>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ textAlign: 'right', wordBreak: 'break-word' }}>
                   {formatCurrency(quo.grandTotal, quo.currency)}
                 </Typography>
               </Box>
             </CardContent>
           </Card>
         ))}
-
-        <ActionPopover
-          anchorEl={anchorEl}
-          quotation={selectedQuotation}
-          onClose={handleCloseMenu}
-          onOpenStatusDialog={onOpenStatusDialog}
-          onOpenDeleteDialog={onOpenDeleteDialog}
-        />
       </Box>
     );
   }
 
   return (
-    <TableContainer component={Box} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-      <Table size="medium">
+    <DataTableShell
+      isLoading={false}
+      isError={false}
+      isEmpty={false}
+      loadingContent={null}
+      errorContent={null}
+      emptyContent={null}
+      tableContainerProps={{ component: Box, sx: { border: '1px solid', borderColor: 'divider', borderRadius: 2 } }}
+    >
+      <Table size="medium" sx={{ minWidth: 920 }}>
         <TableHead sx={{ bgcolor: 'grey.50' }}>
           <TableRow>
             <TableCell sx={{ fontWeight: 700 }}>Quotation Number</TableCell>
@@ -133,7 +114,7 @@ export function QuotationTable({
             <TableRow
               key={quo.id}
               hover
-              onClick={() => navigate(`/quotations/${quo.id}`)}
+              onClick={() => navigate(`/quotations/${quo.id}`, { state: returnState })}
               sx={{ cursor: 'pointer' }}
             >
               <TableCell sx={{ fontWeight: 600, color: 'primary.main', wordBreak: 'break-word', whiteSpace: 'normal' }}>
@@ -166,104 +147,70 @@ export function QuotationTable({
                 {formatCurrency(quo.grandTotal, quo.currency)}
               </TableCell>
               <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                <IconButton
-                  size="small"
-                  onClick={(e) => handleOpenMenu(e, quo)}
-                  aria-label={`Actions for ${quo.quotationNumber}`}
-                >
-                  <MoreVertIcon fontSize="small" />
-                </IconButton>
+                <QuotationActionsMenu
+                  quotation={quo}
+                  returnState={returnState}
+                  onOpenStatusDialog={onOpenStatusDialog}
+                  onOpenDeleteDialog={onOpenDeleteDialog}
+                />
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-
-      <ActionPopover
-        anchorEl={anchorEl}
-        quotation={selectedQuotation}
-        onClose={handleCloseMenu}
-        onOpenStatusDialog={onOpenStatusDialog}
-        onOpenDeleteDialog={onOpenDeleteDialog}
-      />
-    </TableContainer>
+    </DataTableShell>
   );
 }
 
-type ActionPopoverProps = {
-  anchorEl: HTMLElement | null;
+type QuotationActionsMenuProps = {
   quotation: QuotationListItem | null;
-  onClose: () => void;
+  returnState?: { from: string };
   onOpenStatusDialog: (quotation: QuotationListItem) => void;
   onOpenDeleteDialog: (quotation: QuotationListItem) => void;
 };
 
-function ActionPopover({
-  anchorEl,
+function QuotationActionsMenu({
   quotation,
-  onClose,
+  returnState,
   onOpenStatusDialog,
   onOpenDeleteDialog,
-}: ActionPopoverProps) {
+}: QuotationActionsMenuProps) {
   const navigate = useNavigate();
 
   if (!quotation) return null;
   const canEdit = quotation.canEdit;
 
   return (
-    <Popover
-      open={Boolean(anchorEl)}
-      anchorEl={anchorEl}
-      onClose={onClose}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-    >
-      <MenuList sx={{ minWidth: 160 }}>
-        <MenuItem
-          onClick={() => {
-            onClose();
-            navigate(`/quotations/${quotation.id}`);
-          }}
-        >
-          <VisibilityOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-          View Details
-        </MenuItem>
-
-        {canEdit ? (
-          <MenuItem
-            onClick={() => {
-              onClose();
-              navigate(`/quotations/${quotation.id}/edit`);
-            }}
-          >
-            <EditOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-            Edit Draft
-          </MenuItem>
-        ) : null}
-
-        <MenuItem
-          onClick={() => {
-            onClose();
-            onOpenStatusDialog(quotation);
-          }}
-        >
-          <SwapHorizOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-          Update Status
-        </MenuItem>
-
-        {canEdit ? (
-          <MenuItem
-            onClick={() => {
-              onClose();
-              onOpenDeleteDialog(quotation);
-            }}
-            sx={{ color: 'error.main' }}
-          >
-            <DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} />
-            Delete Draft
-          </MenuItem>
-        ) : null}
-      </MenuList>
-    </Popover>
+    <RowActionsMenu
+      triggerLabel={`Actions for ${quotation.quotationNumber}`}
+      stopPropagationOnTrigger
+      actions={[
+        {
+          key: 'view',
+          label: <><VisibilityOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> View Details</>,
+          onSelect: () => navigate(`/quotations/${quotation.id}`, { state: returnState }),
+        },
+        ...(canEdit
+          ? [{
+              key: 'edit',
+              label: <><EditOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> Edit Draft</>,
+              onSelect: () => navigate(`/quotations/${quotation.id}/edit`, { state: returnState }),
+            }]
+          : []),
+        {
+          key: 'status',
+          label: <><SwapHorizOutlinedIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> Update Status</>,
+          onSelect: () => onOpenStatusDialog(quotation),
+        },
+        ...(canEdit
+          ? [{
+              key: 'delete',
+              label: <><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> Delete Draft</>,
+              destructive: true,
+              onSelect: () => onOpenDeleteDialog(quotation),
+            }]
+          : []),
+      ]}
+    />
   );
 }

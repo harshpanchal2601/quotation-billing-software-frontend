@@ -1,17 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as attachmentsApi from './api/quotation-attachments.api';
-import * as documentsApi from './api/quotation-documents.api';
+import * as attachmentsApi from './attachments/api/quotation-attachments.api';
+import * as documentsApi from './documents/api/quotation-documents.api';
 import * as quotationsApi from './api/quotations.api';
-import { QuotationDocumentsSection } from './components/QuotationDocumentsSection';
-import type { GeneratedDocumentHistoryResponse } from './quotation-documents.types';
-import type { QuotationDetail } from './quotations.types';
+import { QuotationDocumentsSection } from './documents/components/QuotationDocumentsSection';
+import type { GeneratedDocumentHistoryResponse } from './documents/model/quotation-documents.types';
+import type { QuotationDetail } from './model/quotations.types';
 
-vi.mock('./api/quotation-documents.api');
-vi.mock('./api/quotation-attachments.api');
+vi.mock('./documents/api/quotation-documents.api');
+vi.mock('./attachments/api/quotation-attachments.api');
 vi.mock('./api/quotations.api');
 
 function createTestQueryClient() {
@@ -149,12 +149,17 @@ describe('Generated Document History & Quotation Email Frontend', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockViewport(1200);
     vi.mocked(documentsApi.getGeneratedDocumentHistoryRequest).mockResolvedValue(mockHistoryResponse);
     vi.mocked(documentsApi.getQuotationCommunicationHistoryRequest).mockResolvedValue(mockCommunicationHistoryResponse);
     vi.mocked(attachmentsApi.getQuotationAttachmentsRequest).mockResolvedValue({
       attachments: [],
       limits: { maximumAttachments: 20, remainingAttachments: 20, maximumFileSizeBytes: 20971520 },
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('does not show the empty generated-document state before the first request completes', () => {
@@ -195,6 +200,7 @@ describe('Generated Document History & Quotation Email Frontend', () => {
   });
 
   it('renders revision-specific communication history with SMTP acceptance wording', async () => {
+    const user = userEvent.setup();
     renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
 
     expect(await screen.findByText('Accepted by email server')).toBeInTheDocument();
@@ -202,7 +208,34 @@ describe('Generated Document History & Quotation Email Frontend', () => {
     expect(screen.getByText(/To: ramesh@mankind.com/i)).toBeInTheDocument();
     expect(screen.getByText(/CC: manager@mankind.com/i)).toBeInTheDocument();
     expect(screen.getByText(/BCC: audit@buminex.test/i)).toBeInTheDocument();
+    expect(screen.getByText('Revision 0')).toBeInTheDocument();
+    expect(screen.getByText('1 file')).toBeInTheDocument();
     expect(screen.getAllByText('Quotation-BUMINEX-2026-27-000001-v1.pdf')[0]).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /expand communication details/i }));
+
+    expect(screen.getByText('Message')).toBeInTheDocument();
+    expect(screen.getByText('Please find attached.')).toBeInTheDocument();
+    expect(screen.getByText('Supporting attachments')).toBeInTheDocument();
+    expect(screen.getByText('layout.pdf')).toBeInTheDocument();
+  });
+
+  it('renders communication history as compact cards on mobile and tablet widths', async () => {
+    mockViewport(700);
+    const user = userEvent.setup();
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+
+    expect(await screen.findByLabelText('Communication history cards')).toBeInTheDocument();
+    expect(screen.getByText('Recipients')).toBeInTheDocument();
+    expect(screen.getByText(/To: ramesh@mankind.com/i)).toBeInTheDocument();
+    expect(screen.getByText('PDF')).toBeInTheDocument();
+    expect(screen.getAllByText('Revision 0')[0]).toBeInTheDocument();
+    expect(screen.getByText('Attachments')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /expand communication details/i }));
+
+    expect(screen.getByText('Please find attached.')).toBeInTheDocument();
+    expect(screen.getByText('layout.pdf')).toBeInTheDocument();
   });
 
   it('shows local pending state while generating a new PDF', async () => {
@@ -227,4 +260,26 @@ function deferred<T>() {
     reject = rej;
   });
   return { promise, resolve, reject };
+}
+
+function mockViewport(width: number) {
+  vi.stubGlobal('innerWidth', width);
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: matchesMediaQuery(query, width),
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
+function matchesMediaQuery(query: string, width: number) {
+  const maxWidth = query.match(/\(max-width:\s*([0-9.]+)px\)/);
+  if (maxWidth && width > Number(maxWidth[1])) return false;
+  const minWidth = query.match(/\(min-width:\s*([0-9.]+)px\)/);
+  if (minWidth && width < Number(minWidth[1])) return false;
+  return true;
 }

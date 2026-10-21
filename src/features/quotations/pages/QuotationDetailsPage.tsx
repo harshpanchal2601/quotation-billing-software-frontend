@@ -7,28 +7,33 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer } from '@shared/ui/layout';
+import { DataTableShell } from '@shared/ui/tables';
+import { paths } from '@shared/routing/paths';
+import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
+import { toApiError } from '@shared/api/apiClient';
 import {
   createQuotationRevisionRequest,
   deleteQuotationRequest,
@@ -38,26 +43,30 @@ import {
   getQuotationRequest,
   updateQuotationStatusRequest,
 } from '../api/quotations.api';
-import { QuotationAttachmentsSection } from '../components/QuotationAttachmentsSection';
+import { QuotationAttachmentsSection } from '../attachments/components/QuotationAttachmentsSection';
 import { QuotationDeleteDialog } from '../components/QuotationDeleteDialog';
-import { QuotationDocumentsSection } from '../components/QuotationDocumentsSection';
-import { QuotationPdfPreviewDialog } from '../components/QuotationPdfPreviewDialog';
+import { QuotationDocumentsSection } from '../documents/components/QuotationDocumentsSection';
+import { QuotationPdfPreviewDialog } from '../documents/components/QuotationPdfPreviewDialog';
 import { QuotationStatusChip } from '../components/QuotationStatusChip';
 import { QuotationStatusDialog } from '../components/QuotationStatusDialog';
-import { quotationsQueryKeys } from '../quotations.query-keys';
-import type { QuotationStatus } from '../quotations.types';
+import { quotationsQueryKeys } from '../model/quotations.query-keys';
+import type { QuotationStatus } from '../model/quotations.types';
 import {
   formatCurrency,
   formatDiscountTypeLabel,
   formatQuotationStatusLabel,
   formatTaxModeLabel,
-} from '../quotations.utils';
+} from '../model/quotations.utils';
 
 export function QuotationDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const quotationId = Number(id);
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
+  const returnPath = getSafeListReturnPath(location, paths.quotations);
 
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -100,7 +109,7 @@ export function QuotationDetailsPage() {
       setFeedback({ open: true, message: 'Draft quotation deleted successfully', severity: 'success' });
       queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all });
       setDeleteDialogOpen(false);
-      navigate('/quotations');
+      navigate(returnPath);
     },
     onError: (error) => {
       const apiError = toApiError(error);
@@ -117,7 +126,7 @@ export function QuotationDetailsPage() {
         severity: 'success',
       });
       queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all });
-      navigate(`/quotations/${created.id}/edit`);
+      navigate(`/quotations/${created.id}/edit`, { state: { from: returnPath } });
     },
     onError: (error) => {
       const apiError = toApiError(error);
@@ -182,10 +191,10 @@ export function QuotationDetailsPage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+      <PageContainer maxWidth={1200} sx={{ p: { xs: 0, sm: 3 }, mx: 'auto' }}>
         <Skeleton variant="text" width={300} height={40} />
         <Skeleton variant="rectangular" height={500} sx={{ mt: 2, borderRadius: 2 }} />
-      </Box>
+      </PageContainer>
     );
   }
 
@@ -200,14 +209,14 @@ export function QuotationDetailsPage() {
   const canChangeStatus = quotation.isLatestRevision;
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
+    <PageContainer maxWidth={1200} sx={{ mx: 'auto' }}>
       {!quotation.isLatestRevision && quotation.latestRevision ? (
         <Alert
           severity="info"
           action={
-            <Button color="inherit" size="small" onClick={() => navigate(`/quotations/${quotation.latestRevision?.id}`)}>
+            <AppButton color="inherit" size="small" onClick={() => navigate(`/quotations/${quotation.latestRevision?.id}`, { state: { from: returnPath } })}>
               View Latest
-            </Button>
+            </AppButton>
           }
           sx={{ mb: 2 }}
         >
@@ -216,19 +225,19 @@ export function QuotationDetailsPage() {
       ) : null}
 
       {/* Header Actions */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Button
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' }, mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: { xs: 1, sm: 2 }, minWidth: 0 }}>
+          <AppButton
             size="small"
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/quotations')}
+            onClick={() => navigate(returnPath)}
             color="inherit"
           >
-            Quotations
-          </Button>
+            Back to Quotations
+          </AppButton>
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Typography variant="h5" fontWeight={700}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+              <Typography component="h1" variant="h1" sx={{ wordBreak: 'break-word' }}>
                 {quotation.quotationNumber}
               </Typography>
               <QuotationStatusChip status={quotation.status} size="medium" />
@@ -239,54 +248,54 @@ export function QuotationDetailsPage() {
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' }, '& .MuiButton-root': { flex: { xs: '1 1 150px', md: '0 0 auto' } } }}>
+          <AppButton
             variant="contained"
             color="primary"
             startIcon={<PictureAsPdfOutlinedIcon />}
             onClick={handlePreviewPdf}
-            loading={pdfLoading}
+            isLoading={pdfLoading}
             loadingPosition="start"
           >
             {pdfLoading ? 'Generating...' : 'Preview PDF'}
-          </Button>
+          </AppButton>
 
-          <Button
+          <AppButton
             variant="outlined"
             color="primary"
             startIcon={<DownloadOutlinedIcon />}
             onClick={handleDownloadPdf}
-            loading={pdfDownloading}
+            isLoading={pdfDownloading}
             loadingPosition="start"
           >
             {pdfDownloading ? 'Downloading...' : 'Download PDF'}
-          </Button>
+          </AppButton>
 
           {canEdit ? (
-            <Button
+            <AppButton
               variant="outlined"
               color="primary"
               startIcon={<EditOutlinedIcon />}
-              onClick={() => navigate(`/quotations/${quotation.id}/edit`)}
+              onClick={() => navigate(`/quotations/${quotation.id}/edit`, { state: { from: returnPath } })}
             >
               Edit Draft
-            </Button>
+            </AppButton>
           ) : null}
 
           {canCreateRevision ? (
-            <Button
+            <AppButton
               variant="contained"
               color="secondary"
               startIcon={<ContentCopyOutlinedIcon />}
               onClick={() => createRevisionMutation.mutate()}
-              loading={createRevisionMutation.isPending}
+              isLoading={createRevisionMutation.isPending}
               loadingPosition="start"
             >
               {createRevisionMutation.isPending ? 'Creating...' : 'Create Revision'}
-            </Button>
+            </AppButton>
           ) : null}
 
-          <Button
+          <AppButton
             variant="outlined"
             color="inherit"
             startIcon={<SwapHorizOutlinedIcon />}
@@ -294,10 +303,10 @@ export function QuotationDetailsPage() {
             disabled={statusMutation.isPending || !canChangeStatus}
           >
             Change Status
-          </Button>
+          </AppButton>
 
           {canEdit ? (
-            <Button
+            <AppButton
               variant="outlined"
               color="error"
               startIcon={<DeleteOutlineOutlinedIcon />}
@@ -305,7 +314,7 @@ export function QuotationDetailsPage() {
               disabled={deleteMutation.isPending}
             >
               Delete
-            </Button>
+            </AppButton>
           ) : null}
         </Box>
       </Box>
@@ -357,7 +366,7 @@ export function QuotationDetailsPage() {
               <Typography variant="subtitle1" fontWeight={700} color="primary.main" gutterBottom>
                 Quotation Configuration
               </Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mt: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5, mt: 1 }}>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
                     Quotation Date
@@ -446,54 +455,105 @@ export function QuotationDetailsPage() {
           <Typography variant="h6" fontWeight={700} sx={{ mb: 1.5 }}>
             Quotation Line Items ({quotation.items.length})
           </Typography>
-          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-            <Table size="small">
-              <TableHead sx={{ bgcolor: 'grey.50' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Item Description</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Qty</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Unit Rate</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Base Amount</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Discount</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Taxable</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>GST Rate</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Line Total</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {quotation.items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell sx={{ fontWeight: 600 }}>{item.lineNumber}</TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={600}>
-                        {item.itemNameSnapshot}
+          {isCompact ? (
+            <Stack spacing={1.5} aria-label="Quotation line item cards">
+              {quotation.items.map((item) => (
+                <Card key={item.id} variant="outlined">
+                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Line #{item.lineNumber}
+                        </Typography>
+                        <Typography variant="subtitle2" fontWeight={700} sx={{ wordBreak: 'break-word' }}>
+                          {item.itemNameSnapshot}
+                        </Typography>
+                        {item.itemCodeSnapshot ? (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Code: {item.itemCodeSnapshot}
+                          </Typography>
+                        ) : null}
+                      </Box>
+                      <Typography variant="subtitle2" fontWeight={700} color="primary.main" sx={{ textAlign: 'right', wordBreak: 'break-word' }}>
+                        {formatCurrency(item.lineTotal, quotation.currency)}
                       </Typography>
-                      {item.itemCodeSnapshot ? (
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Code: {item.itemCodeSnapshot}
-                        </Typography>
-                      ) : null}
-                      {item.descriptionSnapshot ? (
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          {item.descriptionSnapshot}
-                        </Typography>
-                      ) : null}
-                    </TableCell>
-                    <TableCell align="right">{item.quantity} {item.measurementUnitSnapshot}</TableCell>
-                    <TableCell align="right">{formatCurrency(item.unitRate, quotation.currency)}</TableCell>
-                    <TableCell align="right">{formatCurrency(item.baseAmount, quotation.currency)}</TableCell>
-                    <TableCell align="right">{formatCurrency(item.discountAmount, quotation.currency)}</TableCell>
-                    <TableCell align="right">{formatCurrency(item.taxableAmount, quotation.currency)}</TableCell>
-                    <TableCell align="right">{item.gstRate}%</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>
-                      {formatCurrency(item.lineTotal, quotation.currency)}
-                    </TableCell>
+                    </Stack>
+                    {item.descriptionSnapshot ? (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                        {item.descriptionSnapshot}
+                      </Typography>
+                    ) : null}
+                    <Divider sx={{ my: 1.5 }} />
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
+                      <DetailMetric label="Quantity" value={`${item.quantity} ${item.measurementUnitSnapshot}`} />
+                      <DetailMetric label="Unit Rate" value={formatCurrency(item.unitRate, quotation.currency)} />
+                      <DetailMetric label="Base Amount" value={formatCurrency(item.baseAmount, quotation.currency)} />
+                      <DetailMetric label="Discount" value={formatCurrency(item.discountAmount, quotation.currency)} />
+                      <DetailMetric label="Taxable" value={formatCurrency(item.taxableAmount, quotation.currency)} />
+                      <DetailMetric label="GST Rate" value={`${item.gstRate}%`} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          ) : (
+            <DataTableShell
+              isLoading={false}
+              isError={false}
+              isEmpty={false}
+              loadingContent={null}
+              errorContent={null}
+              emptyContent={null}
+              tableContainerProps={{ component: Paper, variant: 'outlined', sx: { borderRadius: 2 } }}
+            >
+              <Table size="small" sx={{ minWidth: 980 }}>
+                <TableHead sx={{ bgcolor: 'grey.50' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Item Description</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Qty</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Unit Rate</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Base Amount</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Discount</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Taxable</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>GST Rate</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Line Total</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {quotation.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell sx={{ fontWeight: 600 }}>{item.lineNumber}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={600}>
+                          {item.itemNameSnapshot}
+                        </Typography>
+                        {item.itemCodeSnapshot ? (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Code: {item.itemCodeSnapshot}
+                          </Typography>
+                        ) : null}
+                        {item.descriptionSnapshot ? (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            {item.descriptionSnapshot}
+                          </Typography>
+                        ) : null}
+                      </TableCell>
+                      <TableCell align="right">{item.quantity} {item.measurementUnitSnapshot}</TableCell>
+                      <TableCell align="right">{formatCurrency(item.unitRate, quotation.currency)}</TableCell>
+                      <TableCell align="right">{formatCurrency(item.baseAmount, quotation.currency)}</TableCell>
+                      <TableCell align="right">{formatCurrency(item.discountAmount, quotation.currency)}</TableCell>
+                      <TableCell align="right">{formatCurrency(item.taxableAmount, quotation.currency)}</TableCell>
+                      <TableCell align="right">{item.gstRate}%</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>
+                        {formatCurrency(item.lineTotal, quotation.currency)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </DataTableShell>
+          )}
         </Grid>
 
         {/* Totals Breakdown */}
@@ -621,7 +681,7 @@ export function QuotationDetailsPage() {
               <CardContent>
                 <Stack spacing={2} divider={<Divider />}>
                   {quotation.statusHistory.map((hist) => (
-                    <Box key={hist.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box key={hist.id} sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-start' } }}>
                       <Box>
                         <Typography variant="body2" fontWeight={600}>
                           {hist.fromStatus ? `${formatQuotationStatusLabel(hist.fromStatus)} → ` : ''}
@@ -700,15 +760,26 @@ export function QuotationDetailsPage() {
       />
 
       {/* Feedback Snackbar */}
-      <Snackbar
+      <AppSnackbar
         open={feedback.open}
         autoHideDuration={4000}
+        message={feedback.message}
+        severity={feedback.severity}
         onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
-      >
-        <Alert severity={feedback.severity} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
-          {feedback.message}
-        </Alert>
-      </Snackbar>
+      />
+    </PageContainer>
+  );
+}
+
+function DetailMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant="caption" color="text.secondary" display="block">
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+        {value}
+      </Typography>
     </Box>
   );
 }

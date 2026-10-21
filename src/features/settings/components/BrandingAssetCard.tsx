@@ -1,24 +1,20 @@
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import UploadOutlinedIcon from '@mui/icons-material/UploadOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
 
-import { SafeImage } from '../../../components/common/SafeImage';
-import type { BrandingAssetType } from '../settings.types';
-import { resolveAssetUrl } from '../settings.utils';
+import { SafeImage } from '@shared/components/common/SafeImage';
+import { AppButton } from '@shared/ui/actions';
+import { DeleteConfirmDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
+import type { BrandingAssetType } from '../model/settings.types';
+import { resolveAssetUrl } from '../model/settings.utils';
 
 const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const maxFileSize = 5 * 1024 * 1024;
@@ -152,9 +148,9 @@ export function BrandingAssetCard({
               <LinearProgress aria-label={busyLabel} />
             </Box>
           ) : null}
-          {error ? <Alert severity="error">{error}</Alert> : null}
+          <ServerErrorAlert message={error} />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            <Button component="label" variant="outlined" startIcon={<UploadOutlinedIcon />} disabled={isBusy} loading={isBusy && fileName !== null}>
+            <AppButton component="label" variant="outlined" startIcon={<UploadOutlinedIcon />} disabled={isBusy} isLoading={isBusy && fileName !== null}>
               {isBusy && fileName !== null ? 'Uploading...' : imageUrl ? 'Replace image' : 'Select image'}
               <input
                 ref={inputRef}
@@ -163,30 +159,30 @@ export function BrandingAssetCard({
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(event) => void handleFileChange(event)}
               />
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               variant="text"
               color="error"
               startIcon={<DeleteOutlineOutlinedIcon />}
               disabled={isBusy || imageUrl === null}
-              loading={isBusy && fileName === null}
+              isLoading={isBusy && fileName === null}
               onClick={() => setConfirmOpen(true)}
             >
               {isBusy && fileName === null ? 'Removing...' : 'Remove image'}
-            </Button>
+            </AppButton>
           </Stack>
         </Stack>
       </CardContent>
-      <Dialog open={confirmOpen} onClose={() => (!isBusy ? setConfirmOpen(false) : undefined)}>
-        <DialogTitle>Remove {title.toLowerCase()}?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>This removes the current branding image. You can upload a replacement later.</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={() => setConfirmOpen(false)} disabled={isBusy}>Cancel</Button>
-          <Button color="error" onClick={() => void handleDelete()} loading={isBusy}>Remove</Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteConfirmDialog
+        open={confirmOpen}
+        title={`Remove ${title.toLowerCase()}?`}
+        confirmLabel="Remove"
+        isDeleting={isBusy}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => void handleDelete()}
+      >
+        <Typography color="text.secondary">This removes the current branding image. You can upload a replacement later.</Typography>
+      </DeleteConfirmDialog>
     </Card>
   );
 }

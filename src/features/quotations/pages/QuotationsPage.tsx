@@ -1,19 +1,21 @@
 import NoteAddOutlinedIcon from '@mui/icons-material/NoteAddOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
-import TablePagination from '@mui/material/TablePagination';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { toApiError } from '../../../services/apiClient';
-import { listCompaniesRequest } from '../../companies/api/companies.api';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { AppTablePagination, DataTableShell } from '@shared/ui/tables';
+import { toApiError } from '@shared/api/apiClient';
+import { paths } from '@shared/routing/paths';
+import { getCurrentListReturnState } from '@shared/routing/returnNavigation';
+import { listCompaniesRequest } from '@features/companies';
 import {
   deleteQuotationRequest,
   listQuotationsRequest,
@@ -23,11 +25,12 @@ import { QuotationDeleteDialog } from '../components/QuotationDeleteDialog';
 import { QuotationFilters } from '../components/QuotationFilters';
 import { QuotationStatusDialog } from '../components/QuotationStatusDialog';
 import { QuotationTable } from '../components/QuotationTable';
-import { quotationsQueryKeys } from '../quotations.query-keys';
-import type { QuotationListItem, QuotationListParams, QuotationStatus } from '../quotations.types';
+import { quotationsQueryKeys } from '../model/quotations.query-keys';
+import type { QuotationListItem, QuotationListParams, QuotationStatus } from '../model/quotations.types';
 
 export function QuotationsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -136,39 +139,36 @@ export function QuotationsPage() {
     setSearchParams(new URLSearchParams());
   };
 
-  const handleChangePage = (_e: unknown, newPage: number) => {
-    handleFilterChange({ page: newPage + 1 });
+  const handleChangePage = (newPage: number) => {
+    handleFilterChange({ page: newPage });
   };
 
-  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFilterChange({ limit: Number(e.target.value), page: 1 });
+  const handleChangeRowsPerPage = (rowsPerPage: number) => {
+    handleFilterChange({ limit: rowsPerPage, page: 1 });
   };
 
   const quotations = data?.quotations || [];
   const pagination = data?.pagination;
   const showRefreshing = isFetching && !isLoading;
+  const listReturnState = getCurrentListReturnState(location.pathname, location.search);
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Quotations
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage quotation generation, calculation preview, draft updates, and status transitions.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<NoteAddOutlinedIcon />}
-          onClick={() => navigate('/quotations/new')}
-        >
-          Create Quotation
-        </Button>
-      </Box>
+    <PageContainer>
+      <PageHeader
+        title="Quotations"
+        description="Manage quotation generation, calculation preview, draft updates, and status transitions."
+        descriptionTypographyProps={{ variant: 'body2' }}
+        actions={
+          <AppButton
+            variant="contained"
+            color="primary"
+            startIcon={<NoteAddOutlinedIcon />}
+            onClick={() => navigate(paths.newQuotation)}
+          >
+            Create Quotation
+          </AppButton>
+        }
+      />
 
       {/* Filters */}
       <QuotationFilters
@@ -179,17 +179,21 @@ export function QuotationsPage() {
       />
 
       {/* Content State */}
-      <RefreshIndicator show={showRefreshing} label="Refreshing quotations..." />
-
-      {isLoading ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Skeleton variant="rectangular" height={50} sx={{ borderRadius: 2 }} />
-          <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
-        </Box>
-      ) : isError ? (
-        <ErrorState message={toApiError(error).message} onRetry={refetch} />
-      ) : quotations.length === 0 ? (
-        <Box sx={{ p: 6, textAlign: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+      <DataTableShell
+        isLoading={isLoading}
+        isError={isError}
+        isEmpty={quotations.length === 0}
+        isRefreshing={showRefreshing}
+        refreshIndicator={<RefreshIndicator show={showRefreshing} label="Refreshing quotations..." />}
+        loadingContent={
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Skeleton variant="rectangular" height={50} sx={{ borderRadius: 2 }} />
+            <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
+          </Box>
+        }
+        errorContent={<ErrorState message={toApiError(error).message} onRetry={refetch} />}
+        emptyContent={
+          <Box sx={{ p: 6, textAlign: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
           <Typography variant="h6" fontWeight={600} gutterBottom>
             No Quotations Found
           </Typography>
@@ -199,37 +203,37 @@ export function QuotationsPage() {
               : 'You have not created any quotations yet.'}
           </Typography>
           {params.search || params.status || params.companyId ? (
-            <Button variant="outlined" size="small" onClick={handleClearFilters}>
+            <AppButton variant="outlined" size="small" onClick={handleClearFilters}>
               Clear Filters
-            </Button>
+            </AppButton>
           ) : (
-            <Button variant="contained" size="small" startIcon={<NoteAddOutlinedIcon />} onClick={() => navigate('/quotations/new')}>
+            <AppButton variant="contained" size="small" startIcon={<NoteAddOutlinedIcon />} onClick={() => navigate(paths.newQuotation)}>
               Create First Quotation
-            </Button>
+            </AppButton>
           )}
         </Box>
-      ) : (
-        <Box aria-busy={isLoading || showRefreshing}>
-          <QuotationTable
-            quotations={quotations}
-            onOpenStatusDialog={(quo) => setStatusDialogTarget(quo)}
-            onOpenDeleteDialog={(quo) => setDeleteDialogTarget(quo)}
-          />
-
-          {pagination ? (
-            <TablePagination
-              component="div"
+        }
+        pagination={
+          pagination ? (
+            <AppTablePagination
               count={pagination.total}
-              page={pagination.page - 1}
+              page={pagination.page}
               onPageChange={handleChangePage}
               rowsPerPage={pagination.limit}
               onRowsPerPageChange={handleChangeRowsPerPage}
               rowsPerPageOptions={[10, 20, 50]}
               sx={{ mt: 2 }}
             />
-          ) : null}
-        </Box>
-      )}
+          ) : null
+        }
+      >
+          <QuotationTable
+            quotations={quotations}
+            returnState={listReturnState}
+            onOpenStatusDialog={(quo) => setStatusDialogTarget(quo)}
+            onOpenDeleteDialog={(quo) => setDeleteDialogTarget(quo)}
+          />
+      </DataTableShell>
 
       {/* Status Transition Dialog */}
       {statusDialogTarget ? (
@@ -260,15 +264,13 @@ export function QuotationsPage() {
       ) : null}
 
       {/* Feedback Snackbar */}
-      <Snackbar
+      <AppSnackbar
         open={feedback.open}
         autoHideDuration={4000}
+        message={feedback.message}
+        severity={feedback.severity}
         onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
-      >
-        <Alert severity={feedback.severity} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
-          {feedback.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      />
+    </PageContainer>
   );
 }

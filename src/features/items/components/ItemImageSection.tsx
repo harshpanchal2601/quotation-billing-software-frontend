@@ -1,27 +1,23 @@
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 
-import { SafeImage } from '../../../components/common/SafeImage';
-import { toApiError } from '../../../services/apiClient';
+import { SafeImage } from '@shared/components/common/SafeImage';
+import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
+import { DeleteConfirmDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import { deleteItemImageRequest, uploadItemImageRequest } from '../api/items.api';
-import { itemsQueryKeys } from '../items.query-keys';
-import type { ItemDetail } from '../items.types';
-import { resolveAssetUrl } from '../items.utils';
+import { itemsQueryKeys } from '../model/items.query-keys';
+import type { ItemDetail } from '../model/items.types';
+import { resolveAssetUrl } from '../model/items.utils';
 
 type ItemImageSectionProps = {
   item: ItemDetail;
@@ -131,7 +127,7 @@ export function ItemImageSection({ item, onSuccess }: ItemImageSectionProps) {
             </Typography>
           </Box>
 
-          {errorMessage ? <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert> : null}
+          <ServerErrorAlert message={errorMessage} onDismiss={() => setErrorMessage(null)} />
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center">
             <Box
@@ -175,30 +171,30 @@ export function ItemImageSection({ item, onSuccess }: ItemImageSectionProps) {
               <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
                 {selectedFile ? (
                   <>
-                    <Button
+                    <AppButton
                       variant="contained"
                       startIcon={<CloudUploadOutlinedIcon />}
                       onClick={() => void handleConfirmUpload()}
-                      loading={uploadMutation.isPending}
+                      isLoading={uploadMutation.isPending}
                     >
                       Save Image
-                    </Button>
-                    <Button variant="outlined" onClick={clearSelectedFile} disabled={isBusy}>
+                    </AppButton>
+                    <AppButton variant="outlined" onClick={clearSelectedFile} disabled={isBusy}>
                       Cancel Selection
-                    </Button>
+                    </AppButton>
                   </>
                 ) : (
                   <>
-                    <Button
+                    <AppButton
                       variant="outlined"
                       startIcon={<CloudUploadOutlinedIcon />}
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isBusy}
                     >
                       {item.imageUrl ? 'Replace Image' : 'Select Image'}
-                    </Button>
+                    </AppButton>
                     {item.imageUrl ? (
-                      <Button
+                      <AppButton
                         variant="outlined"
                         color="error"
                         startIcon={<DeleteOutlineOutlinedIcon />}
@@ -206,7 +202,7 @@ export function ItemImageSection({ item, onSuccess }: ItemImageSectionProps) {
                         disabled={isBusy}
                       >
                         Remove Image
-                      </Button>
+                      </AppButton>
                     ) : null}
                   </>
                 )}
@@ -222,27 +218,18 @@ export function ItemImageSection({ item, onSuccess }: ItemImageSectionProps) {
         </Stack>
       </CardContent>
 
-      <Dialog open={deleteConfirmOpen} onClose={isBusy ? undefined : () => setDeleteConfirmOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Remove Product Image</DialogTitle>
-        <DialogContent>
-          <DialogContentText pt={1}>
-            Are you sure you want to remove the image for <strong>{item.name}</strong>?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setDeleteConfirmOpen(false)} disabled={isBusy}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => void deleteMutation.mutateAsync().catch(() => undefined)}
-            loading={deleteMutation.isPending}
-          >
-            Remove Image
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteConfirmDialog
+        open={deleteConfirmOpen}
+        title="Remove Product Image"
+        confirmLabel="Remove Image"
+        isDeleting={deleteMutation.isPending}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={() => void deleteMutation.mutateAsync().catch(() => undefined)}
+      >
+        <Typography color="text.secondary" pt={1}>
+          Are you sure you want to remove the image for <strong>{item.name}</strong>?
+        </Typography>
+      </DeleteConfirmDialog>
     </Card>
   );
 }

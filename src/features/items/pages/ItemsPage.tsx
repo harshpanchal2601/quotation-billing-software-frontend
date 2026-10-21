@@ -1,33 +1,30 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
-import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
-import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { EmptyState } from '../../../components/common/EmptyState';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
-import { getCategoryOptionsRequest } from '../../categories/api/categories.api';
-import { categoriesQueryKeys } from '../../categories/categories.query-keys';
-import { getMeasurementUnitOptionsRequest } from '../../measurement-units/api/measurement-units.api';
-import { measurementUnitsQueryKeys } from '../../measurement-units/measurement-units.query-keys';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
+import { paths } from '@shared/routing/paths';
+import { getCurrentListReturnState } from '@shared/routing/returnNavigation';
+import { toApiError } from '@shared/api/apiClient';
+import { categoriesQueryKeys, getCategoryOptionsRequest } from '@features/categories';
+import { getMeasurementUnitOptionsRequest, measurementUnitsQueryKeys } from '@features/measurement-units';
 
 import { deleteItemRequest, listItemsRequest, updateItemStatusRequest } from '../api/items.api';
 import { ItemDeleteDialog, ItemStatusDialog } from '../components/ItemConfirmDialogs';
 import { ItemTable } from '../components/ItemTable';
-import { itemsQueryKeys } from '../items.query-keys';
-import type { ItemListItem, ItemListParams } from '../items.types';
+import { itemsQueryKeys } from '../model/items.query-keys';
+import type { ItemListItem, ItemListParams } from '../model/items.types';
 
 const sortOptions = [
   { value: 'createdAt:desc', label: 'Newest first' },
@@ -45,6 +42,7 @@ const sortOptions = [
 
 export function ItemsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get('search') ?? '');
@@ -61,10 +59,12 @@ export function ItemsPage() {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      updateSearchParams(setSearchParams, { search: searchInput.trim() || undefined, page: 1 });
+      const nextSearch = searchInput.trim();
+      if (nextSearch === (searchParams.get('search') ?? '')) return;
+      updateSearchParams(setSearchParams, { search: nextSearch || undefined, page: 1 });
     }, 350);
     return () => window.clearTimeout(timeout);
-  }, [searchInput, setSearchParams]);
+  }, [searchInput, searchParams, setSearchParams]);
 
   const categoriesQuery = useQuery({
     queryKey: categoriesQueryKeys.options(),
@@ -118,28 +118,25 @@ export function ItemsPage() {
       ? deleteMutation.variables?.id
       : null;
   const showRefreshing = query.isFetching && !query.isPending;
+  const listReturnState = getCurrentListReturnState(location.pathname, location.search);
 
   return (
-    <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ sm: 'center' }}>
-        <Box>
-          <Typography component="h1" variant="h1">
-            Items
-          </Typography>
-          <Typography color="text.secondary">
-            Manage equipment, products and services for quotation line items.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={() => navigate(paths.newCompany ? `${paths.items}/new` : `${paths.items}/new`)}
-        >
-          Add Item
-        </Button>
-      </Stack>
+    <PageContainer>
+      <PageHeader
+        title="Items"
+        description="Manage equipment, products and services for quotation line items."
+        actions={
+          <AppButton
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => navigate(paths.newCompany ? `${paths.items}/new` : `${paths.items}/new`)}
+          >
+            Add Item
+          </AppButton>
+        }
+      />
 
-      {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+      <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
 
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -161,7 +158,7 @@ export function ItemsPage() {
                 page: 1,
               })
             }
-            sx={{ minWidth: 180 }}
+            sx={{ minWidth: { xs: 0, md: 180 }, width: { xs: '100%', md: 'auto' } }}
           >
             <MenuItem value="all">All Categories</MenuItem>
             {categoriesQuery.data?.map((cat) => (
@@ -181,7 +178,7 @@ export function ItemsPage() {
                 page: 1,
               })
             }
-            sx={{ minWidth: 180 }}
+            sx={{ minWidth: { xs: 0, md: 180 }, width: { xs: '100%', md: 'auto' } }}
           >
             <MenuItem value="all">All Units</MenuItem>
             {unitsQuery.data?.map((unit) => (
@@ -203,7 +200,7 @@ export function ItemsPage() {
                 page: 1,
               })
             }
-            sx={{ minWidth: 140 }}
+            sx={{ minWidth: { xs: 0, md: 140 }, width: { xs: '100%', md: 'auto' } }}
           >
             <MenuItem value="all">All Statuses</MenuItem>
             <MenuItem value="true">Active</MenuItem>
@@ -220,7 +217,7 @@ export function ItemsPage() {
                 page: 1,
               })
             }
-            sx={{ minWidth: 160 }}
+            sx={{ minWidth: { xs: 0, md: 160 }, width: { xs: '100%', md: 'auto' } }}
           >
             <MenuItem value="all">All Sources</MenuItem>
             <MenuItem value="MANUAL">Manual</MenuItem>
@@ -267,7 +264,7 @@ export function ItemsPage() {
               ];
               updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
             }}
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: { xs: 0, md: 200 }, width: { xs: '100%', md: 'auto' } }}
           >
             {sortOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -278,38 +275,46 @@ export function ItemsPage() {
         </Stack>
       </Stack>
 
-      <RefreshIndicator show={showRefreshing} />
-      <Box aria-busy={query.isPending || showRefreshing}>
-      {query.isPending ? (
-        <Stack spacing={1}>
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} height={64} />
-          ))}
-        </Stack>
-      ) : null}
-
-      {query.isError ? (
-        <Stack spacing={1}>
-          <ErrorState message={toApiError(query.error).message} />
-          <Button variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
-            Retry
-          </Button>
-        </Stack>
-      ) : null}
-
-      {query.data && query.data.items.length === 0 ? (
-        <EmptyState
-          title={isFiltered ? 'No items match the active filters' : 'No items created yet'}
-          description={
-            isFiltered
-              ? 'Adjust search text, category, unit, rate or status filters to view items.'
-              : 'Add product or service items to start building quotation catalog.'
-          }
-        />
-      ) : null}
-
-      {query.data && query.data.items.length > 0 ? (
-        <>
+      <DataTableShell
+        isLoading={query.isPending}
+        isError={query.isError}
+        isEmpty={Boolean(query.data && query.data.items.length === 0)}
+        isRefreshing={showRefreshing}
+        refreshIndicator={<RefreshIndicator show={showRefreshing} />}
+        loadingContent={<TableSkeleton />}
+        errorContent={
+          <Stack spacing={1}>
+            <ErrorState message={toApiError(query.error).message} />
+            <AppButton variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
+              Retry
+            </AppButton>
+          </Stack>
+        }
+        emptyContent={
+          <EmptyState
+            title={isFiltered ? 'No items match the active filters' : 'No items created yet'}
+            description={
+              isFiltered
+                ? 'Adjust search text, category, unit, rate or status filters to view items.'
+                : 'Add product or service items to start building quotation catalog.'
+            }
+          />
+        }
+        pagination={
+          query.data && query.data.items.length > 0 ? (
+            <AppTablePagination
+              count={query.data.pagination.total}
+              page={params.page}
+              rowsPerPage={params.limit}
+              rowsPerPageOptions={[10, 20, 50]}
+              onPageChange={(page) => updateSearchParams(setSearchParams, { page })}
+              onRowsPerPageChange={(limit) => updateSearchParams(setSearchParams, { limit, page: 1 })}
+            />
+          ) : null
+        }
+      >
+        {query.data && query.data.items.length > 0 ? (
+          <>
           <Typography color="text.secondary">
             {query.data.pagination.total} item(s) found
           </Typography>
@@ -317,26 +322,14 @@ export function ItemsPage() {
           <ItemTable
             items={query.data.items}
             busyItemId={busyItemId}
-            onView={(itm) => navigate(`${paths.items}/${itm.id}`)}
-            onEdit={(itm) => navigate(`${paths.items}/${itm.id}/edit`)}
+            onView={(itm) => navigate(`${paths.items}/${itm.id}`, { state: listReturnState })}
+            onEdit={(itm) => navigate(`${paths.items}/${itm.id}/edit`, { state: listReturnState })}
             onStatusChange={(itm) => setStatusTarget(itm)}
             onDelete={(itm) => setDeleteTarget(itm)}
           />
-
-          <TablePagination
-            component="div"
-            count={query.data.pagination.total}
-            page={params.page - 1}
-            rowsPerPage={params.limit}
-            rowsPerPageOptions={[10, 20, 50]}
-            onPageChange={(_event, nextPage) => updateSearchParams(setSearchParams, { page: nextPage + 1 })}
-            onRowsPerPageChange={(event) =>
-              updateSearchParams(setSearchParams, { limit: Number(event.target.value), page: 1 })
-            }
-          />
-        </>
-      ) : null}
-      </Box>
+          </>
+        ) : null}
+      </DataTableShell>
 
       <ItemStatusDialog
         item={statusTarget}
@@ -356,16 +349,8 @@ export function ItemsPage() {
         }}
       />
 
-      <Snackbar
-        open={successMessage !== null}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
-    </Stack>
+      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
+    </PageContainer>
   );
 }
 

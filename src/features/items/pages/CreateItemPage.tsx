@@ -1,19 +1,16 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
+import { paths } from '@shared/routing/paths';
+import { toApiError } from '@shared/api/apiClient';
+import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { createItemRequest } from '../api/items.api';
 
 import { ItemForm } from '../components/ItemForm';
-import { itemsQueryKeys } from '../items.query-keys';
-import type { ItemFormValues } from '../items.schema';
+import { itemsQueryKeys } from '../model/items.query-keys';
+import type { ItemFormValues } from '../model/items.schema';
 
 export function CreateItemPage() {
   const navigate = useNavigate();
@@ -55,15 +52,8 @@ export function CreateItemPage() {
   }
 
   return (
-    <Stack spacing={3}>
-      <Box>
-        <Typography component="h1" variant="h1">
-          Add Item
-        </Typography>
-        <Typography color="text.secondary">
-          Create a new product or service item for quotations.
-        </Typography>
-      </Box>
+    <PageContainer>
+      <PageHeader title="Add Item" description="Create a new product or service item for quotations." />
 
       <ItemForm
         isSubmitting={mutation.isPending}
@@ -72,15 +62,7 @@ export function CreateItemPage() {
         serverError={serverError}
       />
 
-      <Snackbar
-        open={snackbarMessage !== null}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSnackbarMessage(null)}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </Stack>
+      <AppSnackbar open={snackbarMessage !== null} autoHideDuration={4000} message={snackbarMessage} onClose={() => setSnackbarMessage(null)} />
+    </PageContainer>
   );
 }

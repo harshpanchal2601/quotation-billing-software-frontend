@@ -1,23 +1,19 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
-import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import type { ApiFieldErrors } from '../../../services/apiClient';
-import { applyApiFieldErrors } from '../../../services/formErrors';
-import { bankDetailsSchema, type BankDetailsFormValues, type BankDetailsSubmitValues } from '../schemas/bank-details.schema';
-import type { BankDetail } from '../settings.types';
+import type { ApiFieldErrors } from '@shared/api/apiClient';
+import { FormActions } from '@shared/forms';
+import { ControlledCheckbox, ControlledTextField } from '@shared/forms/controlled';
+import { AppDialog } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
+import { applyApiFieldErrors } from '@shared/forms/formErrors';
+import { bankDetailsSchema, type BankDetailsFormValues, type BankDetailsSubmitValues } from '../model/bank-details.schema';
+import type { BankDetail } from '../model/settings.types';
 
 const accountTypeOptions = ['Current', 'Savings', 'Cash Credit', 'Overdraft'];
 
@@ -74,37 +70,55 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
   }
 
   return (
-    <Dialog open={open} onClose={() => (!isSubmitting ? onClose() : undefined)} fullWidth maxWidth="md">
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
-        <DialogContentText mb={2}>
+    <AppDialog
+      open={open}
+      onClose={onClose}
+      preventClose={isSubmitting}
+      fullWidth
+      maxWidth="md"
+      title={title}
+      actions={
+        <FormActions
+          submitLabel={isSubmitting ? 'Saving...' : 'Save account'}
+          isSubmitting={isSubmitting}
+          isSubmitDisabled={!form.formState.isValid}
+          onCancel={onClose}
+          submitButtonProps={{ form: 'bank-details-form' }}
+        />
+      }
+    >
+        <Typography color="text.secondary" mb={2}>
           Account numbers are stored as text so leading zeros and bank-specific formats are preserved.
-        </DialogContentText>
+        </Typography>
         <Stack component="form" id="bank-details-form" spacing={2} onSubmit={(event) => void form.handleSubmit(handleValidSubmit)(event)} noValidate aria-busy={isSubmitting}>
-          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+          <ServerErrorAlert message={errorMessage} />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <Controller
+            <ControlledTextField
               name="bankName"
               control={form.control}
-              render={({ field, fieldState }) => (
-                <TextField {...field} fullWidth required autoFocus label="Bank name" autoComplete="organization" disabled={isSubmitting} error={fieldState.invalid} helperText={fieldState.error?.message} />
-              )}
+              required
+              autoFocus
+              label="Bank name"
+              autoComplete="organization"
+              disabled={isSubmitting}
             />
-            <Controller
+            <ControlledTextField
               name="accountName"
               control={form.control}
-              render={({ field, fieldState }) => (
-                <TextField {...field} fullWidth required label="Account name" autoComplete="name" disabled={isSubmitting} error={fieldState.invalid} helperText={fieldState.error?.message} />
-              )}
+              required
+              label="Account name"
+              autoComplete="name"
+              disabled={isSubmitting}
             />
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <Controller
+            <ControlledTextField
               name="accountNumber"
               control={form.control}
-              render={({ field, fieldState }) => (
-                <TextField {...field} fullWidth required label="Account number" autoComplete="off" disabled={isSubmitting} error={fieldState.invalid} helperText={fieldState.error?.message} />
-              )}
+              required
+              label="Account number"
+              autoComplete="off"
+              disabled={isSubmitting}
             />
             <Controller
               name="accountType"
@@ -125,56 +139,45 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
             />
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <Controller
+            <ControlledTextField
               name="ifscCode"
               control={form.control}
-              render={({ field, fieldState }) => (
-                <TextField {...field} fullWidth label="IFSC code" autoComplete="off" disabled={isSubmitting} error={fieldState.invalid} helperText={fieldState.error?.message} />
-              )}
+              label="IFSC code"
+              autoComplete="off"
+              disabled={isSubmitting}
             />
-            <Controller
+            <ControlledTextField
               name="branchName"
               control={form.control}
-              render={({ field, fieldState }) => (
-                <TextField {...field} fullWidth label="Branch name" autoComplete="address-level2" disabled={isSubmitting} error={fieldState.invalid} helperText={fieldState.error?.message} />
-              )}
+              label="Branch name"
+              autoComplete="address-level2"
+              disabled={isSubmitting}
             />
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <Controller
+            <ControlledTextField
               name="swiftCode"
               control={form.control}
-              render={({ field, fieldState }) => (
-                <TextField {...field} fullWidth label="SWIFT/BIC code" autoComplete="off" disabled={isSubmitting} error={fieldState.invalid} helperText={fieldState.error?.message} />
-              )}
+              label="SWIFT/BIC code"
+              autoComplete="off"
+              disabled={isSubmitting}
             />
-            <Controller
+            <ControlledTextField
               name="upiId"
               control={form.control}
-              render={({ field, fieldState }) => (
-                <TextField {...field} fullWidth label="UPI ID" autoComplete="off" disabled={isSubmitting} error={fieldState.invalid} helperText={fieldState.error?.message} />
-              )}
+              label="UPI ID"
+              autoComplete="off"
+              disabled={isSubmitting}
             />
           </Stack>
-          <Controller
+          <ControlledCheckbox
             name="isDefault"
             control={form.control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={<Checkbox checked={field.value} onChange={(event) => field.onChange(event.target.checked)} disabled={isSubmitting} />}
-                label="Make this the default account"
-              />
-            )}
+            label="Make this the default account"
+            disabled={isSubmitting}
           />
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-        <Button type="submit" form="bank-details-form" variant="contained" disabled={!form.formState.isValid} loading={isSubmitting} loadingPosition="start">
-          {isSubmitting ? 'Saving...' : 'Save account'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </AppDialog>
   );
 }
 

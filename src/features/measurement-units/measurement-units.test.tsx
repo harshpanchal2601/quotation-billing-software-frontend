@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { renderWithProviders } from '../../test/render';
-import { measurementUnitFormSchema } from './measurement-units.schema';
-import type { MeasurementUnitListItem } from './measurement-units.types';
+import { renderWithProviders } from '@shared/test/render';
+import { measurementUnitFormSchema } from './model/measurement-units.schema';
+import type { MeasurementUnitListItem } from './model/measurement-units.types';
 import { MeasurementUnitsPage } from './pages/MeasurementUnitsPage';
 
 const unitsApi = vi.hoisted(() => ({
@@ -113,6 +113,22 @@ describe('measurement unit frontend', () => {
     await userEvent.click(screen.getByRole('button', { name: /^deactivate$/i }));
 
     await waitFor(() => expect(unitsApi.updateMeasurementUnitStatusRequest).toHaveBeenCalledWith(1, false));
+  });
+
+  it('blocks measurement unit deletion when linked items are present', async () => {
+    unitsApi.listMeasurementUnitsRequest.mockResolvedValue({
+      measurementUnits: [unitListItem({ linkedItemCount: 3 })],
+      pagination: { page: 1, limit: 20, total: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+    });
+
+    renderPage(<MeasurementUnitsPage />, '/measurement-units');
+
+    expect(await screen.findByText('Kilogram')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /actions for kilogram/i }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /delete unit/i }));
+
+    expect(screen.getByText(/cannot be deleted because/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete unit/i })).toBeDisabled();
   });
 });
 

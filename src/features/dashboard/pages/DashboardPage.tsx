@@ -1,0 +1,249 @@
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined';
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
+import Grid from '@mui/material/Grid';
+import Skeleton from '@mui/material/Skeleton';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton } from '@shared/ui/actions';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { toApiError } from '@shared/api/apiClient';
+import { paths } from '@shared/routing/paths';
+import { useAuth } from '@features/auth';
+import { formatCurrency } from '@features/quotations';
+import { getDashboardOverviewRequest } from '../api/dashboard.api';
+import { DashboardMetricCard } from '../components/DashboardMetricCard';
+import { DashboardPeriodFilter } from '../components/DashboardPeriodFilter';
+import { ExpiringQuotationsSection } from '../components/ExpiringQuotationsSection';
+import { MonthlyQuotationTrend } from '../components/MonthlyQuotationTrend';
+import { QuotationStatusBreakdown } from '../components/QuotationStatusBreakdown';
+import { RecentQuotationsSection } from '../components/RecentQuotationsSection';
+import { TopCustomersSection } from '../components/TopCustomersSection';
+import { dashboardQueryKeys } from '../model/dashboard.query-keys';
+import type { DashboardOverviewQuery, DashboardPeriod } from '../model/dashboard.types';
+
+export function DashboardPage() {
+  const { user } = useAuth();
+  const firstName = user?.name.split(' ')[0] ?? 'there';
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read URL query params
+  const periodParam = (searchParams.get('period') as DashboardPeriod) || 'CURRENT_FINANCIAL_YEAR';
+  const dateFromParam = searchParams.get('dateFrom') || undefined;
+  const dateToParam = searchParams.get('dateTo') || undefined;
+
+  const queryParams: DashboardOverviewQuery = {
+    period: periodParam,
+    dateFrom: dateFromParam,
+    dateTo: dateToParam,
+  };
+
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+    queryKey: dashboardQueryKeys.overview(queryParams),
+    queryFn: () => getDashboardOverviewRequest(queryParams),
+    staleTime: 60000,
+    placeholderData: keepPreviousData,
+  });
+
+  const handlePeriodChange = (newPeriod: DashboardPeriod, newFrom?: string, newTo?: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('period', newPeriod);
+
+    if (newPeriod === 'CUSTOM' && newFrom && newTo) {
+      params.set('dateFrom', newFrom);
+      params.set('dateTo', newTo);
+    } else {
+      params.delete('dateFrom');
+      params.delete('dateTo');
+    }
+
+    setSearchParams(params, { replace: true });
+  };
+
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <Skeleton variant="text" width={250} height={40} />
+        <Grid container spacing={2}>
+          {[1, 2, 3, 4, 5, 6, 7].map((k) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={k}>
+              <Skeleton variant="rectangular" height={130} sx={{ borderRadius: 2 }} />
+            </Grid>
+          ))}
+        </Grid>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={8}>
+            <Skeleton variant="rectangular" height={320} sx={{ borderRadius: 2 }} />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Skeleton variant="rectangular" height={320} sx={{ borderRadius: 2 }} />
+          </Grid>
+        </Grid>
+      </PageContainer>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <ErrorState
+        message={toApiError(error).message}
+        onRetry={refetch}
+      />
+    );
+  }
+
+  const {
+    currency,
+    range,
+    quotationMetrics,
+    masterDataMetrics,
+    operationalMetrics,
+    statusBreakdown,
+    monthlyTrend,
+    recentQuotations,
+    expiringQuotations,
+    topCustomers,
+  } = data;
+
+  return (
+    <PageContainer>
+      <PageHeader
+        title="Dashboard"
+        titleTypographyProps={{ variant: 'h4', fontWeight: 700 }}
+        description={`Welcome back, ${firstName}. Commercial quotation proposals & operational metrics overview.`}
+        descriptionTypographyProps={{ variant: 'body2' }}
+        actions={
+          <AppButton component={RouterLink} to={paths.newQuotation} variant="contained" startIcon={<AddOutlinedIcon />}>
+            Create Quotation
+          </AppButton>
+        }
+      />
+
+      {/* Period Filter */}
+      <DashboardPeriodFilter
+        period={range.period}
+        dateFrom={range.dateFrom}
+        dateTo={range.dateTo}
+        rangeLabel={range.label}
+        isFetching={isFetching}
+        onPeriodChange={handlePeriodChange}
+        onRefresh={refetch}
+      />
+
+      {/* Primary Metric Cards Grid */}
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6} md={4} lg={3}>
+          <DashboardMetricCard
+            title="Total Quotations"
+            value={quotationMetrics.totalQuotations}
+            caption="Quotations created in period"
+            icon={<DescriptionOutlinedIcon />}
+            iconBgColor="primary.50"
+            iconColor="primary.main"
+            linkTo="/quotations"
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4} lg={3}>
+          <DashboardMetricCard
+            title="Total Quotation Value"
+            value={formatCurrency(quotationMetrics.totalQuotationValue, currency)}
+            caption="Value of quotations created in this period"
+            icon={<RequestQuoteOutlinedIcon />}
+            iconBgColor="success.50"
+            iconColor="success.main"
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4} lg={3}>
+          <DashboardMetricCard
+            title="Accepted / Completed Value"
+            value={formatCurrency(quotationMetrics.acceptedQuotationValue, currency)}
+            caption="Accepted and completed quotation value"
+            icon={<CheckCircleOutlinedIcon />}
+            iconBgColor="success.50"
+            iconColor="success.main"
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4} lg={3}>
+          <DashboardMetricCard
+            title="Average Quotation Value"
+            value={formatCurrency(quotationMetrics.averageQuotationValue, currency)}
+            caption="Average value per quotation in period"
+            icon={<CalculateOutlinedIcon />}
+            iconBgColor="info.50"
+            iconColor="info.main"
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4} lg={3}>
+          <DashboardMetricCard
+            title="Active Companies"
+            value={masterDataMetrics.activeCompanies}
+            caption="Current active companies"
+            icon={<BusinessOutlinedIcon />}
+            iconBgColor="grey.100"
+            iconColor="text.primary"
+            linkTo="/companies"
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4} lg={3}>
+          <DashboardMetricCard
+            title="Active Catalogue Items"
+            value={masterDataMetrics.activeItems}
+            caption="Current active catalogue items"
+            icon={<Inventory2OutlinedIcon />}
+            iconBgColor="grey.100"
+            iconColor="text.primary"
+            linkTo="/items"
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4} lg={3}>
+          <DashboardMetricCard
+            title="Expiring Soon"
+            value={operationalMetrics.expiringSoonCount}
+            caption="Open quotations expiring within 7 days"
+            icon={<HourglassEmptyOutlinedIcon />}
+            iconBgColor="warning.50"
+            iconColor="warning.main"
+          />
+        </Grid>
+      </Grid>
+
+      {/* Main Charts & Breakdown Row */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={7} lg={8}>
+          <MonthlyQuotationTrend monthlyTrend={monthlyTrend} currency={currency} />
+        </Grid>
+
+        <Grid item xs={12} md={5} lg={4}>
+          <QuotationStatusBreakdown statusBreakdown={statusBreakdown} currency={currency} />
+        </Grid>
+      </Grid>
+
+      {/* Recent Quotations Table / Cards */}
+      <RecentQuotationsSection recentQuotations={recentQuotations} currency={currency} />
+
+      {/* Operational Bottom Row: Expiring Soon & Top Customers */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <ExpiringQuotationsSection expiringQuotations={expiringQuotations} currency={currency} />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <TopCustomersSection topCustomers={topCustomers} currency={currency} />
+        </Grid>
+      </Grid>
+    </PageContainer>
+  );
+}

@@ -5,9 +5,8 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import { QuotationStatusChip } from '../../quotations/components/QuotationStatusChip';
-import { formatCurrency } from '../../quotations/quotations.utils';
-import type { StatusBreakdownDto } from '../dashboard.types';
+import { QuotationStatusChip, formatCurrency } from '@features/quotations';
+import type { StatusBreakdownDto } from '../model/dashboard.types';
 
 type QuotationStatusBreakdownProps = {
   statusBreakdown: StatusBreakdownDto[];

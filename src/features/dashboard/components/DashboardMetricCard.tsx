@@ -2,10 +2,11 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
+
+import { AppIconButton } from '@shared/ui/actions';
 
 type DashboardMetricCardProps = {
   title: string;
@@ -59,15 +60,15 @@ export function DashboardMetricCard({
           </Typography>
 
           {linkTo ? (
-            <IconButton
+            <AppIconButton
               component={RouterLink}
               to={linkTo}
               size="small"
               color="primary"
-              aria-label={`View ${title}`}
+              label={`View ${title}`}
             >
               <ArrowForwardIcon fontSize="small" />
-            </IconButton>
+            </AppIconButton>
           ) : null}
         </Box>
       </CardContent>

@@ -1,20 +1,19 @@
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { getQuotationRequest, updateQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
-import { quotationsQueryKeys } from '../quotations.query-keys';
-import type { QuotationFormSubmitValues } from '../quotations.schema';
-import { formatQuotationStatusLabel } from '../quotations.utils';
+import { quotationsQueryKeys } from '../model/quotations.query-keys';
+import type { QuotationFormSubmitValues } from '../model/quotations.schema';
+import { formatQuotationStatusLabel } from '../model/quotations.utils';
 
 export function EditQuotationPage() {
   const { id } = useParams<{ id: string }>();
@@ -73,10 +72,10 @@ export function EditQuotationPage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+      <PageContainer maxWidth={1200} sx={{ p: 3, mx: 'auto' }}>
         <Skeleton variant="text" width={240} height={40} />
         <Skeleton variant="rectangular" height={400} sx={{ mt: 2, borderRadius: 2 }} />
-      </Box>
+      </PageContainer>
     );
   }
 
@@ -89,17 +88,17 @@ export function EditQuotationPage() {
   if (!quotation.canEdit) {
     const latestRevision = quotation.latestRevision;
     return (
-      <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
+      <PageContainer maxWidth={800} sx={{ p: 3, mx: 'auto' }}>
         <Alert severity="warning" sx={{ mb: 3 }}>
           Quotation <strong>{quotation.quotationNumber}</strong> Revision #{quotation.revisionNumber} is currently in status <strong>{formatQuotationStatusLabel(quotation.status)}</strong> and can no longer be edited. Only the latest Draft revision is editable.
         </Alert>
-        <Button
+        <AppButton
           variant="contained"
           onClick={() => navigate(`/quotations/${latestRevision?.id ?? quotation.id}`)}
         >
           {latestRevision && latestRevision.id !== quotation.id ? 'View Latest Revision' : 'View Quotation Details'}
-        </Button>
-      </Box>
+        </AppButton>
+      </PageContainer>
     );
   }
 
@@ -143,15 +142,13 @@ export function EditQuotationPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>
-          Edit Draft Quotation — {quotation.quotationNumber} Revision #{quotation.revisionNumber}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Update customer details, line items or charges. A version snapshot will be saved automatically upon submission.
-        </Typography>
-      </Box>
+    <PageContainer maxWidth={1200} sx={{ mx: 'auto' }}>
+      <PageHeader
+        title={`Edit Draft Quotation — ${quotation.quotationNumber} Revision #${quotation.revisionNumber}`}
+        titleTypographyProps={{ variant: 'h5', fontWeight: 700 }}
+        description="Update customer details, line items or charges. A version snapshot will be saved automatically upon submission."
+        descriptionTypographyProps={{ variant: 'body2' }}
+      />
 
       <QuotationForm
         initialValues={initialValues}
@@ -169,15 +166,13 @@ export function EditQuotationPage() {
         }}
       />
 
-      <Snackbar
+      <AppSnackbar
         open={feedback.open}
         autoHideDuration={4000}
+        message={feedback.message}
+        severity={feedback.severity}
         onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
-      >
-        <Alert severity={feedback.severity} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
-          {feedback.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      />
+    </PageContainer>
   );
 }

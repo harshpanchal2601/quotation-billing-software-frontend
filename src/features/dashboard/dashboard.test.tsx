@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
-import { DashboardPage } from '../../routes/pages/DashboardPage';
+import { DashboardPage } from './pages/DashboardPage';
 import * as dashboardApi from './api/dashboard.api';
-import type { DashboardOverviewData } from './dashboard.types';
+import type { DashboardOverviewData } from './model/dashboard.types';
 
-vi.mock('../auth/auth.hooks', () => ({
+vi.mock('@features/auth', () => ({
   useAuth: () => ({
     user: { id: 1, name: 'Admin User', role: 'ADMIN' },
   }),

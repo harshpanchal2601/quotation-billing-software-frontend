@@ -13,9 +13,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { getCompanyRequest, listCompaniesRequest } from '../../companies/api/companies.api';
-import type { CompanyAddress, CompanyContact } from '../../companies/companies.types';
-import type { QuotationFormSubmitValues } from '../quotations.schema';
+import { getCompanyRequest, listCompaniesRequest, type CompanyAddress, type CompanyContact } from '@features/companies';
+import type { QuotationFormSubmitValues } from '../model/quotations.schema';
 
 export function QuotationCustomerSection() {
   const { control, setValue, watch, formState: { errors } } = useFormContext<QuotationFormSubmitValues>();

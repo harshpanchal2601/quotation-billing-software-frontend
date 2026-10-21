@@ -1,18 +1,20 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Controller, useWatch, useForm } from 'react-hook-form';
+import { useWatch, useForm, type FieldPath } from 'react-hook-form';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { toApiError } from '@shared/api/apiClient';
+import { FormActions } from '@shared/forms';
+import { ControlledTextField } from '@shared/forms/controlled';
+import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import {
   businessProfileQueryKey,
   deleteBrandingAssetRequest,
@@ -22,11 +24,10 @@ import {
 } from '../api/business-profile.api';
 import { BrandingAssetCard } from '../components/BrandingAssetCard';
 import { ColourField } from '../components/ColourField';
-import { SettingsNavigation } from '../components/SettingsNavigation';
 import { SettingsSection } from '../components/SettingsSection';
-import { businessProfileSchema, type BusinessProfileFormValues, type BusinessProfileSubmitValues } from '../schemas/business-profile.schema';
-import type { BrandingAssetType, BusinessProfile } from '../settings.types';
-import { getSafeApiErrorMessage } from '../settings.utils';
+import { businessProfileSchema, type BusinessProfileFormValues, type BusinessProfileSubmitValues } from '../model/business-profile.schema';
+import type { BrandingAssetType, BusinessProfile } from '../model/settings.types';
+import { getSafeApiErrorMessage } from '../model/settings.utils';
 
 export function BusinessSettingsPage() {
   const queryClient = useQueryClient();
@@ -88,10 +89,11 @@ export function BusinessSettingsPage() {
 
   if (query.isError) {
     return (
-      <SettingsPageHeader title="Business Settings" description="Manage company identity, contact details and branding assets.">
+      <PageContainer maxWidth={1120}>
+        <PageHeader title="Business Settings" description="Manage company identity, contact details and branding assets." />
         <ErrorState message={toApiError(query.error).message} />
-        <Button onClick={() => void query.refetch()} variant="outlined">Retry</Button>
-      </SettingsPageHeader>
+        <AppButton onClick={() => void query.refetch()} variant="outlined">Retry</AppButton>
+      </PageContainer>
     );
   }
 
@@ -104,9 +106,10 @@ export function BusinessSettingsPage() {
   const isFormBusy = updateMutation.isPending;
 
   return (
-    <SettingsPageHeader title="Business Settings" description="Manage company identity, contact details and branding assets.">
+    <PageContainer maxWidth={1120}>
+      <PageHeader title="Business Settings" description="Manage company identity, contact details and branding assets." />
       <Stack component="form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isFormBusy}>
-        {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+        <ServerErrorAlert message={serverError} />
         {form.formState.isDirty ? <Alert severity="info">You have unsaved changes.</Alert> : null}
         <SettingsSection title="Company information">
           <TwoColumnGrid>
@@ -162,19 +165,18 @@ export function BusinessSettingsPage() {
             <BrandingAssetCard assetType="stamp" title="Company stamp" description="Used for stamped quotation output." imageUrl={profile.stampUrl} updatedAt={profile.updatedAt} isBusy={activeBrandingAsset === 'stamp'} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'stamp', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('stamp').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
           </Box>
         </SettingsSection>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
-          <Button type="button" variant="outlined" disabled={isFormBusy || !form.formState.isDirty} onClick={() => form.reset(toBusinessProfileFormValues(profile))}>
-            Reset changes
-          </Button>
-          <Button type="submit" variant="contained" disabled={!form.formState.isDirty} loading={updateMutation.isPending} loadingPosition="start">
-            {updateMutation.isPending ? 'Saving...' : 'Save changes'}
-          </Button>
-        </Stack>
+        <FormActions
+          submitLabel={updateMutation.isPending ? 'Saving...' : 'Save changes'}
+          isSubmitting={updateMutation.isPending}
+          isSubmitDisabled={!form.formState.isDirty}
+          isCancelDisabled={isFormBusy || !form.formState.isDirty}
+          onCancel={() => form.reset(toBusinessProfileFormValues(profile))}
+          cancelLabel="Reset changes"
+          cancelButtonProps={{ type: 'button', variant: 'outlined' }}
+        />
       </Stack>
-      <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert>
-      </Snackbar>
-    </SettingsPageHeader>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
+    </PageContainer>
   );
 }
 
@@ -182,33 +184,21 @@ type ProfileForm = ReturnType<typeof useForm<BusinessProfileFormValues, unknown,
 
 function ProfileTextField({ form, name, label, required, disabled, autoComplete }: {
   form: ProfileForm;
-  name: keyof BusinessProfileFormValues;
+  name: FieldPath<BusinessProfileFormValues>;
   label: string;
   required?: boolean;
   disabled?: boolean;
   autoComplete?: string;
 }) {
   return (
-    <Controller
+    <ControlledTextField
       name={name}
       control={form.control}
-      render={({ field, fieldState }) => (
-        <TextField {...field} value={field.value ?? ''} fullWidth required={required} label={label} autoComplete={autoComplete} disabled={disabled} error={fieldState.invalid} helperText={fieldState.error?.message} />
-      )}
+      required={required}
+      label={label}
+      autoComplete={autoComplete}
+      disabled={disabled}
     />
-  );
-}
-
-function SettingsPageHeader({ title, description, children }: React.PropsWithChildren<{ title: string; description: string }>) {
-  return (
-    <Stack spacing={3} maxWidth={1120}>
-      <Box>
-        <Typography component="h1" variant="h1">{title}</Typography>
-        <Typography color="text.secondary">{description}</Typography>
-      </Box>
-      <SettingsNavigation />
-      {children}
-    </Stack>
   );
 }
 
@@ -218,11 +208,12 @@ function TwoColumnGrid({ children }: React.PropsWithChildren) {
 
 function SettingsSkeleton({ title, description }: { title: string; description: string }) {
   return (
-    <SettingsPageHeader title={title} description={description}>
+    <PageContainer maxWidth={1120}>
+      <PageHeader title={title} description={description} />
       <Stack spacing={2}>
         {Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}
       </Stack>
-    </SettingsPageHeader>
+    </PageContainer>
   );
 }
 

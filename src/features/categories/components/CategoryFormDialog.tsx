@@ -1,28 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormHelperText from '@mui/material/FormHelperText';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { toApiError } from '../../../services/apiClient';
-import { applyApiFieldErrors } from '../../../services/formErrors';
+import { toApiError } from '@shared/api/apiClient';
+import { applyApiFieldErrors, FormActions } from '@shared/forms';
+import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
+import { ServerErrorAlert } from '@shared/ui/feedback';
+import { FormDialogShell } from '@shared/ui/dialogs';
 import { createCategoryRequest, updateCategoryRequest } from '../api/categories.api';
-import { categoriesQueryKeys } from '../categories.query-keys';
-import { categoryFormSchema, type CategoryFormValues } from '../categories.schema';
-import type { CategoryListItem } from '../categories.types';
-import { isProtectedCategory } from '../categories.utils';
+import { categoriesQueryKeys } from '../model/categories.query-keys';
+import { categoryFormSchema, type CategoryFormValues } from '../model/categories.schema';
+import type { CategoryListItem } from '../model/categories.types';
+import { isProtectedCategory } from '../model/categories.utils';
 
 type CategoryFormDialogProps = {
   open: boolean;
@@ -46,15 +39,10 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
     },
   });
   const {
-    register,
     handleSubmit,
     reset,
-    watch,
-    setValue,
-    formState: { errors },
+    control,
   } = form;
-
-  const isActiveValue = watch('isActive');
 
   useEffect(() => {
     if (open) {
@@ -113,79 +101,66 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
   }
 
   return (
-    <Dialog open={open} onClose={mutation.isPending ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEditing ? 'Edit Category' : 'Add Category'}</DialogTitle>
-      <Box component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
-        <DialogContent dividers>
-          <Stack spacing={2.5}>
-            {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+    <FormDialogShell
+      open={open}
+      title={isEditing ? 'Edit Category' : 'Add Category'}
+      onClose={onClose}
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      isSubmitting={mutation.isPending}
+      actions={(formId) => (
+        <FormActions
+          submitLabel={isEditing ? 'Save Changes' : 'Create Category'}
+          isSubmitting={mutation.isPending}
+          onCancel={onClose}
+          submitButtonProps={{ form: formId }}
+        />
+      )}
+    >
+      <Stack spacing={2.5}>
+        <ServerErrorAlert message={serverError} />
 
-            <TextField
-              label="Category name"
-              required
-              fullWidth
-              {...register('name')}
-              error={Boolean(errors.name)}
-              helperText={errors.name?.message}
-            />
+        <ControlledTextField
+          control={control}
+          name="name"
+          label="Category name"
+          required
+        />
 
-            {isEditing && category ? (
-              <TextField
-                label="Slug"
-                value={category.slug}
-                fullWidth
-                disabled
-                helperText="Slug is generated on creation and is read-only."
-              />
-            ) : (
-              <Typography variant="caption" color="text.secondary">
-                Note: Slug will be generated automatically from the category name.
-              </Typography>
-            )}
+        {isEditing && category ? (
+          <TextField
+            label="Slug"
+            value={category.slug}
+            fullWidth
+            disabled
+            helperText="Slug is generated on creation and is read-only."
+          />
+        ) : (
+          <Typography variant="caption" color="text.secondary">
+            Note: Slug will be generated automatically from the category name.
+          </Typography>
+        )}
 
-            <TextField
-              label="Description"
-              multiline
-              rows={3}
-              fullWidth
-              {...register('description')}
-              error={Boolean(errors.description)}
-              helperText={errors.description?.message ?? 'Optional brief description for the category.'}
-            />
+        <ControlledTextField
+          control={control}
+          name="description"
+          label="Description"
+          multiline
+          rows={3}
+          helperText="Optional brief description for the category."
+        />
 
-            <Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isActiveValue}
-                    onChange={(e) => setValue('isActive', e.target.checked)}
-                    disabled={isProtected || mutation.isPending}
-                  />
-                }
-                label="Active category"
-              />
-              {isProtected ? (
-                <FormHelperText error={false}>
-                  The default Uncategorised category cannot be deactivated.
-                </FormHelperText>
-              ) : (
-                <FormHelperText>
-                  Inactive categories cannot be selected when creating or updating items.
-                </FormHelperText>
-              )}
-            </Box>
-          </Stack>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={onClose} disabled={mutation.isPending}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="contained" loading={mutation.isPending}>
-            {isEditing ? 'Save Changes' : 'Create Category'}
-          </Button>
-        </DialogActions>
-      </Box>
-    </Dialog>
+        <ControlledSwitch
+          control={control}
+          name="isActive"
+          label="Active category"
+          disabled={isProtected || mutation.isPending}
+          helperText={
+            isProtected
+              ? 'The default Uncategorised category cannot be deactivated.'
+              : 'Inactive categories cannot be selected when creating or updating items.'
+          }
+        />
+      </Stack>
+    </FormDialogShell>
   );
 }

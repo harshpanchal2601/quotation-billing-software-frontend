@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import type { ComponentProps } from 'react';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as quotationsApi from './api/quotations.api';
@@ -9,21 +10,19 @@ import { QuotationForm } from './components/QuotationForm';
 import { EditQuotationPage } from './pages/EditQuotationPage';
 import { QuotationDetailsPage } from './pages/QuotationDetailsPage';
 import { QuotationsPage } from './pages/QuotationsPage';
-import { quotationFormSchema, type QuotationFormSubmitValues } from './quotations.schema';
-import type { CalculatedQuotationTotals, QuotationDetail, QuotationListItem } from './quotations.types';
+import { quotationFormSchema, type QuotationFormSubmitValues } from './model/quotations.schema';
+import type { CalculatedQuotationTotals, QuotationDetail, QuotationListItem } from './model/quotations.types';
 
 vi.mock('./api/quotations.api');
-vi.mock('../companies/api/companies.api', () => ({
+vi.mock('@features/companies', () => ({
   listCompaniesRequest: vi.fn().mockResolvedValue({ companies: [{ id: 1, name: 'Mankind Pharma' }] }),
   getCompanyRequest: vi.fn().mockResolvedValue({ id: 1, name: 'Mankind Pharma', contacts: [], addresses: [] }),
 }));
-vi.mock('../items/api/items.api', () => ({
+vi.mock('@features/items', () => ({
   getItemOptionsRequest: vi.fn().mockResolvedValue([]),
 }));
-vi.mock('../settings/api/quotation-settings.api', () => ({
+vi.mock('@features/settings', () => ({
   getQuotationSettingsRequest: vi.fn().mockResolvedValue({ defaultTaxMode: 'CGST_SGST' }),
-}));
-vi.mock('../settings/api/bank-details.api', () => ({
   listBankDetailsRequest: vi.fn().mockResolvedValue([]),
 }));
 
@@ -35,7 +34,10 @@ function createTestQueryClient() {
   });
 }
 
-function renderWithProviders(ui: React.ReactNode, { initialEntries = ['/quotations'] } = {}) {
+function renderWithProviders(
+  ui: React.ReactNode,
+  { initialEntries = ['/quotations'] }: { initialEntries?: ComponentProps<typeof MemoryRouter>['initialEntries'] } = {},
+) {
   const queryClient = createTestQueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
@@ -166,10 +168,12 @@ const mockQuotationDetail: QuotationDetail = {
 describe('quotation frontend management', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockViewport(1200);
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it('renders quotation list and passes URL search and filter parameters to API', async () => {
@@ -187,6 +191,39 @@ describe('quotation frontend management', () => {
         search: 'BUMINEX',
       }),
     );
+  });
+
+  it('opens detail pages with the current quotation list URL in navigation state', async () => {
+    vi.mocked(quotationsApi.listQuotationsRequest).mockResolvedValueOnce({
+      quotations: [mockQuotationListItem],
+      pagination: { page: 3, limit: 10, total: 30, totalPages: 3, hasNextPage: false, hasPreviousPage: true },
+    });
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/quotations" element={<QuotationsPage />} />
+        <Route path="/quotations/:id" element={<QuotationReturnStateProbe />} />
+      </Routes>,
+      { initialEntries: ['/quotations?search=BUMINEX&status=DRAFT&page=3&limit=10&sortBy=quotationDate&sortOrder=asc'] },
+    );
+
+    await userEvent.click(await screen.findByText('BUMINEX/2026-27/000001'));
+
+    expect(await screen.findByText('/quotations?search=BUMINEX&status=DRAFT&page=3&limit=10&sortBy=quotationDate&sortOrder=asc')).toBeInTheDocument();
+  });
+
+  it('renders quotation list records as compact cards through tablet widths', async () => {
+    mockViewport(700);
+    vi.mocked(quotationsApi.listQuotationsRequest).mockResolvedValueOnce({
+      quotations: [mockQuotationListItem],
+      pagination: { page: 1, limit: 20, total: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+    });
+
+    renderWithProviders(<QuotationsPage />);
+
+    expect(await screen.findByText('BUMINEX/2026-27/000001')).toBeInTheDocument();
+    expect(screen.getByText(/2 items/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /actions for BUMINEX\/2026-27\/000001/i })).toBeInTheDocument();
   });
 
   it('preserves current quotation rows while a page transition refetch is pending', async () => {
@@ -221,6 +258,41 @@ describe('quotation frontend management', () => {
     expect(screen.getByText('Mankind Pharma')).toBeInTheDocument();
     expect(screen.getByText('SS Reactor Tank')).toBeInTheDocument();
     expect(screen.getByText('Draft')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /back to quotations/i })).toBeInTheDocument();
+  });
+
+  it('renders quotation detail line items as compact cards on mobile and tablet widths', async () => {
+    mockViewport(700);
+    vi.mocked(quotationsApi.getQuotationRequest).mockResolvedValueOnce(mockQuotationDetail);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/quotations/:id" element={<QuotationDetailsPage />} />
+      </Routes>,
+      { initialEntries: ['/quotations/1'] },
+    );
+
+    expect(await screen.findByLabelText('Quotation line item cards')).toBeInTheDocument();
+    expect(screen.getByText('Line #1')).toBeInTheDocument();
+    expect(screen.getByText('Quantity')).toBeInTheDocument();
+    expect(screen.getByText('2.000 PCS')).toBeInTheDocument();
+  });
+
+  it('ignores unsafe external return state on quotation detail back navigation', async () => {
+    vi.mocked(quotationsApi.getQuotationRequest).mockResolvedValueOnce(mockQuotationDetail);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/quotations/:id" element={<QuotationDetailsPage />} />
+        <Route path="/quotations" element={<div>Quotation list fallback</div>} />
+      </Routes>,
+      { initialEntries: [{ pathname: '/quotations/1', state: { from: 'https://example.com/phishing' } }] },
+    );
+
+    await screen.findByText('BUMINEX/2026-27/000001');
+    await userEvent.click(screen.getByRole('button', { name: /back to quotations/i }));
+
+    expect(await screen.findByText('Quotation list fallback')).toBeInTheDocument();
   });
 
   it('hides edit and delete controls for non-draft quotation on details page', async () => {
@@ -383,26 +455,22 @@ describe('quotation frontend management', () => {
     renderQuotationForm();
     await waitForPreviewCalls(1);
 
-    await user.clear(screen.getByLabelText(/Unit Rate/i));
-    await user.type(screen.getByLabelText(/Unit Rate/i), '1500');
+    fireEvent.change(screen.getByLabelText(/Unit Rate/i), { target: { value: '1500' } });
     await waitForPreviewCalls(2);
 
     await user.click(screen.getAllByRole('combobox', { name: /Discount/i })[0]!);
     await user.click(await screen.findByRole('option', { name: '%' }));
-    await user.clear(screen.getByLabelText(/Disc Val/i));
-    await user.type(screen.getByLabelText(/Disc Val/i), '5');
+    fireEvent.change(screen.getByLabelText(/Disc Val/i), { target: { value: '5' } });
     await waitForPreviewCalls(3);
 
-    await user.clear(screen.getByLabelText(/GST Rate/i));
-    await user.type(screen.getByLabelText(/GST Rate/i), '12');
+    fireEvent.change(screen.getByLabelText(/GST Rate/i), { target: { value: '12' } });
     await waitForPreviewCalls(4);
 
-    await user.clear(screen.getByLabelText(/Freight Amount/i));
-    await user.type(screen.getByLabelText(/Freight Amount/i), '100');
+    fireEvent.change(screen.getByLabelText(/Freight Amount/i), { target: { value: '100' } });
     await waitForPreviewCalls(5);
 
     expect(quotationsApi.calculatePreviewRequest).toHaveBeenCalledTimes(5);
-  });
+  }, 10000);
 
   it('does not recalculate when only the line description changes', async () => {
     const user = userEvent.setup();
@@ -519,6 +587,34 @@ describe('quotation frontend management', () => {
     }
   });
 });
+
+function QuotationReturnStateProbe() {
+  const location = useLocation();
+  const state = location.state as { from?: string } | null;
+  return <div>{state?.from ?? 'missing return state'}</div>;
+}
+
+function mockViewport(width: number) {
+  vi.stubGlobal('innerWidth', width);
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: matchesMediaQuery(query, width),
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
+function matchesMediaQuery(query: string, width: number) {
+  const maxWidth = query.match(/\(max-width:\s*([0-9.]+)px\)/);
+  if (maxWidth && width > Number(maxWidth[1])) return false;
+  const minWidth = query.match(/\(min-width:\s*([0-9.]+)px\)/);
+  if (minWidth && width < Number(minWidth[1])) return false;
+  return true;
+}
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

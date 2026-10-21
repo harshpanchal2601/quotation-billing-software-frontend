@@ -1,22 +1,20 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { paths } from '@shared/routing/paths';
+import { toApiError } from '@shared/api/apiClient';
 import { getItemRequest, updateItemRequest } from '../api/items.api';
 import { ItemForm } from '../components/ItemForm';
 import { ItemImageSection } from '../components/ItemImageSection';
-import { itemsQueryKeys } from '../items.query-keys';
-import type { ItemFormValues } from '../items.schema';
+import { itemsQueryKeys } from '../model/items.query-keys';
+import type { ItemFormValues } from '../model/items.schema';
 
 export function EditItemPage() {
   const { id } = useParams<{ id: string }>();
@@ -69,11 +67,11 @@ export function EditItemPage() {
 
   if (query.isPending) {
     return (
-      <Stack spacing={3}>
+      <PageContainer>
         <Skeleton height={40} width="30%" />
         <Skeleton height={200} />
         <Skeleton height={300} />
-      </Stack>
+      </PageContainer>
     );
   }
 
@@ -81,9 +79,9 @@ export function EditItemPage() {
     return (
       <Stack spacing={2} py={4}>
         <ErrorState message={query.error ? toApiError(query.error).message : 'Item not found'} />
-        <Button variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
+        <AppButton variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
           Retry
-        </Button>
+        </AppButton>
       </Stack>
     );
   }
@@ -91,15 +89,11 @@ export function EditItemPage() {
   const item = query.data;
 
   return (
-    <Stack spacing={3}>
-      <Box>
-        <Typography component="h1" variant="h1">
-          Edit {item.name}
-        </Typography>
-        <Typography color="text.secondary">
-          Update item details, pricing, specifications or product image. Code: {item.itemCode}
-        </Typography>
-      </Box>
+    <PageContainer>
+      <PageHeader
+        title={`Edit ${item.name}`}
+        description={`Update item details, pricing, specifications or product image. Code: ${item.itemCode}`}
+      />
 
       <ItemImageSection item={item} onSuccess={(msg) => setSuccessMessage(msg)} />
 
@@ -111,15 +105,7 @@ export function EditItemPage() {
         serverError={serverError}
       />
 
-      <Snackbar
-        open={successMessage !== null}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
-    </Stack>
+      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
+    </PageContainer>
   );
 }

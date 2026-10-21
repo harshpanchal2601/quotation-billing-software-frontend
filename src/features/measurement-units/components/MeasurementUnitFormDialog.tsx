@@ -1,32 +1,24 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormHelperText from '@mui/material/FormHelperText';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
-import TextField from '@mui/material/TextField';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { toApiError } from '../../../services/apiClient';
-import { applyApiFieldErrors } from '../../../services/formErrors';
+import { toApiError } from '@shared/api/apiClient';
+import { applyApiFieldErrors, FormActions } from '@shared/forms';
+import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
+import { FormDialogShell } from '@shared/ui/dialogs';
+import { ServerErrorAlert } from '@shared/ui/feedback';
 import {
   createMeasurementUnitRequest,
   updateMeasurementUnitRequest,
 } from '../api/measurement-units.api';
-import { measurementUnitsQueryKeys } from '../measurement-units.query-keys';
+import { measurementUnitsQueryKeys } from '../model/measurement-units.query-keys';
 import {
   measurementUnitFormSchema,
   type MeasurementUnitFormValues,
-} from '../measurement-units.schema';
-import type { MeasurementUnitListItem } from '../measurement-units.types';
+} from '../model/measurement-units.schema';
+import type { MeasurementUnitListItem } from '../model/measurement-units.types';
 
 type FormDialogProps = {
   open: boolean;
@@ -50,16 +42,13 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
     },
   });
   const {
-    register,
     handleSubmit,
     reset,
     watch,
-    setValue,
-    formState: { errors },
+    control,
   } = form;
 
   const allowDecimalValue = watch('allowDecimal');
-  const isActiveValue = watch('isActive');
 
   useEffect(() => {
     if (open) {
@@ -122,76 +111,60 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
   }
 
   return (
-    <Dialog open={open} onClose={mutation.isPending ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEditing ? 'Edit Measurement Unit' : 'Add Measurement Unit'}</DialogTitle>
-      <Box component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
-        <DialogContent dividers>
-          <Stack spacing={2.5}>
-            {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+    <FormDialogShell
+      open={open}
+      title={isEditing ? 'Edit Measurement Unit' : 'Add Measurement Unit'}
+      onClose={onClose}
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      isSubmitting={mutation.isPending}
+      actions={(formId) => (
+        <FormActions
+          submitLabel={isEditing ? 'Save Changes' : 'Create Measurement Unit'}
+          isSubmitting={mutation.isPending}
+          onCancel={onClose}
+          submitButtonProps={{ form: formId }}
+        />
+      )}
+    >
+      <Stack spacing={2.5}>
+        <ServerErrorAlert message={serverError} />
 
-            <TextField
-              label="Unit name"
-              required
-              fullWidth
-              {...register('name')}
-              error={Boolean(errors.name)}
-              helperText={errors.name?.message ?? 'Full name of the unit, e.g., Kilogram, Piece, Meter.'}
-            />
+        <ControlledTextField
+          control={control}
+          name="name"
+          label="Unit name"
+          required
+          helperText="Full name of the unit, e.g., Kilogram, Piece, Meter."
+        />
 
-            <TextField
-              label="Symbol"
-              required
-              fullWidth
-              {...register('symbol')}
-              error={Boolean(errors.symbol)}
-              helperText={errors.symbol?.message ?? 'Exact symbol string, e.g., kg, m², NOS, %.'}
-            />
+        <ControlledTextField
+          control={control}
+          name="symbol"
+          label="Symbol"
+          required
+          helperText="Exact symbol string, e.g., kg, m², NOS, %."
+        />
 
-            <Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={allowDecimalValue}
-                    onChange={(e) => setValue('allowDecimal', e.target.checked)}
-                    disabled={mutation.isPending}
-                  />
-                }
-                label="Allow decimal quantities"
-              />
-              <FormHelperText>
-                {allowDecimalValue
-                  ? 'Enabled: fractional quantities such as 1.5 or 0.25 are allowed.'
-                  : 'Disabled: only whole integer quantities are allowed.'}
-              </FormHelperText>
-            </Box>
+        <ControlledSwitch
+          control={control}
+          name="allowDecimal"
+          label="Allow decimal quantities"
+          disabled={mutation.isPending}
+          helperText={
+            allowDecimalValue
+              ? 'Enabled: fractional quantities such as 1.5 or 0.25 are allowed.'
+              : 'Disabled: only whole integer quantities are allowed.'
+          }
+        />
 
-            <Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isActiveValue}
-                    onChange={(e) => setValue('isActive', e.target.checked)}
-                    disabled={mutation.isPending}
-                  />
-                }
-                label="Active measurement unit"
-              />
-              <FormHelperText>
-                Inactive measurement units cannot be selected when creating or updating items.
-              </FormHelperText>
-            </Box>
-          </Stack>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={onClose} disabled={mutation.isPending}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="contained" loading={mutation.isPending}>
-            {isEditing ? 'Save Changes' : 'Create Measurement Unit'}
-          </Button>
-        </DialogActions>
-      </Box>
-    </Dialog>
+        <ControlledSwitch
+          control={control}
+          name="isActive"
+          label="Active measurement unit"
+          disabled={mutation.isPending}
+          helperText="Inactive measurement units cannot be selected when creating or updating items."
+        />
+      </Stack>
+    </FormDialogShell>
   );
 }

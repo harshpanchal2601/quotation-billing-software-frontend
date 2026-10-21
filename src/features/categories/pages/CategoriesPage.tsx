@@ -1,29 +1,27 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
-import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
-import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { EmptyState } from '../../../components/common/EmptyState';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { toApiError } from '../../../services/apiClient';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { toApiError } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import {
   deleteCategoryRequest,
   listCategoriesRequest,
   updateCategoryStatusRequest,
 } from '../api/categories.api';
-import { categoriesQueryKeys } from '../categories.query-keys';
-import type { CategoryListItem, CategoryListParams } from '../categories.types';
+import { categoriesQueryKeys } from '../model/categories.query-keys';
+import type { CategoryListItem, CategoryListParams } from '../model/categories.types';
 import { CategoryDeleteDialog, CategoryStatusDialog } from '../components/CategoryConfirmDialogs';
 import { CategoryDetailsDialog } from '../components/CategoryDetailsDialog';
 import { CategoryFormDialog } from '../components/CategoryFormDialog';
@@ -112,22 +110,18 @@ export function CategoriesPage() {
   }
 
   return (
-    <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ sm: 'center' }}>
-        <Box>
-          <Typography component="h1" variant="h1">
-            Categories
-          </Typography>
-          <Typography color="text.secondary">
-            Manage product categories for organizing items in quotations.
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={handleOpenCreate}>
-          Add Category
-        </Button>
-      </Stack>
+    <PageContainer>
+      <PageHeader
+        title="Categories"
+        description="Manage product categories for organizing items in quotations."
+        actions={
+          <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={handleOpenCreate}>
+            Add Category
+          </AppButton>
+        }
+      />
 
-      {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+      <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
         <TextField
@@ -148,7 +142,7 @@ export function CategoriesPage() {
               page: 1,
             })
           }
-          sx={{ minWidth: 160 }}
+          sx={{ minWidth: { xs: 0, md: 160 }, width: { xs: '100%', md: 'auto' } }}
         >
           <MenuItem value="all">All</MenuItem>
           <MenuItem value="true">Active</MenuItem>
@@ -166,7 +160,7 @@ export function CategoriesPage() {
             ];
             updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
           }}
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: { xs: 0, md: 200 }, width: { xs: '100%', md: 'auto' } }}
         >
           {sortOptions.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -176,38 +170,45 @@ export function CategoriesPage() {
         </TextField>
       </Stack>
 
-      <RefreshIndicator show={showRefreshing} />
-      <Box aria-busy={query.isPending || showRefreshing}>
-      {query.isPending ? (
-        <Stack spacing={1}>
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} height={64} />
-          ))}
-        </Stack>
-      ) : null}
-
-      {query.isError ? (
-        <Stack spacing={1}>
-          <ErrorState message={toApiError(query.error).message} />
-          <Button variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
-            Retry
-          </Button>
-        </Stack>
-      ) : null}
-
-      {query.data && query.data.categories.length === 0 ? (
-        <EmptyState
-          title={isFiltered ? 'No categories match the filters' : 'No categories created yet'}
-          description={
-            isFiltered
-              ? 'Adjust search or active status filters to view categories.'
-              : 'Add a product category to start grouping quotation items.'
-          }
-        />
-      ) : null}
-
-      {query.data && query.data.categories.length > 0 ? (
-        <>
+      <DataTableShell
+        isLoading={query.isPending}
+        isError={query.isError}
+        isEmpty={Boolean(query.data && query.data.categories.length === 0)}
+        isRefreshing={showRefreshing}
+        refreshIndicator={<RefreshIndicator show={showRefreshing} />}
+        loadingContent={<TableSkeleton />}
+        errorContent={
+          <Stack spacing={1}>
+            <ErrorState message={toApiError(query.error).message} />
+            <AppButton variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
+              Retry
+            </AppButton>
+          </Stack>
+        }
+        emptyContent={
+          <EmptyState
+            title={isFiltered ? 'No categories match the filters' : 'No categories created yet'}
+            description={
+              isFiltered
+                ? 'Adjust search or active status filters to view categories.'
+                : 'Add a product category to start grouping quotation items.'
+            }
+          />
+        }
+        pagination={
+          query.data && query.data.categories.length > 0 ? (
+            <AppTablePagination
+              count={query.data.pagination.total}
+              page={params.page}
+              rowsPerPage={params.limit}
+              onPageChange={(page) => updateSearchParams(setSearchParams, { page })}
+              onRowsPerPageChange={(limit) => updateSearchParams(setSearchParams, { limit, page: 1 })}
+            />
+          ) : null
+        }
+      >
+        {query.data && query.data.categories.length > 0 ? (
+          <>
           <Typography color="text.secondary">
             {query.data.pagination.total} category(ies) found
           </Typography>
@@ -220,21 +221,9 @@ export function CategoriesPage() {
             onStatusChange={(cat) => setStatusTarget(cat)}
             onDelete={(cat) => setDeleteTarget(cat)}
           />
-
-          <TablePagination
-            component="div"
-            count={query.data.pagination.total}
-            page={params.page - 1}
-            rowsPerPage={params.limit}
-            rowsPerPageOptions={[10, 20, 50]}
-            onPageChange={(_event, nextPage) => updateSearchParams(setSearchParams, { page: nextPage + 1 })}
-            onRowsPerPageChange={(event) =>
-              updateSearchParams(setSearchParams, { limit: Number(event.target.value), page: 1 })
-            }
-          />
-        </>
-      ) : null}
-      </Box>
+          </>
+        ) : null}
+      </DataTableShell>
 
       <CategoryFormDialog
         open={formOpen}
@@ -267,16 +256,8 @@ export function CategoriesPage() {
         }}
       />
 
-      <Snackbar
-        open={successMessage !== null}
-        autoHideDuration={5000}
-        onClose={() => setSuccessMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
-    </Stack>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
+    </PageContainer>
   );
 }
 

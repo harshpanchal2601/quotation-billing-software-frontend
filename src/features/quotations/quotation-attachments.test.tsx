@@ -3,12 +3,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as attachmentsApi from './api/quotation-attachments.api';
-import { QuotationAttachmentsSection } from './components/QuotationAttachmentsSection';
-import type { QuotationAttachmentListResponse } from './quotation-attachments.types';
-import { formatFileSize } from './quotation-attachments.utils';
+import * as attachmentsApi from './attachments/api/quotation-attachments.api';
+import { QuotationAttachmentsSection } from './attachments/components/QuotationAttachmentsSection';
+import type { QuotationAttachmentListResponse } from './attachments/model/quotation-attachments.types';
+import { formatFileSize } from './attachments/model/quotation-attachments.utils';
 
-vi.mock('./api/quotation-attachments.api');
+vi.mock('./attachments/api/quotation-attachments.api');
 
 function createTestQueryClient() {
   return new QueryClient({

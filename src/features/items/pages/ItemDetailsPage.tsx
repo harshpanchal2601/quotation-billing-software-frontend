@@ -1,46 +1,50 @@
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { SafeImage } from '../../../components/common/SafeImage';
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { SafeImage } from '@shared/components/common/SafeImage';
+import { AppButton } from '@shared/ui/actions';
+import { AppStatusChip } from '@shared/ui/display';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer } from '@shared/ui/layout';
+import { DataTableShell } from '@shared/ui/tables';
+import { paths } from '@shared/routing/paths';
+import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
+import { toApiError } from '@shared/api/apiClient';
 import { deleteItemRequest, getItemRequest, updateItemStatusRequest } from '../api/items.api';
 import { ItemDeleteDialog, ItemStatusDialog } from '../components/ItemConfirmDialogs';
-import { itemsQueryKeys } from '../items.query-keys';
+import { itemsQueryKeys } from '../model/items.query-keys';
 import {
   formatCurrencyRate,
   formatGstRateLabel,
   formatItemSourceTypeLabel,
   formatReadableDate,
   resolveAssetUrl,
-} from '../items.utils';
+} from '../model/items.utils';
 
 export function ItemDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const itemId = Number(id);
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
   const [statusTarget, setStatusTarget] = useState<boolean | null>(null);
@@ -72,7 +76,7 @@ export function ItemDetailsPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: itemsQueryKeys.all });
       setDeleteDialogOpen(false);
-      navigate(paths.items, { replace: true });
+      navigate(returnPath, { replace: true });
     },
     onError: (error) => {
       setDeleteDialogOpen(false);
@@ -82,10 +86,10 @@ export function ItemDetailsPage() {
 
   if (query.isPending) {
     return (
-      <Stack spacing={3}>
+      <PageContainer>
         <Skeleton height={40} width="40%" />
         <Skeleton height={300} />
-      </Stack>
+      </PageContainer>
     );
   }
 
@@ -93,9 +97,9 @@ export function ItemDetailsPage() {
     return (
       <Stack spacing={2} py={4}>
         <ErrorState message={query.error ? toApiError(query.error).message : 'Item not found'} />
-        <Button variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
+        <AppButton variant="outlined" sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>
           Retry
-        </Button>
+        </AppButton>
       </Stack>
     );
   }
@@ -103,48 +107,52 @@ export function ItemDetailsPage() {
   const item = query.data;
   const imageUrl = resolveAssetUrl(item.imageUrl);
   const isMutating = statusMutation.isPending || deleteMutation.isPending;
+  const returnPath = getSafeListReturnPath(location, paths.items);
 
   return (
-    <Stack spacing={3}>
+    <PageContainer>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ sm: 'center' }}>
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Typography component="h1" variant="h1">
             {item.name}
           </Typography>
-          <Chip
+          <AppStatusChip
             label={item.isActive ? 'Active' : 'Inactive'}
-            color={item.isActive ? 'success' : 'default'}
+            variant={item.isActive ? 'success' : 'neutral'}
           />
         </Stack>
 
         <Stack direction="row" spacing={1.5}>
-          <Button
+          <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
+            Back to Items
+          </AppButton>
+          <AppButton
             variant="outlined"
             onClick={() => setStatusTarget(!item.isActive)}
             disabled={isMutating}
           >
             {item.isActive ? 'Deactivate' : 'Activate'}
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             variant="contained"
             startIcon={<EditOutlinedIcon />}
-            onClick={() => navigate(`${paths.items}/${itemId}/edit`)}
+            onClick={() => navigate(`${paths.items}/${itemId}/edit`, { state: { from: returnPath } })}
             disabled={isMutating}
           >
             Edit Item
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             variant="outlined"
             color="error"
             onClick={() => setDeleteDialogOpen(true)}
             disabled={isMutating}
           >
             Delete
-          </Button>
+          </AppButton>
         </Stack>
       </Stack>
 
-      {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+      <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
         <Card variant="outlined" sx={{ width: { xs: '100%', md: 280 }, flexShrink: 0 }}>
@@ -287,7 +295,15 @@ export function ItemDetailsPage() {
                   Technical Specifications ({item.specifications.length})
                 </Typography>
 
-                <TableContainer component={Paper} variant="outlined">
+                <DataTableShell
+                  isLoading={false}
+                  isError={false}
+                  isEmpty={false}
+                  loadingContent={null}
+                  errorContent={null}
+                  emptyContent={null}
+                  tableContainerProps={{ component: Paper, variant: 'outlined' }}
+                >
                   <Table size="small" aria-label="Item specifications table">
                     <TableHead>
                       <TableRow>
@@ -306,7 +322,7 @@ export function ItemDetailsPage() {
                       ))}
                     </TableBody>
                   </Table>
-                </TableContainer>
+                </DataTableShell>
               </CardContent>
             </Card>
           ) : null}
@@ -355,15 +371,7 @@ export function ItemDetailsPage() {
         }}
       />
 
-      <Snackbar
-        open={successMessage !== null}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-      >
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
-    </Stack>
+      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
+    </PageContainer>
   );
 }

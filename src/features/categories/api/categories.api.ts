@@ -1,4 +1,4 @@
-import { apiClient, type ApiSuccessResponse } from '../../../services/apiClient';
+import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import type {
   CategoryCreateInput,
   CategoryListItem,
@@ -7,7 +7,7 @@ import type {
   CategoryOption,
   CategoryOptionsResponse,
   CategoryUpdateInput,
-} from '../categories.types';
+} from '../model/categories.types';
 
 export async function listCategoriesRequest(params: CategoryListParams): Promise<CategoryListResponse> {
   const response = await apiClient.get<ApiSuccessResponse<CategoryListResponse>>('/categories', { params });

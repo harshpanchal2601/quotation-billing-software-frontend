@@ -5,8 +5,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 
-import type { CalculatedQuotationTotals, DiscountType, TaxMode } from '../quotations.types';
-import { formatCurrency, formatDiscountTypeLabel, formatTaxModeLabel } from '../quotations.utils';
+import type { CalculatedQuotationTotals, DiscountType, TaxMode } from '../model/quotations.types';
+import { formatCurrency, formatDiscountTypeLabel, formatTaxModeLabel } from '../model/quotations.utils';
 
 type QuotationTotalsSummaryProps = {
   totals: CalculatedQuotationTotals | null;

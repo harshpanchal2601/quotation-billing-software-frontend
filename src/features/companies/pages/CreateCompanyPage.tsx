@@ -1,17 +1,15 @@
-import Alert from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
+import { paths } from '@shared/routing/paths';
+import { toApiError } from '@shared/api/apiClient';
+import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { createCompanyRequest } from '../api/companies.api';
-import { companiesQueryKeys } from '../companies.query-keys';
+import { companiesQueryKeys } from '../model/companies.query-keys';
 import { CompanyForm } from '../components/CompanyForm';
-import type { CompanyCreateSubmitValues } from '../schemas/company.schema';
+import type { CompanyCreateSubmitValues } from '../model/company.schema';
 
 export function CreateCompanyPage() {
   const navigate = useNavigate();
@@ -34,15 +32,10 @@ export function CreateCompanyPage() {
   }
 
   return (
-    <Stack spacing={3} maxWidth={1040}>
-      <Stack>
-        <Typography component="h1" variant="h1">Add Company</Typography>
-        <Typography color="text.secondary">Create a company with an optional primary contact and addresses.</Typography>
-      </Stack>
+    <PageContainer maxWidth={1040}>
+      <PageHeader title="Add Company" description="Create a company with an optional primary contact and addresses." />
       <CompanyForm mode="create" isSubmitting={mutation.isPending} errorMessage={errorMessage} onSubmit={handleSubmit} onCancel={() => navigate(paths.companies)} />
-      <Snackbar open={successMessage !== null} autoHideDuration={4000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled">{successMessage}</Alert>
-      </Snackbar>
-    </Stack>
+      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
+    </PageContainer>
   );
 }

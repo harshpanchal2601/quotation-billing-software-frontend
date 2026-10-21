@@ -1,39 +1,40 @@
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type MouseEvent } from 'react';
-import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { ErrorState } from '../../../components/common/ErrorState';
-import { paths } from '../../../routes/routeConfig';
-import { toApiError } from '../../../services/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton, AppIconButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer } from '@shared/ui/layout';
+import { paths } from '@shared/routing/paths';
+import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
+import { toApiError } from '@shared/api/apiClient';
 import { createCompanyAddressRequest, deleteCompanyAddressRequest, setPrimaryCompanyAddressRequest, updateCompanyAddressRequest } from '../api/addresses.api';
 import { deleteCompanyRequest, getCompanyRequest, updateCompanyStatusRequest } from '../api/companies.api';
 import { createCompanyContactRequest, deleteCompanyContactRequest, setPrimaryCompanyContactRequest, updateCompanyContactRequest } from '../api/contacts.api';
-import { companiesQueryKeys } from '../companies.query-keys';
-import type { CompanyAddress, CompanyContact } from '../companies.types';
+import { companiesQueryKeys } from '../model/companies.query-keys';
+import type { CompanyAddress, CompanyContact } from '../model/companies.types';
 import { AddressDialog } from '../components/AddressDialog';
 import { CompanyStatusDialog, DeleteCompanyDialog } from '../components/CompanyConfirmDialogs';
 import { AddressesSection, CompanyOverview, ContactsSection } from '../components/CompanyDetailSections';
 import { CompanyQuotationHistory } from '../components/CompanyQuotationHistory';
 import { CompanyStatusChip } from '../components/CompanyStatusChip';
 import { ContactDialog } from '../components/ContactDialog';
-import type { AddressSubmitValues } from '../schemas/address.schema';
-import type { ContactSubmitValues } from '../schemas/contact.schema';
+import type { AddressSubmitValues } from '../model/address.schema';
+import type { ContactSubmitValues } from '../model/contact.schema';
 
 type CompanyTab = 'overview' | 'contacts' | 'addresses' | 'quotations';
 const tabs: CompanyTab[] = ['overview', 'contacts', 'addresses', 'quotations'];
@@ -41,6 +42,7 @@ const tabs: CompanyTab[] = ['overview', 'contacts', 'addresses', 'quotations'];
 export function CompanyDetailsPage() {
   const companyId = Number(useParams().id);
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') as CompanyTab | null;
@@ -78,7 +80,7 @@ export function CompanyDetailsPage() {
     onSuccess: async () => {
       queryClient.removeQueries({ queryKey: companiesQueryKeys.detail(companyId) });
       await queryClient.invalidateQueries({ queryKey: companiesQueryKeys.lists() });
-      navigate(paths.companies);
+      navigate(returnPath);
     },
     onError: (error) => setPageError(toApiError(error).message),
   });
@@ -122,11 +124,12 @@ export function CompanyDetailsPage() {
   });
 
   if (!Number.isFinite(companyId)) return <ErrorState message="Company not found" />;
-  if (query.isPending) return <Stack spacing={1}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</Stack>;
-  if (query.isError) return <Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><Button onClick={() => void query.refetch()}>Retry</Button></Stack>;
+  if (query.isPending) return <PageContainer spacing={1}>{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} height={56} />)}</PageContainer>;
+  if (query.isError) return <Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><AppButton onClick={() => void query.refetch()}>Retry</AppButton></Stack>;
 
   const company = query.data;
   const isMutating = statusMutation.isPending || deleteMutation.isPending || contactActionMutation.isPending || addressActionMutation.isPending;
+  const returnPath = getSafeListReturnPath(location, paths.companies);
 
   function openMenu(event: MouseEvent<HTMLElement>) {
     setMenuAnchor(event.currentTarget);
@@ -145,7 +148,7 @@ export function CompanyDetailsPage() {
   }
 
   return (
-    <Stack spacing={3}>
+    <PageContainer>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
         <Box>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
@@ -155,15 +158,18 @@ export function CompanyDetailsPage() {
           <Typography color="text.secondary">{company.companyCode}</Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button component={RouterLink} to={`${paths.companies}/${company.id}/edit`} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</Button>
-          <IconButton aria-label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></IconButton>
+          <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
+            Back to Companies
+          </AppButton>
+          <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
+          <AppIconButton label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></AppIconButton>
           <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
             <MenuItem onClick={() => { setMenuAnchor(null); setStatusOpen(true); }}><PowerSettingsNewOutlinedIcon fontSize="small" sx={{ mr: 1 }} />{company.isActive ? 'Deactivate' : 'Activate'}</MenuItem>
             <MenuItem onClick={() => { setMenuAnchor(null); setDeleteOpen(true); }} sx={{ color: 'error.main' }}><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Delete</MenuItem>
           </Menu>
         </Stack>
       </Stack>
-      {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
+      <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
       <Tabs value={selectedTab} onChange={(_event, value: CompanyTab) => setSearchParams((current) => { const next = new URLSearchParams(current); next.set('tab', value); return next; })} variant="scrollable" allowScrollButtonsMobile>
         <Tab label="Overview" value="overview" />
         <Tab label="Contacts" value="contacts" />
@@ -218,9 +224,7 @@ export function CompanyDetailsPage() {
       />
       <CompanyStatusDialog company={statusOpen ? company : null} isSubmitting={statusMutation.isPending} onClose={() => setStatusOpen(false)} onConfirm={async () => { await statusMutation.mutateAsync(); }} />
       <DeleteCompanyDialog company={deleteOpen ? company : null} isDeleting={deleteMutation.isPending} onClose={() => setDeleteOpen(false)} onConfirm={() => deleteMutation.mutateAsync()} />
-      <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert>
-      </Snackbar>
-    </Stack>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
+    </PageContainer>
   );
 }

@@ -1,17 +1,15 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
-import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { getQuotationSettingsRequest } from '../../settings/api/quotation-settings.api';
-import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
+import { getQuotationSettingsRequest } from '@features/settings';
+import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
+import { AppSnackbar } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { createQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
-import { quotationsQueryKeys } from '../quotations.query-keys';
-import type { QuotationFormSubmitValues } from '../quotations.schema';
+import { quotationsQueryKeys } from '../model/quotations.query-keys';
+import type { QuotationFormSubmitValues } from '../model/quotations.schema';
 
 export function CreateQuotationPage() {
   const navigate = useNavigate();
@@ -78,15 +76,13 @@ export function CreateQuotationPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>
-          Create New Quotation
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Fill in customer selection, line items, and terms. Quotation number will be generated automatically.
-        </Typography>
-      </Box>
+    <PageContainer maxWidth={1200} sx={{ mx: 'auto' }}>
+      <PageHeader
+        title="Create New Quotation"
+        titleTypographyProps={{ variant: 'h5', fontWeight: 700 }}
+        description="Fill in customer selection, line items, and terms. Quotation number will be generated automatically."
+        descriptionTypographyProps={{ variant: 'body2' }}
+      />
 
       <QuotationForm
         initialValues={initialValues}
@@ -104,15 +100,13 @@ export function CreateQuotationPage() {
         }}
       />
 
-      <Snackbar
+      <AppSnackbar
         open={feedback.open}
         autoHideDuration={4000}
+        message={feedback.message}
+        severity={feedback.severity}
         onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
-      >
-        <Alert severity={feedback.severity} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
-          {feedback.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      />
+    </PageContainer>
   );
 }

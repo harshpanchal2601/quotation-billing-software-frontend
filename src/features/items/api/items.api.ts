@@ -1,4 +1,4 @@
-import { apiClient, type ApiSuccessResponse } from '../../../services/apiClient';
+import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import type {
   ItemCreateInput,
   ItemDetail,
@@ -7,7 +7,7 @@ import type {
   ItemOption,
   ItemOptionsResponse,
   ItemUpdateInput,
-} from '../items.types';
+} from '../model/items.types';
 
 export async function listItemsRequest(params: ItemListParams): Promise<ItemListResponse> {
   const response = await apiClient.get<ApiSuccessResponse<ItemListResponse>>('/items', { params });

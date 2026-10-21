@@ -1,18 +1,18 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Skeleton from '@mui/material/Skeleton';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type PropsWithChildren } from 'react';
+import { useState } from 'react';
 
-import { EmptyState } from '../../../components/common/EmptyState';
-import { ErrorState } from '../../../components/common/ErrorState';
-import { RefreshIndicator } from '../../../components/common/RefreshIndicator';
-import { toApiError, type ApiFieldErrors } from '../../../services/apiClient';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
+import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
+import { AppButton } from '@shared/ui/actions';
+import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
+import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { DataTableShell, TableSkeleton } from '@shared/ui/tables';
 import {
   bankDetailsQueryKey,
   createBankDetailRequest,
@@ -24,9 +24,8 @@ import {
 import { BankDeleteDialog } from '../components/BankDeleteDialog';
 import { BankDetailsDialog } from '../components/BankDetailsDialog';
 import { BankDetailsTable } from '../components/BankDetailsTable';
-import { SettingsNavigation } from '../components/SettingsNavigation';
-import type { BankDetailsSubmitValues } from '../schemas/bank-details.schema';
-import type { BankDetail } from '../settings.types';
+import type { BankDetailsSubmitValues } from '../model/bank-details.schema';
+import type { BankDetail } from '../model/settings.types';
 
 export function BankDetailsPage() {
   const queryClient = useQueryClient();
@@ -118,18 +117,20 @@ export function BankDetailsPage() {
 
   if (query.isPending) {
     return (
-      <SettingsPageShell title="Bank Details" description="Manage bank accounts shown on quotation documents.">
-        <Stack spacing={1.5}>{Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} height={64} />)}</Stack>
-      </SettingsPageShell>
+      <PageContainer maxWidth={1120}>
+        <PageHeader title="Bank Details" description="Manage bank accounts shown on quotation documents." />
+        <TableSkeleton rowCount={5} rowHeight={64} />
+      </PageContainer>
     );
   }
 
   if (query.isError) {
     return (
-      <SettingsPageShell title="Bank Details" description="Manage bank accounts shown on quotation documents.">
+      <PageContainer maxWidth={1120}>
+        <PageHeader title="Bank Details" description="Manage bank accounts shown on quotation documents." />
         <ErrorState message={toApiError(query.error).message} />
-        <Button onClick={() => void query.refetch()} variant="outlined">Retry</Button>
-      </SettingsPageShell>
+        <AppButton onClick={() => void query.refetch()} variant="outlined">Retry</AppButton>
+      </PageContainer>
     );
   }
 
@@ -142,21 +143,27 @@ export function BankDetailsPage() {
   const bankDetails = query.data;
 
   return (
-    <SettingsPageShell title="Bank Details" description="Manage bank accounts shown on quotation documents.">
+    <PageContainer maxWidth={1120}>
+      <PageHeader title="Bank Details" description="Manage bank accounts shown on quotation documents." />
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
           <Box>
             <Typography component="h2" variant="h3">Accounts</Typography>
             <Typography color="text.secondary">Only one active account can be marked as the default.</Typography>
           </Box>
-          <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={openAddDialog}>Add Bank Account</Button>
+          <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={openAddDialog}>Add Bank Account</AppButton>
         </Stack>
-        {pageError ? <Alert severity="error" onClose={() => setPageError(null)}>{pageError}</Alert> : null}
-        <RefreshIndicator show={showRefreshing} />
-        <Box aria-busy={query.isPending || showRefreshing}>
-        {bankDetails.length === 0 ? (
-          <EmptyState title="No bank accounts yet" description="Add a bank account to make payment details available for quotations." />
-        ) : (
+        <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
+        <DataTableShell
+          isLoading={false}
+          isError={false}
+          isEmpty={bankDetails.length === 0}
+          isRefreshing={showRefreshing}
+          refreshIndicator={<RefreshIndicator show={showRefreshing} />}
+          loadingContent={<TableSkeleton rowCount={5} rowHeight={64} />}
+          errorContent={null}
+          emptyContent={<EmptyState title="No bank accounts yet" description="Add a bank account to make payment details available for quotations." />}
+        >
           <BankDetailsTable
             bankDetails={bankDetails}
             onEdit={openEditDialog}
@@ -164,8 +171,7 @@ export function BankDetailsPage() {
             onSetDefault={(bankDetail) => void defaultMutation.mutateAsync(bankDetail.id)}
             busyBankDetailId={busyBankDetailId}
           />
-        )}
-        </Box>
+        </DataTableShell>
       </Stack>
       <BankDetailsDialog
         open={dialogOpen}
@@ -184,22 +190,7 @@ export function BankDetailsPage() {
           if (deletingBankDetail !== null) await deleteMutation.mutateAsync(deletingBankDetail.id);
         }}
       />
-      <Snackbar open={successMessage !== null} autoHideDuration={5000} onClose={() => setSuccessMessage(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert>
-      </Snackbar>
-    </SettingsPageShell>
-  );
-}
-
-function SettingsPageShell({ title, description, children }: PropsWithChildren<{ title: string; description: string }>) {
-  return (
-    <Stack spacing={3} maxWidth={1120}>
-      <Box>
-        <Typography component="h1" variant="h1">{title}</Typography>
-        <Typography color="text.secondary">{description}</Typography>
-      </Box>
-      <SettingsNavigation />
-      {children}
-    </Stack>
+      <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
+    </PageContainer>
   );
 }

@@ -1,25 +1,21 @@
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { useState, type MouseEvent } from 'react';
 
-import type { MeasurementUnitListItem } from '../measurement-units.types';
-import { formatQuantityTypeLabel } from '../measurement-units.utils';
+import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
+import { AppStatusChip } from '@shared/ui/display';
+import type { MeasurementUnitListItem } from '../model/measurement-units.types';
+import { formatQuantityTypeLabel } from '../model/measurement-units.utils';
 
 type MeasurementUnitTableProps = {
   units: MeasurementUnitListItem[];
@@ -40,21 +36,33 @@ export function MeasurementUnitTable({
 }: MeasurementUnitTableProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [activeUnit, setActiveUnit] = useState<MeasurementUnitListItem | null>(null);
-
-  function handleOpenMenu(event: MouseEvent<HTMLElement>, unit: MeasurementUnitListItem) {
-    setAnchorEl(event.currentTarget);
-    setActiveUnit(unit);
-  }
-
-  function handleCloseMenu() {
-    setAnchorEl(null);
-    setActiveUnit(null);
-  }
 
   function formatDate(isoString: string) {
     return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(isoString));
+  }
+
+  function renderRowActions(unit: MeasurementUnitListItem) {
+    return (
+      <RowActionsMenu
+        triggerLabel={`Actions for ${unit.name}`}
+        disabled={busyUnitId === unit.id}
+        actions={[
+          { key: 'view', label: 'View Details', onSelect: () => onView(unit) },
+          { key: 'edit', label: 'Edit Unit', onSelect: () => onEdit(unit) },
+          {
+            key: 'status',
+            label: unit.isActive ? 'Deactivate' : 'Activate',
+            onSelect: () => onStatusChange(unit),
+          },
+          {
+            key: 'delete',
+            label: 'Delete Unit',
+            destructive: true,
+            onSelect: () => onDelete(unit),
+          },
+        ]}
+      />
+    );
   }
 
   if (!isDesktop) {
@@ -73,9 +81,9 @@ export function MeasurementUnitTable({
                       Symbol: <strong>{unit.symbol}</strong>
                     </Typography>
                   </Box>
-                  <Chip
+                  <AppStatusChip
                     label={unit.isActive ? 'Active' : 'Inactive'}
-                    color={unit.isActive ? 'success' : 'default'}
+                    variant={unit.isActive ? 'success' : 'neutral'}
                     size="small"
                   />
                 </Stack>
@@ -88,27 +96,26 @@ export function MeasurementUnitTable({
                   <Typography variant="body2" color="text.secondary">
                     Linked Items: <strong>{unit.linkedItemCount}</strong>
                   </Typography>
-                  <IconButton
-                    size="small"
-                    aria-label={`Actions for ${unit.name}`}
-                    onClick={(e) => handleOpenMenu(e, unit)}
-                    disabled={busyUnitId === unit.id}
-                  >
-                    <MoreVertIcon fontSize="small" />
-                  </IconButton>
+                  {renderRowActions(unit)}
                 </Stack>
               </Stack>
             </CardContent>
           </Card>
         ))}
-        {renderActionMenu()}
       </Stack>
     );
   }
 
   return (
-    <>
-      <TableContainer component={Card} variant="outlined">
+    <DataTableShell
+      isLoading={false}
+      isError={false}
+      isEmpty={false}
+      loadingContent={null}
+      errorContent={null}
+      emptyContent={null}
+      tableContainerProps={{ component: Card, variant: 'outlined' }}
+    >
         <Table aria-label="Measurement unit table">
           <TableHead>
             <TableRow>
@@ -144,9 +151,9 @@ export function MeasurementUnitTable({
                   <Typography fontWeight={600}>{unit.linkedItemCount}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Chip
+                  <AppStatusChip
                     label={unit.isActive ? 'Active' : 'Inactive'}
-                    color={unit.isActive ? 'success' : 'default'}
+                    variant={unit.isActive ? 'success' : 'neutral'}
                     size="small"
                   />
                 </TableCell>
@@ -156,73 +163,12 @@ export function MeasurementUnitTable({
                   </Typography>
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton
-                    size="small"
-                    aria-label={`Actions for ${unit.name}`}
-                    onClick={(e) => handleOpenMenu(e, unit)}
-                    disabled={busyUnitId === unit.id}
-                  >
-                    <MoreVertIcon fontSize="small" />
-                  </IconButton>
+                  {renderRowActions(unit)}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
-      {renderActionMenu()}
-    </>
+    </DataTableShell>
   );
-
-  function renderActionMenu() {
-    if (!activeUnit) return null;
-
-    return (
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleCloseMenu}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <MenuItem
-          onClick={() => {
-            const u = activeUnit;
-            handleCloseMenu();
-            onView(u);
-          }}
-        >
-          View Details
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const u = activeUnit;
-            handleCloseMenu();
-            onEdit(u);
-          }}
-        >
-          Edit Unit
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const u = activeUnit;
-            handleCloseMenu();
-            onStatusChange(u);
-          }}
-        >
-          {activeUnit.isActive ? 'Deactivate' : 'Activate'}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const u = activeUnit;
-            handleCloseMenu();
-            onDelete(u);
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          Delete Unit
-        </MenuItem>
-      </Menu>
-    );
-  }
 }
