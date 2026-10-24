@@ -6,7 +6,7 @@ import axios, {
 } from 'axios';
 
 import { resolveApiBaseUrl } from './apiBaseUrl';
-import { getSelectedFirm } from '../tenancy/selectedFirm';
+import { getFirmContextRevision, getSelectedFirm } from '../tenancy/selectedFirm';
 
 export type ApiSuccessResponse<TData> = {
   success: true;
@@ -58,10 +58,20 @@ export const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   const selectedFirm = getSelectedFirm();
+  if (!/^\/?(?:auth|platform|health)(?:\/|$)/.test(config.url ?? '')) {
+    assertCurrentFirmRequest(config);
+    config.firmContextRevision = getFirmContextRevision();
+  }
   if (selectedFirm !== null) config.headers.set('x-firm-id', String(selectedFirm.id));
   else config.headers.delete('x-firm-id');
   return config;
 });
+
+function assertCurrentFirmRequest(config: AxiosRequestConfig | undefined) {
+  if (config?.firmContextRevision !== undefined && config.firmContextRevision !== getFirmContextRevision()) {
+    throw new axios.CanceledError('Firm context changed');
+  }
+}
 
 export function createSkipAuthRefreshConfig(config: AxiosRequestConfig = {}): AxiosRequestConfig {
   return {
@@ -246,9 +256,13 @@ async function refreshSession() {
 }
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    assertCurrentFirmRequest(response.config);
+    return response;
+  },
   async (error: AxiosError<ApiErrorResponse>) => {
     const originalRequest = error.config as RetriableRequestConfig | undefined;
+    assertCurrentFirmRequest(originalRequest);
 
     if (
       error.response?.status !== 401 ||
@@ -266,7 +280,7 @@ apiClient.interceptors.response.use(
       await refreshSession();
       return apiClient(originalRequest);
     } catch (refreshError) {
-      authenticationFailureHandler?.();
+      if (!axios.isCancel(refreshError)) authenticationFailureHandler?.();
       return Promise.reject(refreshError);
     }
   },
@@ -276,5 +290,6 @@ declare module 'axios' {
   interface AxiosRequestConfig {
     skipAuthRefresh?: boolean;
     hasRetriedAfterRefresh?: boolean;
+    firmContextRevision?: number;
   }
 }

@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
-import { setSelectedFirm } from '@shared/tenancy/selectedFirm';
+import { switchSelectedFirm } from '@shared/tenancy/selectedFirm';
 import { AppButton } from '@shared/ui/actions';
 import { AppDialog, ConfirmDialog } from '@shared/ui/dialogs';
 import { AppStatusChip } from '@shared/ui/display';
@@ -141,10 +141,7 @@ export function PlatformFirmsPage() {
   }
 
   function selectFirm(firm: PlatformFirm) {
-    setSelectedFirm({ id: firm.id, name: firm.displayName || firm.name });
-    queryClient.removeQueries({
-      predicate: (entry) => entry.queryKey[0] !== 'auth' && entry.queryKey[0] !== 'platform',
-    });
+    switchSelectedFirm(queryClient, { id: firm.id, name: firm.displayName || firm.name });
     navigate(paths.dashboard);
   }
 

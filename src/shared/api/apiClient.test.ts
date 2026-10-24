@@ -16,6 +16,53 @@ describe('apiClient', () => {
     expect(sessionStorage.length).toBe(0);
   });
 
+  it('discards a delayed tenant response after firm selection changes', async () => {
+    const { apiClient } = await import('./apiClient');
+    const { setSelectedFirm } = await import('../tenancy/selectedFirm');
+    setSelectedFirm({ id: 1, name: 'Firm A' });
+    let complete!: () => void;
+    let started!: () => void;
+    const ready = new Promise<void>((resolve) => { started = resolve; });
+    const result = apiClient.get('/companies', { adapter: (config) => new Promise((resolve) => {
+      expect(config.headers.get('x-firm-id')).toBe('1');
+      complete = () => resolve({ config, data: 'private A', status: 200, statusText: 'OK', headers: {} });
+      started();
+    }) }).catch((error: unknown) => error);
+    await ready;
+    setSelectedFirm({ id: 2, name: 'Firm B' });
+    complete();
+    expect(axios.isCancel(await result)).toBe(true);
+  });
+
+  it('does not retry a firm-A request under firm B after refresh', async () => {
+    const { apiClient, setAuthenticationFailureHandler } = await import('./apiClient');
+    const { setSelectedFirm } = await import('../tenancy/selectedFirm');
+    const failure = vi.fn();
+    setAuthenticationFailureHandler(failure);
+    setSelectedFirm({ id: 1, name: 'Firm A' });
+    let attempts = 0;
+    const previousAdapter = apiClient.defaults.adapter;
+    apiClient.defaults.adapter = async (config) => {
+      if (config.url === '/auth/refresh') {
+        setSelectedFirm({ id: 2, name: 'Firm B' });
+        return { config, data: {}, status: 200, statusText: 'OK', headers: {} };
+      }
+      attempts += 1;
+      throw new axios.AxiosError('expired', undefined, config, undefined, {
+        config, data: {}, status: 401, statusText: 'Unauthorized', headers: {},
+      });
+    };
+    try {
+      const result = await apiClient.put('/companies/1', { name: 'Update' }).catch((error: unknown) => error);
+      expect(axios.isCancel(result)).toBe(true);
+      expect(attempts).toBe(1);
+      expect(failure).not.toHaveBeenCalled();
+    } finally {
+      apiClient.defaults.adapter = previousAdapter;
+      setAuthenticationFailureHandler(null);
+    }
+  });
+
   it('converts safe backend errors into frontend API errors', async () => {
     const { toApiError } = await import('./apiClient');
     const error = new axios.AxiosError('Request failed', undefined, undefined, undefined, {

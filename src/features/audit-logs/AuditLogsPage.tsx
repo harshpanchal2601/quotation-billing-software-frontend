@@ -43,7 +43,7 @@ export function AuditLogsPage() {
             <TableBody>{query.data.auditLogs.map((entry) => (
               <TableRow key={entry.id} hover>
                 <TableCell>{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(entry.createdAt))}</TableCell>
-                <TableCell><Typography fontWeight={600}>{entry.user?.name ?? 'System'}</Typography><Typography variant="caption" color="text.secondary">{entry.user?.email ?? entry.ipAddress ?? '—'}</Typography></TableCell>
+                <TableCell><Typography fontWeight={600}>{entry.user?.name ?? 'System or unavailable actor'}</Typography><Typography variant="caption" color="text.secondary">{entry.user?.email ?? entry.ipAddress ?? '—'}</Typography></TableCell>
                 <TableCell>{entry.action.replace(/_/g, ' ')}</TableCell>
                 <TableCell>{entry.entityType} #{entry.entityId}</TableCell>
                 <TableCell><Typography variant="caption" component="pre" sx={{ whiteSpace: 'pre-wrap', m: 0, maxWidth: 360 }}>{formatChanges(entry.oldValues, entry.newValues)}</Typography></TableCell>

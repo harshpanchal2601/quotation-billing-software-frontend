@@ -30,7 +30,7 @@ import { AppIconButton } from '@shared/ui/actions';
 import { canAccessNavigationItem, getRouteTitle, navigationItems, paths } from '../router/routeConfig';
 import { designTokens } from '../theme/tokens';
 import { AppBreadcrumbs } from './AppBreadcrumbs';
-import { setSelectedFirm, useSelectedFirm } from '@shared/tenancy/selectedFirm';
+import { switchSelectedFirm, useSelectedFirm } from '@shared/tenancy/selectedFirm';
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 
 const sections = ['Platform', 'Main', 'Quotation Management', 'Master Management', 'Configuration', 'System'] as const;
@@ -76,8 +76,7 @@ export function AppLayout() {
 
   function exitFirmWorkspace() {
     setMenuAnchor(null);
-    setSelectedFirm(null);
-    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' && query.queryKey[0] !== 'platform' });
+    switchSelectedFirm(queryClient, null);
     navigate(paths.platformFirms);
   }
 
