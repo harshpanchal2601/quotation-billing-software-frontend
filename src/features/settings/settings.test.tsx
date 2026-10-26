@@ -79,6 +79,7 @@ describe('settings validation and utilities', () => {
   it('keeps decimal strings and validates quotation ranges', () => {
     expect(quotationSettingsSchema.parse(quotationFormValues()).defaultGstRate).toBe('18.00');
     expect(quotationSettingsSchema.safeParse({ ...quotationFormValues(), nextSequenceNumber: 0 }).success).toBe(false);
+    expect(quotationSettingsSchema.safeParse({ ...quotationFormValues(), nextSequenceNumber: 2147483648 }).success).toBe(false);
     expect(quotationSettingsSchema.safeParse({ ...quotationFormValues(), defaultValidityDays: 366 }).success).toBe(false);
     expect(quotationSettingsSchema.safeParse({ ...quotationFormValues(), defaultGstRate: '100.01' }).success).toBe(false);
   });

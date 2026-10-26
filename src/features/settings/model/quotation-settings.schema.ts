@@ -23,7 +23,7 @@ export const quotationSettingsSchema = z.object({
     .max(30)
     .regex(/^[A-Z0-9_-]+$/, 'Use letters, numbers, hyphens or underscores'),
   financialYearFormat: z.literal('YYYY-YY'),
-  nextSequenceNumber: z.coerce.number().int().min(1, 'Sequence number must be at least 1'),
+  nextSequenceNumber: z.coerce.number().int().min(1, 'Sequence number must be at least 1').max(2147483647, 'Sequence number exceeds the supported range'),
   sequenceResetRule: z.enum(['FINANCIAL_YEAR', 'CALENDAR_YEAR', 'NEVER']),
   defaultValidityDays: z.coerce.number().int().min(1).max(365),
   defaultTaxMode: z.enum(['CGST_SGST', 'IGST', 'NONE']),

@@ -99,7 +99,7 @@ export function QuotationSettingsPage() {
               <MenuItem value="YYYY-YY">YYYY-YY</MenuItem>
             </QuotationTextField>
             <QuotationTextField form={form} name="nextSequenceNumber" label="Next sequence number" required disabled={isBusy} type="number" />
-            <QuotationTextField form={form} name="sequenceResetRule" label="Sequence reset rule" required disabled={isBusy} select>
+            <QuotationTextField form={form} name="sequenceResetRule" label="Sequence reset rule" required disabled select helperText="Quotations continue their existing counter across financial years. This saved rule is retained for compatibility.">
               {sequenceResetRuleOptions.map((option) => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
             </QuotationTextField>
           </TwoColumnGrid>

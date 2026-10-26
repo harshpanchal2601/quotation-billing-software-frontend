@@ -25,6 +25,7 @@ import {
 import { BrandingAssetCard } from '../components/BrandingAssetCard';
 import { ColourField } from '../components/ColourField';
 import { SettingsSection } from '../components/SettingsSection';
+import { BusinessPolicyPanel } from '../components/BusinessPolicyPanel';
 import { businessProfileSchema, type BusinessProfileFormValues, type BusinessProfileSubmitValues } from '../model/business-profile.schema';
 import type { BrandingAssetType, BusinessProfile } from '../model/settings.types';
 import { getSafeApiErrorMessage } from '../model/settings.utils';
@@ -183,6 +184,7 @@ export function BusinessSettingsPage() {
           cancelButtonProps={{ type: 'button', variant: 'outlined' }}
         />
       </Stack>
+      <BusinessPolicyPanel />
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </PageContainer>
   );
