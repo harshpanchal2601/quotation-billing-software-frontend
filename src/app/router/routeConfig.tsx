@@ -16,6 +16,7 @@ import type { SvgIconComponent } from '@mui/icons-material';
 
 import { paths, type AppRoutePath } from '@shared/routing/paths';
 import { PERMISSIONS, type AccountType, type Permission } from '@features/auth';
+import { permitsEntitledPermission, type EffectiveAccess } from '@shared/tenancy/entitlements';
 
 export { paths };
 export type { AppRoutePath };
@@ -32,6 +33,9 @@ export type NavigationItem = {
 
 export const navigationItems: NavigationItem[] = [
   { title: 'Firms', path: paths.platformFirms, icon: CorporateFareOutlinedIcon, section: 'Platform', accountTypes: ['SUPER_ADMIN'], tenantScoped: false },
+  { title: 'Plans & Features', path: paths.platformPlans, icon: TuneOutlinedIcon, section: 'Platform', accountTypes: ['SUPER_ADMIN'], tenantScoped: false },
+  { title: 'Subscriptions', path: paths.platformSubscriptions, icon: BusinessOutlinedIcon, section: 'Platform', accountTypes: ['SUPER_ADMIN'], tenantScoped: false },
+  { title: 'Subscription & Usage', path: paths.firmEntitlements, icon: AssessmentOutlinedIcon, section: 'System', accountTypes: ['FIRM_ADMIN', 'FIRM_USER'] },
   { title: 'Dashboard', path: paths.dashboard, icon: DashboardOutlinedIcon, section: 'Main', permissions: [PERMISSIONS.DASHBOARD_VIEW] },
   { title: 'Quotations', path: paths.quotations, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_VIEW] },
   { title: 'Create Quotation', path: paths.newQuotation, icon: NoteAddOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_CREATE] },
@@ -51,10 +55,11 @@ export function canAccessNavigationItem(
   item: NavigationItem,
   user: { accountType: AccountType; permissions: Permission[] },
   hasSelectedFirm: boolean,
+  access?: EffectiveAccess,
 ) {
   if (item.accountTypes !== undefined && !item.accountTypes.includes(user.accountType)) return false;
   if (item.tenantScoped !== false && user.accountType === 'SUPER_ADMIN' && !hasSelectedFirm) return false;
-  return item.permissions === undefined || item.permissions.some((permission) => user.permissions.includes(permission));
+  return item.permissions === undefined || permitsEntitledPermission(access, item.permissions.filter((permission) => user.permissions.includes(permission)));
 }
 
 export function getRouteTitle(pathname: string) {

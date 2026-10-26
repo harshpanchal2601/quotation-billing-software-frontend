@@ -32,6 +32,7 @@ import { designTokens } from '../theme/tokens';
 import { AppBreadcrumbs } from './AppBreadcrumbs';
 import { switchSelectedFirm, useSelectedFirm } from '@shared/tenancy/selectedFirm';
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
+import { useEntitlements } from '@shared/tenancy/entitlements';
 
 const sections = ['Platform', 'Main', 'Quotation Management', 'Master Management', 'Configuration', 'System'] as const;
 
@@ -43,6 +44,7 @@ export function AppLayout() {
   const queryClient = useQueryClient();
   const { user, logout, isLoggingOut } = useAuth();
   const selectedFirm = useSelectedFirm();
+  const access = useEntitlements(user);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const activeNavigationPath = navigationItems.find((item) => item.path === location.pathname)?.path
@@ -92,7 +94,7 @@ export function AppLayout() {
       <Box component="nav" flex={1} py={1.5} overflow="auto">
         {sections.map((section) => {
           const items = navigationItems.filter(
-            (item) => item.section === section && user !== null && canAccessNavigationItem(item, user, selectedFirm !== null),
+            (item) => item.section === section && user !== null && canAccessNavigationItem(item, user, selectedFirm !== null, access.data),
           );
           if (items.length === 0) return null;
           return (

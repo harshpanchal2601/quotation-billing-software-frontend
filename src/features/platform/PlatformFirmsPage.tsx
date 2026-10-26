@@ -211,6 +211,7 @@ export function PlatformFirmsPage() {
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                       <AppButton size="small" startIcon={<BusinessOutlinedIcon />} disabled={firm.status !== 'ACTIVE'} onClick={() => selectFirm(firm)}>Open</AppButton>
                       <AppButton size="small" onClick={() => openEdit(firm)}>Edit</AppButton>
+                      <AppButton size="small" onClick={() => navigate(`${paths.platformSubscriptions}?firmId=${firm.id}`)}>Subscription</AppButton>
                       <AppButton size="small" onClick={() => openReset(firm)}>Reset Admin</AppButton>
                       <AppButton size="small" color={firm.status === 'ACTIVE' ? 'warning' : 'success'} onClick={() => { setError(null); setFieldErrors({}); setStatusTarget(firm); }}>{firm.status === 'ACTIVE' ? 'Suspend' : 'Activate'}</AppButton>
                     </Stack>

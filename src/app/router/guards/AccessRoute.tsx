@@ -3,6 +3,9 @@ import { Navigate } from 'react-router-dom';
 
 import { getDefaultAuthenticatedPath, useAuth, type AccountType, type Permission } from '@features/auth';
 import { useSelectedFirm } from '@shared/tenancy/selectedFirm';
+import { permitsEntitledPermission, useEntitlements } from '@shared/tenancy/entitlements';
+import { FullPageLoader } from '@shared/components/common/FullPageLoader';
+import { ErrorState } from '@shared/components/common/ErrorState';
 import { paths } from '../routeConfig';
 
 type AccessRouteProps = {
@@ -15,6 +18,7 @@ type AccessRouteProps = {
 export function AccessRoute({ children, permissions, accountTypes, tenantScoped = true }: AccessRouteProps) {
   const { user } = useAuth();
   const selectedFirm = useSelectedFirm();
+  const access = useEntitlements(user, tenantScoped && permissions !== undefined);
 
   if (user === null) return null;
   if (accountTypes !== undefined && !accountTypes.includes(user.accountType)) {
@@ -25,6 +29,11 @@ export function AccessRoute({ children, permissions, accountTypes, tenantScoped 
   }
   if (permissions !== undefined && !permissions.some((permission) => user.permissions.includes(permission))) {
     return <Navigate to={getDefaultAuthenticatedPath(user)} replace />;
+  }
+  if (tenantScoped && permissions !== undefined) {
+    if (access.isPending) return <FullPageLoader />;
+    if (access.isError) return <ErrorState message="Your subscribed access could not be checked." onRetry={() => { void access.refetch(); }} />;
+    if (!permitsEntitledPermission(access.data, permissions)) return <Navigate to={paths.accessDenied} replace />;
   }
   return <>{children}</>;
 }

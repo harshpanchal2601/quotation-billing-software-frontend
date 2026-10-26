@@ -69,6 +69,9 @@ const EditQuotationPage = lazy(() =>
 const PlatformFirmsPage = lazy(() =>
   import('@features/platform').then((module) => ({ default: module.PlatformFirmsPage })),
 );
+const PlatformPlansPage = lazy(() => import('@features/platform').then((module) => ({ default: module.PlatformPlansPage })));
+const PlatformSubscriptionsPage = lazy(() => import('@features/platform').then((module) => ({ default: module.PlatformSubscriptionsPage })));
+const FirmEntitlementsPage = lazy(() => import('@features/platform').then((module) => ({ default: module.FirmEntitlementsPage })));
 const UsersPage = lazy(() =>
   import('@features/administration').then((module) => ({ default: module.UsersPage })),
 );
@@ -100,6 +103,9 @@ export const router = createBrowserRouter([
             element: <AppLayout />,
             children: [
               { path: paths.platformFirms, element: <AccessRoute accountTypes={['SUPER_ADMIN']} tenantScoped={false}>{lazyPage(<PlatformFirmsPage />)}</AccessRoute> },
+              { path: paths.platformPlans, element: <AccessRoute accountTypes={['SUPER_ADMIN']} tenantScoped={false}>{lazyPage(<PlatformPlansPage />)}</AccessRoute> },
+              { path: paths.platformSubscriptions, element: <AccessRoute accountTypes={['SUPER_ADMIN']} tenantScoped={false}>{lazyPage(<PlatformSubscriptionsPage />)}</AccessRoute> },
+              { path: paths.firmEntitlements, element: <AccessRoute>{lazyPage(<FirmEntitlementsPage />)}</AccessRoute> },
               { path: paths.dashboard, element: <AccessRoute permissions={[PERMISSIONS.DASHBOARD_VIEW]}><DashboardPage /></AccessRoute> },
               { path: paths.changePassword, element: <ChangePasswordPage /> },
               { path: paths.accessDenied, element: <AccessDeniedPage /> },

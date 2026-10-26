@@ -5,6 +5,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@shared/test/render';
 import { AppLayout } from './AppLayout';
 
+vi.mock('@shared/tenancy/entitlements', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@shared/tenancy/entitlements')>()),
+  useEntitlements: () => ({ data: { permissions: Object.fromEntries([
+    'dashboard.view', 'companies.view', 'items.view', 'catalog.view', 'quotations.view',
+    'quotations.create', 'firm.profile.manage', 'firm.quotation-settings.manage',
+    'firm.bank-details.manage', 'firm.users.manage', 'firm.roles.manage', 'audit.view',
+  ].map((permission) => [permission, true])) } }),
+}));
+
 vi.mock('@features/auth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@features/auth')>()),
   useAuth: () => ({
