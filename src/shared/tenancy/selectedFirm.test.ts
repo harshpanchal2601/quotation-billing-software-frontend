@@ -12,10 +12,14 @@ describe('selected firm cache boundary', () => {
     client.setQueryData(['platform', 'firms'], ['A', 'B']);
     client.setQueryData(['companies'], ['private A']);
     client.setQueryData(['audit-logs', 1], ['private A audit']);
+    client.setQueryData(['billing', 1, 'invoices', 'detail', 11], { customFieldValues: { cf_order: 'Private A order' } });
+    client.setQueryData(['billing', 1, 'settings'], { customFields: ['Private A schema'] });
     switchSelectedFirm(client, { id: 2, name: 'Firm B' });
     expect(getSelectedFirm()).toEqual({ id: 2, name: 'Firm B' });
     expect(client.getQueryData(['companies'])).toBeUndefined();
     expect(client.getQueryData(['audit-logs', 1])).toBeUndefined();
+    expect(client.getQueryData(['billing', 1, 'invoices', 'detail', 11])).toBeUndefined();
+    expect(client.getQueryData(['billing', 1, 'settings'])).toBeUndefined();
     expect(client.getQueryData(['auth'])).toEqual({ id: 1 });
     expect(client.getQueryData(['platform', 'firms'])).toEqual(['A', 'B']);
     client.clear();

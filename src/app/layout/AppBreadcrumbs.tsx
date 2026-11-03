@@ -12,11 +12,12 @@ export function AppBreadcrumbs() {
   const isCompanyChild = location.pathname.startsWith(`${paths.companies}/`);
   const isItemChild = location.pathname.startsWith(`${paths.items}/`);
   const isQuotationChild = location.pathname.startsWith(`${paths.quotations}/`);
+  const billingParent = [paths.invoices, paths.proformas, paths.billingAdjustments].find((path) => location.pathname.startsWith(`${path}/`));
   const navItem = navigationItems.find((item) => item.path === location.pathname);
-  const sectionName = isItemChild ? 'Master Management'
+  const sectionName = billingParent ? 'Billing' : isItemChild ? 'Master Management'
     : isQuotationChild ? 'Quotation Management'
       : navItem?.section && navItem.section !== 'Main' ? navItem.section : undefined;
-  const parentPath = isCompanyChild ? paths.companies : isItemChild ? paths.items : isQuotationChild ? paths.quotations : undefined;
+  const parentPath = billingParent ?? (isCompanyChild ? paths.companies : isItemChild ? paths.items : isQuotationChild ? paths.quotations : undefined);
   const parentTitle = navigationItems.find((item) => item.path === parentPath)?.title;
 
   return (

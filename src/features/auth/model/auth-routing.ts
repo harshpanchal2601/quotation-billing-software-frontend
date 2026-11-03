@@ -5,6 +5,9 @@ import { PERMISSIONS } from './permissions';
 const landingCandidates = [
   [PERMISSIONS.DASHBOARD_VIEW, paths.dashboard],
   [PERMISSIONS.QUOTATIONS_VIEW, paths.quotations],
+  [PERMISSIONS.INVOICES_VIEW, paths.invoices],
+  [PERMISSIONS.PROFORMAS_VIEW, paths.proformas],
+  [PERMISSIONS.ADJUSTMENTS_VIEW, paths.billingAdjustments],
   [PERMISSIONS.COMPANIES_VIEW, paths.companies],
   [PERMISSIONS.ITEMS_VIEW, paths.items],
   [PERMISSIONS.CATALOG_VIEW, paths.categories],

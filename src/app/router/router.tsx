@@ -81,6 +81,11 @@ const RolesPage = lazy(() =>
 const AuditLogsPage = lazy(() =>
   import('@features/audit-logs').then((module) => ({ default: module.AuditLogsPage })),
 );
+const InvoicesPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoicesPage })));
+const InvoiceEditorPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoiceEditorPage })));
+const InvoiceDetailsPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoiceDetailsPage })));
+const InvoiceFieldsReviewPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoiceFieldsReviewPage })));
+const BillingSettingsPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.BillingSettingsPage })));
 
 function lazyPage(element: React.ReactNode) {
   return <Suspense fallback={<FullPageLoader />}>{element}</Suspense>;
@@ -123,6 +128,20 @@ export const router = createBrowserRouter([
               { path: paths.categories, element: <AccessRoute permissions={[PERMISSIONS.CATALOG_VIEW]}>{lazyPage(<CategoriesPage />)}</AccessRoute> },
               { path: paths.measurementUnits, element: <AccessRoute permissions={[PERMISSIONS.CATALOG_VIEW]}>{lazyPage(<MeasurementUnitsPage />)}</AccessRoute> },
               { path: paths.quotations, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_VIEW]}>{lazyPage(<QuotationsPage />)}</AccessRoute> },
+              { path: paths.billingSettings, element: <AccessRoute permissions={[PERMISSIONS.BILLING_SETTINGS_MANAGE, PERMISSIONS.INVOICE_FIELDS_MANAGE]}>{lazyPage(<BillingSettingsPage />)}</AccessRoute> },
+              ...([
+                { scope: 'invoices' as const, view: PERMISSIONS.INVOICES_VIEW, create: PERMISSIONS.INVOICES_CREATE, edit: PERMISSIONS.INVOICES_EDIT },
+                { scope: 'proformas' as const, view: PERMISSIONS.PROFORMAS_VIEW, create: PERMISSIONS.PROFORMAS_MANAGE, edit: PERMISSIONS.PROFORMAS_MANAGE },
+                { scope: 'billing-adjustments' as const, view: PERMISSIONS.ADJUSTMENTS_VIEW, create: PERMISSIONS.ADJUSTMENTS_MANAGE, edit: PERMISSIONS.ADJUSTMENTS_MANAGE },
+              ]).flatMap(({ scope, view, create, edit }) => [
+                { path: `/${scope}`, element: <AccessRoute permissions={[view]}>{lazyPage(<InvoicesPage scope={scope} />)}</AccessRoute> },
+                { path: `/${scope}/:id`, element: <AccessRoute permissions={[view]}>{lazyPage(<InvoiceDetailsPage scope={scope} />)}</AccessRoute> },
+                { path: `/${scope}/:id/fields`, element: <AccessRoute permissions={[edit]}>{lazyPage(<InvoiceFieldsReviewPage scope={scope} />)}</AccessRoute> },
+                ...(scope === 'billing-adjustments' ? [] : [
+                  { path: `/${scope}/new`, element: <AccessRoute permissions={[create]}>{lazyPage(<InvoiceEditorPage scope={scope} />)}</AccessRoute> },
+                  { path: `/${scope}/:id/edit`, element: <AccessRoute permissions={[edit]}>{lazyPage(<InvoiceEditorPage scope={scope} editing />)}</AccessRoute> },
+                ]),
+              ]),
               { path: paths.newQuotation, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_CREATE]}>{lazyPage(<CreateQuotationPage />)}</AccessRoute> },
               { path: `${paths.quotations}/:id`, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_VIEW]}>{lazyPage(<QuotationDetailsPage />)}</AccessRoute> },
               { path: `${paths.quotations}/:id/edit`, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_EDIT]}>{lazyPage(<EditQuotationPage />)}</AccessRoute> },

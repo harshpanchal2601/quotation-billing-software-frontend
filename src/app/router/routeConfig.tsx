@@ -25,7 +25,7 @@ export type NavigationItem = {
   title: string;
   path: AppRoutePath;
   icon: SvgIconComponent;
-  section: 'Platform' | 'Main' | 'Quotation Management' | 'Master Management' | 'Configuration' | 'System';
+  section: 'Platform' | 'Main' | 'Quotation Management' | 'Billing' | 'Master Management' | 'Configuration' | 'System';
   permissions?: Permission[];
   accountTypes?: AccountType[];
   tenantScoped?: boolean;
@@ -39,6 +39,10 @@ export const navigationItems: NavigationItem[] = [
   { title: 'Dashboard', path: paths.dashboard, icon: DashboardOutlinedIcon, section: 'Main', permissions: [PERMISSIONS.DASHBOARD_VIEW] },
   { title: 'Quotations', path: paths.quotations, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_VIEW] },
   { title: 'Create Quotation', path: paths.newQuotation, icon: NoteAddOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_CREATE] },
+  { title: 'Invoices', path: paths.invoices, icon: DescriptionOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.INVOICES_VIEW] },
+  { title: 'Proformas', path: paths.proformas, icon: NoteAddOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PROFORMAS_VIEW] },
+  { title: 'Credit & Debit Notes', path: paths.billingAdjustments, icon: AssessmentOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.ADJUSTMENTS_VIEW] },
+  { title: 'Billing Configuration', path: paths.billingSettings, icon: TuneOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.BILLING_SETTINGS_MANAGE, PERMISSIONS.INVOICE_FIELDS_MANAGE] },
   { title: 'Companies', path: paths.companies, icon: BusinessOutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.COMPANIES_VIEW] },
   { title: 'Items', path: paths.items, icon: Inventory2OutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.ITEMS_VIEW] },
   { title: 'Categories', path: paths.categories, icon: CategoryOutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.CATALOG_VIEW] },
@@ -72,6 +76,10 @@ export function getRouteTitle(pathname: string) {
   if (/^\/items\/\d+\/edit$/.test(pathname)) return 'Edit Item';
   if (/^\/items\/\d+$/.test(pathname)) return 'Item Details';
   if (pathname === paths.newQuotation) return 'Create Quotation';
+  if (/^\/(invoices|proformas)\/new$/.test(pathname)) return pathname.startsWith('/proformas') ? 'Create Proforma Draft' : 'Create Invoice Draft';
+  if (/^\/(invoices|proformas|billing-adjustments)\/\d+\/fields$/.test(pathname)) return 'Review Invoice Fields';
+  if (/^\/(invoices|proformas)\/\d+\/edit$/.test(pathname)) return 'Edit Draft';
+  if (/^\/(invoices|proformas|billing-adjustments)\/\d+$/.test(pathname)) return 'Billing Document Details';
   if (/^\/quotations\/\d+\/edit$/.test(pathname)) return 'Edit Quotation';
   if (/^\/quotations\/\d+$/.test(pathname)) return 'Quotation Details';
   return navigationItems.find((item) => item.path === pathname)?.title ?? 'Page not found';

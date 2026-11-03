@@ -23,7 +23,7 @@ import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
@@ -59,6 +59,8 @@ import {
   formatTaxModeLabel,
 } from '../model/quotations.utils';
 
+const QuotationInvoiceConversion = lazy(() => import('@features/invoices').then((module) => ({ default: module.QuotationInvoiceConversion })));
+
 export function QuotationDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const quotationId = Number(id);
@@ -74,6 +76,8 @@ export function QuotationDetailsPage() {
   const canManageDocuments = useHasPermission(PERMISSIONS.QUOTATIONS_DOCUMENTS);
   const canEmailQuotations = useHasPermission(PERMISSIONS.QUOTATIONS_EMAIL);
   const canManageAttachments = useHasPermission(PERMISSIONS.QUOTATIONS_ATTACHMENTS);
+  const canCreateInvoices = useHasPermission(PERMISSIONS.INVOICES_CREATE);
+  const [invoiceConversionOpen, setInvoiceConversionOpen] = useState(false);
 
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -293,6 +297,9 @@ export function QuotationDetailsPage() {
               Edit Draft
             </AppButton>
           ) : null}
+
+          {quotation.status === 'ACCEPTED' && canCreateInvoices ? <AppButton variant="contained" onClick={() => setInvoiceConversionOpen(true)}>Create Invoice</AppButton> : null}
+          {invoiceConversionOpen ? <Suspense fallback={<Typography>Loading conversion…</Typography>}><QuotationInvoiceConversion source={quotation} onClose={() => setInvoiceConversionOpen(false)} /></Suspense> : null}
 
           {canCreateRevision ? (
             <AppButton
