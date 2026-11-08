@@ -1,4 +1,6 @@
 export const PERMISSIONS = {
+  AUTOMATION_MANAGE: 'automation.manage',
+  AUTOMATION_VIEW: 'automation.view',
   DASHBOARD_VIEW: 'dashboard.view',
   COMPANIES_VIEW: 'companies.view',
   COMPANIES_MANAGE: 'companies.manage',

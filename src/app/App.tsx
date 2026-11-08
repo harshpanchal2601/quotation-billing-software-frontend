@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 
 import { useAuth } from '@features/auth';
+import { ApprovalRequestBridge } from '@features/automation';
 import { AppSnackbar } from '@shared/ui/feedback';
 
 export function App() {
@@ -8,6 +9,7 @@ export function App() {
 
   return (
     <>
+      <ApprovalRequestBridge />
       <Outlet />
       <AppSnackbar
         open={sessionMessage !== null}

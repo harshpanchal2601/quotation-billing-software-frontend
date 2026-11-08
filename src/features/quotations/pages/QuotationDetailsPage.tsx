@@ -30,6 +30,7 @@ import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer } from '@shared/ui/layout';
+import { TenantFieldsPanel } from '@features/automation';
 import { DataTableShell } from '@shared/ui/tables';
 import { paths } from '@shared/routing/paths';
 import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
@@ -223,6 +224,7 @@ export function QuotationDetailsPage() {
 
   return (
     <PageContainer maxWidth={1200} sx={{ mx: 'auto' }}>
+      <TenantFieldsPanel key={quotation.id} entity="QUOTATION" entityId={quotation.id} editable={canEdit} />
       {!quotation.isLatestRevision && quotation.latestRevision ? (
         <Alert
           severity="info"

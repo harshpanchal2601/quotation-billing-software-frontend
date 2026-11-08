@@ -1,4 +1,6 @@
 export const paths = {
+  automation: '/settings/automation',
+  approvals: '/approvals',
   login: '/login',
   dashboard: '/dashboard',
   changePassword: '/change-password',

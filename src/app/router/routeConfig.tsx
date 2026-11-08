@@ -56,6 +56,8 @@ export const navigationItems: NavigationItem[] = [
   { title: 'Categories', path: paths.categories, icon: CategoryOutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.CATALOG_VIEW] },
   { title: 'Measurement Units', path: paths.measurementUnits, icon: RulerOutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.CATALOG_VIEW] },
   { title: 'Business Settings', path: paths.businessSettings, icon: SettingsOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.FIRM_PROFILE_MANAGE] },
+  { title: 'Automation Settings', path: paths.automation, icon: TuneOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.AUTOMATION_MANAGE], accountTypes: ['FIRM_ADMIN'] },
+  { title: 'Approvals & Notifications', path: paths.approvals, icon: AssessmentOutlinedIcon, section: 'System', permissions: [PERMISSIONS.AUTOMATION_VIEW], accountTypes: ['FIRM_ADMIN', 'FIRM_USER'] },
   { title: 'Quotation Settings', path: paths.quotationSettings, icon: TuneOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.QUOTATION_SETTINGS_MANAGE] },
   { title: 'Bank Details', path: paths.bankDetails, icon: AccountBalanceOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.BANK_DETAILS_MANAGE] },
   { title: 'Users', path: paths.firmUsers, icon: GroupOutlinedIcon, section: 'System', permissions: [PERMISSIONS.USERS_MANAGE] },

@@ -31,6 +31,7 @@ import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
 import { ItemStockPanel } from '@features/inventory';
+import { TenantFieldsPanel } from '@features/automation';
 import { deleteItemRequest, getItemRequest, updateItemStatusRequest } from '../api/items.api';
 import { ItemDeleteDialog, ItemStatusDialog } from '../components/ItemConfirmDialogs';
 import { itemsQueryKeys } from '../model/items.query-keys';
@@ -213,6 +214,7 @@ export function ItemDetailsPage() {
 
         <Stack spacing={3} flex={1} minWidth={0}>
           <Typography>Item kind: {item.kind === 'SERVICE' ? 'Service' : 'Goods'}</Typography>
+          <TenantFieldsPanel key={item.id} entity="ITEM" entityId={item.id} editable={canManage} />
           <ItemStockPanel key={item.id} itemId={item.id} kind={item.kind} stockTracking={item.stockTracking} changed={() => queryClient.invalidateQueries({ queryKey: itemsQueryKeys.detail(item.id) })} />
           <Card variant="outlined">
             <CardContent sx={{ p: 3 }}>

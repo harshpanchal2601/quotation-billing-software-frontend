@@ -19,6 +19,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
 import { InvoiceSettlementPanel } from '@features/payments';
+import { InvoiceFieldHistory } from '@features/automation';
 import { toApiError } from '@shared/api/apiClient';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { FullPageLoader } from '@shared/components/common/FullPageLoader';
@@ -86,6 +87,7 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
     {document.sourceSnapshot?.extraCharges ? <Typography>{document.sourceSalesOrderId ? 'Allocated delivery charges and adjustment' : 'Freight and other charges'}: {document.currency} {document.sourceSnapshot.extraCharges}</Typography> : null}
     {document.paymentTerms ? <Typography sx={{ whiteSpace: 'pre-wrap' }}>Payment terms: {document.paymentTerms}</Typography> : null}
     <CustomFieldsForm fields={document.customFieldSchema} values={customValues} onChange={setCustomValues} disabled={!draft || !canEdit} />
+    <InvoiceFieldHistory key={`${scope}:${document.id}:${document.version}`} scope={scope} entityId={document.id} />
     {draft && canEdit ? <AppButton isLoading={mutation.isPending} onClick={() => mutation.mutate(() => updateCustomValues(scope, document, customValues))}>Save additional values</AppButton> : null}
     {draft && canEdit ? <AppButton onClick={() => navigate(`/${scope}/${document.id}/fields`)}>Review latest custom-field configuration</AppButton> : null}
     {canDocuments ? <><Typography variant="h6">PDF history</Typography>{documents.isError ? <Alert severity="error">{toApiError(documents.error).message}</Alert> : documents.data?.length === 0 ? <Typography>No PDF versions yet.</Typography> : documents.data?.map((pdf) => <Stack key={pdf.id} direction="row" spacing={2} alignItems="center"><Typography>Version {pdf.versionNumber} · {new Date(pdf.generatedAt).toLocaleString()} · {pdf.fileSize} bytes</Typography><AppButton onClick={() => mutation.mutate(() => openPdf(pdf.id, false))}>Preview</AppButton><AppButton onClick={() => mutation.mutate(() => openPdf(pdf.id, true))}>Download</AppButton></Stack>)}</> : null}

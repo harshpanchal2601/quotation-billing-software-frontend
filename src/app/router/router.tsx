@@ -18,6 +18,8 @@ import { paths } from './routeConfig';
 const BusinessSettingsPage = lazy(() =>
   import('@features/settings').then((module) => ({ default: module.BusinessSettingsPage })),
 );
+const AutomationPage = lazy(() => import('@features/automation').then((module) => ({ default: module.AutomationPage })));
+const ApprovalsPage = lazy(() => import('@features/automation').then((module) => ({ default: module.ApprovalsPage })));
 const QuotationSettingsPage = lazy(() =>
   import('@features/settings').then((module) => ({ default: module.QuotationSettingsPage })),
 );
@@ -128,6 +130,8 @@ export const router = createBrowserRouter([
               { path: paths.changePassword, element: <ChangePasswordPage /> },
               { path: paths.accessDenied, element: <AccessDeniedPage /> },
               { path: paths.businessSettings, element: <AccessRoute permissions={[PERMISSIONS.FIRM_PROFILE_MANAGE]}>{lazyPage(<BusinessSettingsPage />)}</AccessRoute> },
+              { path: paths.automation, element: <AccessRoute accountTypes={['FIRM_ADMIN']} permissions={[PERMISSIONS.AUTOMATION_MANAGE]}>{lazyPage(<AutomationPage />)}</AccessRoute> },
+              { path: paths.approvals, element: <AccessRoute accountTypes={['FIRM_ADMIN', 'FIRM_USER']} permissions={[PERMISSIONS.AUTOMATION_VIEW]}>{lazyPage(<ApprovalsPage />)}</AccessRoute> },
               { path: paths.quotationSettings, element: <AccessRoute permissions={[PERMISSIONS.QUOTATION_SETTINGS_MANAGE]}>{lazyPage(<QuotationSettingsPage />)}</AccessRoute> },
               { path: paths.bankDetails, element: <AccessRoute permissions={[PERMISSIONS.BANK_DETAILS_MANAGE]}>{lazyPage(<BankDetailsPage />)}</AccessRoute> },
               { path: paths.companies, element: <AccessRoute permissions={[PERMISSIONS.COMPANIES_VIEW]}>{lazyPage(<CompaniesPage />)}</AccessRoute> },
