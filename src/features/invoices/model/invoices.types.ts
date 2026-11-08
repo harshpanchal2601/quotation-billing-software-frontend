@@ -16,8 +16,8 @@ export type InvoiceDocument = {
   sellerSnapshot: Record<string, string | null> | null; bankSnapshot: Record<string, string | null> | null;
   financialPolicySnapshot: { taxMode: 'NONE' | 'CGST_SGST' | 'IGST'; localTaxLabel: string; registration: string; sellerStateCode: string };
   supplySnapshot: Supply; customFieldSchema: CustomField[]; customFieldValues: CustomValues; presentationSnapshot: BillingSettings;
-  sourceSnapshot: { quotationNumber?: string; revisionNumber?: number; invoiceNumber?: string; invoiceDate?: string; proformaNumber?: string; extraCharges?: string } | null;
-  sourceQuotationId: number | null; sourceProformaId: number | null; sourceInvoiceId: number | null; adjustmentReason: string | null;
+  sourceSnapshot: { quotationNumber?: string; orderNumber?: string; revisionNumber?: number; invoiceNumber?: string; invoiceDate?: string; proformaNumber?: string; extraCharges?: string } | null;
+  sourceQuotationId: number | null; sourceProformaId: number | null; sourceInvoiceId: number | null; sourceSalesOrderId?: number | null; adjustmentReason: string | null;
   subtotal: string; discountAmount: string; taxableAmount: string; taxAmount: string; roundOffAmount: string; grandTotal: string;
   lines: LineSnapshot[]; statusHistory: { version: number; fromStatus: string | null; toStatus: string; changedById: number; changedAt: string }[];
   postingEffect: 'NONE' | 'CREDIT' | 'DEBIT'; issuedAt: string | null; voidedAt: string | null; voidReason: string | null;

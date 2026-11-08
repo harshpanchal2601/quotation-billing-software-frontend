@@ -77,6 +77,7 @@ export function QuotationDetailsPage() {
   const canEmailQuotations = useHasPermission(PERMISSIONS.QUOTATIONS_EMAIL);
   const canManageAttachments = useHasPermission(PERMISSIONS.QUOTATIONS_ATTACHMENTS);
   const canCreateInvoices = useHasPermission(PERMISSIONS.INVOICES_CREATE);
+  const canCreateOrders = useHasPermission(PERMISSIONS.SALES_ORDERS_MANAGE);
   const [invoiceConversionOpen, setInvoiceConversionOpen] = useState(false);
 
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -299,6 +300,7 @@ export function QuotationDetailsPage() {
           ) : null}
 
           {quotation.status === 'ACCEPTED' && canCreateInvoices ? <AppButton variant="contained" onClick={() => setInvoiceConversionOpen(true)}>Create Invoice</AppButton> : null}
+          {quotation.status === 'ACCEPTED' && canCreateOrders ? <AppButton onClick={() => navigate(`/sales-orders?sourceRevisionId=${quotation.id}`)}>Create Sales Order</AppButton> : null}
           {invoiceConversionOpen ? <Suspense fallback={<Typography>Loading conversion…</Typography>}><QuotationInvoiceConversion source={quotation} onClose={() => setInvoiceConversionOpen(false)} /></Suspense> : null}
 
           {canCreateRevision ? (
@@ -713,7 +715,7 @@ export function QuotationDetailsPage() {
                         ) : null}
                       </Box>
                       <Typography variant="caption" color="text.secondary">
-                        {new Date(hist.changedAt).toLocaleString()} by {hist.changedBy?.name || 'Admin'}
+                        {new Date(hist.changedAt).toLocaleString()} by {hist.changedBy?.name || hist.portalActorName || 'Admin'}
                       </Typography>
                     </Box>
                   ))}

@@ -91,6 +91,7 @@ export type QuotationStatusHistoryItem = {
   toStatus: QuotationStatus;
   comment: string | null;
   changedBy: UserSummary | null;
+  portalActorName?: string | null;
   changedAt: string;
 };
 

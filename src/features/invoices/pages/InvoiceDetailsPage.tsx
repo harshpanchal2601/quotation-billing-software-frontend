@@ -26,6 +26,7 @@ import { AppButton } from '@shared/ui/actions';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { convertProformaToInvoice, createBillingAdjustment, fetchBillingPdf, generateBillingPdf, getBillingDocument, issueBillingDocument, listBillingPdfs, updateCustomValues, voidBillingDocument } from '../api/invoices.api';
 import { CustomFieldsForm } from '../components/CustomFieldsForm';
+import { cancelOrderInvoiceDraft } from '../api/invoices.api';
 import { invoicesQueryKeys, useBillingFirmId } from '../model/invoices.query-keys';
 import type { AdjustmentDraft, BillingScope, CustomValues, InvoiceDocument } from '../model/invoices.types';
 
@@ -50,11 +51,12 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
   const [customValues, setCustomValues] = useState<CustomValues>(document.customFieldValues);
   const [confirmIssue, setConfirmIssue] = useState(false); const [voidOpen, setVoidOpen] = useState(false); const [adjustOpen, setAdjustOpen] = useState(false);
   const [voidReason, setVoidReason] = useState(''); const [voidConfirmed, setVoidConfirmed] = useState(false);
+  const [cancelDraftOpen, setCancelDraftOpen] = useState(false);
   const [conversionKey] = useState(() => crypto.randomUUID()); const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   useEffect(() => () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); }, [pdfUrl]);
   const documents = useQuery({ queryKey: ['billing', firmId, scope, document.id, 'pdfs'], queryFn: ({ signal }) => listBillingPdfs(scope, document.id, signal), enabled: canDocuments });
-  const mutation = useMutation({ mutationFn: (action: () => Promise<unknown>) => action(), onSuccess: () => { void client.invalidateQueries({ queryKey: invoicesQueryKeys.firm(firmId) }); void client.invalidateQueries({ queryKey: ['payments', firmId] }); setConfirmIssue(false); setVoidOpen(false); } });
-  const draft = document.status === 'DRAFT'; const sourceLocked = Boolean(document.sourceQuotationId || document.sourceProformaId || document.sourceInvoiceId);
+  const mutation = useMutation({ mutationFn: (action: () => Promise<unknown>) => action(), onSuccess: () => { void client.invalidateQueries({ queryKey: invoicesQueryKeys.firm(firmId) }); void client.invalidateQueries({ queryKey: ['payments', firmId] }); void client.invalidateQueries({ queryKey: ['sales-orders', firmId] }); setConfirmIssue(false); setVoidOpen(false); setCancelDraftOpen(false); } });
+  const draft = document.status === 'DRAFT'; const sourceLocked = Boolean(document.sourceQuotationId || document.sourceProformaId || document.sourceInvoiceId || document.sourceSalesOrderId);
   async function openPdf(pdfId: number, download: boolean) {
     const blob = await fetchBillingPdf(scope, document.id, pdfId); const url = URL.createObjectURL(blob);
     if (!download) { setPdfUrl(url); return; }
@@ -63,9 +65,10 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
   return <PageContainer><PageHeader title={document.documentNumber ?? `Draft #${document.id}`} description={`${document.kind.replace(/_/g, ' ')} · ${document.status} · Version ${document.version}`} actions={<AppButton onClick={() => navigate(`/${scope}`)}>Back to list</AppButton>} />
     {mutation.isError ? <Alert severity="error">{toApiError(mutation.error).message}</Alert> : null}
     {document.kind === 'PROFORMA' ? <Alert severity="info">This proforma is non-posting and creates no receivable or tax invoice.</Alert> : null}
-    {document.status === 'VOID' ? <Alert severity="warning">Voided: {document.voidReason}. The original issue snapshot and document history are preserved.</Alert> : null}
+    {document.status === 'VOID' ? <Alert severity="warning">{document.issuedAt ? `Voided: ${document.voidReason}. The original issue snapshot and document history are preserved.` : `Draft cancelled: ${document.voidReason}. Reserved order quantities have been released.`}</Alert> : null}
     <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap">
       {draft && canEdit && !sourceLocked ? <AppButton onClick={() => navigate(`/${scope}/${document.id}/edit`)}>Edit draft</AppButton> : null}
+      {draft && document.sourceSalesOrderId && canVoid ? <AppButton onClick={() => setCancelDraftOpen(true)}>Cancel order invoice draft</AppButton> : null}
       {draft && document.kind === 'INVOICE' && !sourceLocked && canRecurring && canCreateInvoice ? <AppButton onClick={() => navigate(`/billing-schedules?sourceDraftId=${document.id}`)}>Create recurring schedule</AppButton> : null}
       {draft && canIssue ? <AppButton variant="contained" onClick={() => setConfirmIssue(true)}>Issue {document.kind === 'PROFORMA' ? 'proforma' : 'document'}</AppButton> : null}
       {!draft && document.status === 'ISSUED' && canVoid && scope !== 'billing-adjustments' ? <AppButton color="error" onClick={() => setVoidOpen(true)}>Void document</AppButton> : null}
@@ -76,10 +79,11 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
     <Typography variant="h6">Customer</Typography><Typography>{document.buyerSnapshot.legalName || document.buyerSnapshot.name} · GSTIN {document.buyerSnapshot.gstin || 'Unregistered'}</Typography><Typography>{Object.values(document.buyerSnapshot.billingAddress ?? {}).filter((value) => typeof value === 'string' && value).join(', ')}</Typography>
     {document.sellerSnapshot ? <><Typography variant="h6">Supplier at issue</Typography><Typography>{document.sellerSnapshot.legalName} · {document.sellerSnapshot.gstin || 'Unregistered'} · {document.sellerSnapshot.stateName}</Typography></> : null}
     <Typography>Document date {document.invoiceDate} · Due {document.dueDate || 'Not specified'} · Place of supply {document.supplySnapshot.placeOfSupplyStateCode} · {document.financialPolicySnapshot.taxMode === 'CGST_SGST' ? `CGST + ${document.financialPolicySnapshot.localTaxLabel}` : document.financialPolicySnapshot.taxMode}</Typography>
-    {document.sourceSnapshot ? <Alert severity="info">Source: {document.sourceSnapshot.quotationNumber || document.sourceSnapshot.proformaNumber || document.sourceSnapshot.invoiceNumber}{document.sourceSnapshot.revisionNumber !== undefined ? ` · Exact quotation revision ${document.sourceSnapshot.revisionNumber}` : ''}. Source financial values are preserved.</Alert> : null}
+    {document.sourceSnapshot ? <Alert severity="info">Source: {document.sourceSnapshot.orderNumber || document.sourceSnapshot.quotationNumber || document.sourceSnapshot.proformaNumber || document.sourceSnapshot.invoiceNumber}{document.sourceSnapshot.revisionNumber !== undefined ? ` · Exact quotation revision ${document.sourceSnapshot.revisionNumber}` : ''}. Source financial values are preserved.</Alert> : null}
     {document.adjustmentReason ? <Typography>Adjustment reason: {document.adjustmentReason}</Typography> : null}
     <Stack sx={{ overflowX: 'auto' }}><Table aria-label="Document lines"><TableHead><TableRow>{['Line', 'Goods / service', 'HSN / SAC', 'Quantity', 'Rate', 'Taxable', 'CGST', document.financialPolicySnapshot.localTaxLabel, 'IGST', 'Total'].map((label) => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>{document.lines.map((line) => <TableRow key={line.lineNumber}><TableCell>{line.lineNumber}</TableCell><TableCell>{line.itemName}</TableCell><TableCell>{line.hsnCode || 'Required before registered issuance'}</TableCell><TableCell>{line.quantity} {line.measurementUnit}</TableCell><TableCell>{line.unitRate}</TableCell><TableCell>{line.taxableAmount}</TableCell><TableCell>{line.cgstAmount}</TableCell><TableCell>{line.sgstAmount}</TableCell><TableCell>{line.igstAmount}</TableCell><TableCell>{line.lineTotal}</TableCell></TableRow>)}</TableBody></Table></Stack>
     <Typography>Subtotal {document.currency} {document.subtotal} · Discount {document.discountAmount} · Tax {document.taxAmount} · Round off {document.roundOffAmount}</Typography><Typography variant="h5">Total {document.currency} {document.grandTotal}</Typography>
+    {document.sourceSnapshot?.extraCharges ? <Typography>{document.sourceSalesOrderId ? 'Allocated delivery charges and adjustment' : 'Freight and other charges'}: {document.currency} {document.sourceSnapshot.extraCharges}</Typography> : null}
     {document.paymentTerms ? <Typography sx={{ whiteSpace: 'pre-wrap' }}>Payment terms: {document.paymentTerms}</Typography> : null}
     <CustomFieldsForm fields={document.customFieldSchema} values={customValues} onChange={setCustomValues} disabled={!draft || !canEdit} />
     {draft && canEdit ? <AppButton isLoading={mutation.isPending} onClick={() => mutation.mutate(() => updateCustomValues(scope, document, customValues))}>Save additional values</AppButton> : null}
@@ -91,6 +95,7 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
     <Dialog open={voidOpen} onClose={() => setVoidOpen(false)}><DialogTitle>Void an unreported document</DialogTitle><DialogContent><Stack spacing={2} sx={{ pt: 1 }}><Typography>This is limited to cancellation on the issue date. Use a credit/debit note for later corrections.</Typography><TextField label="Cancellation reason" required multiline value={voidReason} onChange={(event) => setVoidReason(event.target.value)} /><FormControlLabel control={<Checkbox checked={voidConfirmed} onChange={(event) => setVoidConfirmed(event.target.checked)} />} label="The supply is cancelled and this document has not been reported in GST returns." /></Stack></DialogContent><DialogActions><AppButton onClick={() => setVoidOpen(false)}>Close</AppButton><AppButton color="error" disabled={!voidConfirmed || voidReason.trim().length < 5} isLoading={mutation.isPending} onClick={() => mutation.mutate(() => voidBillingDocument(scope, document, voidReason))}>Void</AppButton></DialogActions></Dialog>
     <Dialog open={pdfUrl !== null} onClose={() => setPdfUrl(null)} fullWidth maxWidth="lg"><DialogTitle>Historical document PDF</DialogTitle><DialogContent>{pdfUrl ? <iframe src={pdfUrl} title="Billing PDF preview" style={{ width: '100%', height: '75vh', border: 0 }} /> : null}</DialogContent><DialogActions><AppButton onClick={() => setPdfUrl(null)}>Close</AppButton></DialogActions></Dialog>
     {adjustOpen ? <AdjustmentDialog source={document} onClose={() => setAdjustOpen(false)} /> : null}
+    <Dialog open={cancelDraftOpen} onClose={() => setCancelDraftOpen(false)}><DialogTitle>Cancel order invoice draft</DialogTitle><DialogContent><Typography>Cancellation preserves this draft and releases its reserved order quantities.</Typography><TextField label="Cancellation reason" required value={voidReason} onChange={(event) => setVoidReason(event.target.value)} /></DialogContent><DialogActions><AppButton onClick={() => setCancelDraftOpen(false)}>Close</AppButton><AppButton disabled={mutation.isPending || voidReason.trim().length < 5} onClick={() => mutation.mutate(() => cancelOrderInvoiceDraft(document, voidReason))}>Confirm draft cancellation</AppButton></DialogActions></Dialog>
   </PageContainer>;
 }
 function AdjustmentDialog({ source, onClose }: { source: InvoiceDocument; onClose: () => void }) {

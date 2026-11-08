@@ -95,12 +95,19 @@ function lazyPage(element: React.ReactNode) {
   return <Suspense fallback={<FullPageLoader />}>{element}</Suspense>;
 }
 
+const CrmPage = lazy(() => import('@features/crm').then((module) => ({ default: module.CrmPage })));
+const SalesOrdersPage = lazy(() => import('@features/sales-orders').then((module) => ({ default: module.SalesOrdersPage })));
+const SalesOrderDetailsPage = lazy(() => import('@features/sales-orders').then((module) => ({ default: module.SalesOrderDetailsPage })));
+const PortalAccessPage = lazy(() => import('@features/customer-portal').then((module) => ({ default: module.PortalAccessPage })));
+const CustomerPortalPage = lazy(() => import('@features/customer-portal').then((module) => ({ default: module.CustomerPortalPage })));
+
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
     children: [
       { index: true, element: <Navigate to={paths.dashboard} replace /> },
+      { path: paths.customerPortal, element: lazyPage(<CustomerPortalPage />) },
       {
         element: <PublicOnlyRoute />,
         children: [{ path: paths.login, element: <LoginPage /> }],
@@ -132,6 +139,10 @@ export const router = createBrowserRouter([
               { path: paths.categories, element: <AccessRoute permissions={[PERMISSIONS.CATALOG_VIEW]}>{lazyPage(<CategoriesPage />)}</AccessRoute> },
               { path: paths.measurementUnits, element: <AccessRoute permissions={[PERMISSIONS.CATALOG_VIEW]}>{lazyPage(<MeasurementUnitsPage />)}</AccessRoute> },
               { path: paths.quotations, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_VIEW]}>{lazyPage(<QuotationsPage />)}</AccessRoute> },
+              { path: paths.crm, element: <AccessRoute permissions={[PERMISSIONS.CRM_VIEW]}>{lazyPage(<CrmPage />)}</AccessRoute> },
+              { path: paths.salesOrders, element: <AccessRoute permissions={[PERMISSIONS.SALES_ORDERS_VIEW]}>{lazyPage(<SalesOrdersPage />)}</AccessRoute> },
+              { path: `${paths.salesOrders}/:id`, element: <AccessRoute permissions={[PERMISSIONS.SALES_ORDERS_VIEW]}>{lazyPage(<SalesOrderDetailsPage />)}</AccessRoute> },
+              { path: paths.portalAccess, element: <AccessRoute permissions={[PERMISSIONS.PORTAL_MANAGE]}>{lazyPage(<PortalAccessPage />)}</AccessRoute> },
               { path: paths.billingSettings, element: <AccessRoute permissions={[PERMISSIONS.BILLING_SETTINGS_MANAGE, PERMISSIONS.INVOICE_FIELDS_MANAGE]}>{lazyPage(<BillingSettingsPage />)}</AccessRoute> },
               { path: paths.payments, element: <AccessRoute permissions={[PERMISSIONS.PAYMENTS_VIEW]}>{lazyPage(<PaymentsPage />)}</AccessRoute> },
               { path: `${paths.payments}/:id`, element: <AccessRoute permissions={[PERMISSIONS.PAYMENTS_VIEW]}>{lazyPage(<PaymentDetailsPage />)}</AccessRoute> },

@@ -40,6 +40,9 @@ export const navigationItems: NavigationItem[] = [
   { title: 'Quotations', path: paths.quotations, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_VIEW] },
   { title: 'Create Quotation', path: paths.newQuotation, icon: NoteAddOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_CREATE] },
   { title: 'Invoices', path: paths.invoices, icon: DescriptionOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.INVOICES_VIEW] },
+  { title: 'CRM & Follow-ups', path: paths.crm, icon: GroupOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.CRM_VIEW] },
+  { title: 'Sales Orders', path: paths.salesOrders, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.SALES_ORDERS_VIEW] },
+  { title: 'Customer Portal Access', path: paths.portalAccess, icon: GroupOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.PORTAL_MANAGE] },
   { title: 'Customer Payments', path: paths.payments, icon: AccountBalanceOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PAYMENTS_VIEW] },
   { title: 'Receivables & Ageing', path: paths.receivables, icon: AssessmentOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PAYMENTS_VIEW] },
   { title: 'Recurring Drafts', path: paths.billingSchedules, icon: NoteAddOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.BILLING_RECURRING] },
@@ -70,6 +73,7 @@ export function canAccessNavigationItem(
 }
 
 export function getRouteTitle(pathname: string) {
+  if (/^\/sales-orders\/\d+$/.test(pathname)) return 'Sales Order Details';
   if (pathname === paths.accessDenied) return 'Access Denied';
   if (pathname === paths.changePassword) return 'Change Password';
   if (pathname === paths.newCompany) return 'Add Company';
