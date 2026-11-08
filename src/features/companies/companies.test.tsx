@@ -77,12 +77,14 @@ describe('company frontend', () => {
     await userEvent.type(screen.getByLabelText(/^contact name/i), 'Nitish');
     await userEvent.type(screen.getByLabelText(/^phone/i), '+91 0987654321');
     await userEvent.type(screen.getByLabelText(/^address line 1/i), 'Factory Road');
+    await userEvent.click(screen.getByLabelText('Also a supplier'));
     await userEvent.click(screen.getByRole('button', { name: /create company/i }));
 
     await waitFor(() => expect(companiesApi.createCompanyRequest).toHaveBeenCalled());
     const payload = companiesApi.createCompanyRequest.mock.calls[0][0];
     expect(payload).toEqual(expect.objectContaining({
       name: 'Acme Pharma',
+      isSupplier: true,
       contacts: [expect.objectContaining({ name: 'Nitish', phone: '+91 0987654321', isPrimary: true })],
       addresses: [expect.objectContaining({ addressType: 'BILLING', addressLine1: 'Factory Road', isPrimary: true })],
     }));
@@ -266,6 +268,7 @@ function companyListItem(overrides: Partial<CompanyListItem> = {}): CompanyListI
     pan: null,
     website: null,
     isActive: true,
+    isSupplier: false,
     primaryContact: { id: 1, name: 'Nitish', designation: null, email: 'nitish@example.com', phone: '+91 9876543210', alternatePhone: null, isPrimary: true, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
     primaryBillingAddress: { id: 1, addressType: 'BILLING', addressLine1: 'Factory Road', addressLine2: null, city: 'Ahmedabad', state: 'Gujarat', postalCode: '038001', country: 'India', isPrimary: true, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
     primaryShippingAddress: null,

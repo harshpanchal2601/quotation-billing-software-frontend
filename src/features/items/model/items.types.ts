@@ -25,6 +25,8 @@ export type ItemListItem = {
   itemCode: string;
   name: string;
   shortDescription: string | null;
+  kind: 'GOODS' | 'SERVICE';
+  stockTracking: boolean;
   category: ItemCategorySummary | null;
   measurementUnit: MeasurementUnitSummary;
   defaultRate: string;
@@ -49,6 +51,8 @@ export type ItemOption = {
   itemCode: string;
   name: string;
   shortDescription: string | null;
+  kind: 'GOODS' | 'SERVICE';
+  stockTracking: boolean;
   defaultRate: string;
   gstRate: string;
   hsnCode: string | null;
@@ -72,6 +76,7 @@ export type ItemListParams = {
 };
 
 export type ItemCreateInput = {
+  kind?: 'GOODS' | 'SERVICE';
   name: string;
   categoryId?: number | null;
   measurementUnitId: number;

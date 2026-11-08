@@ -1,0 +1,13 @@
+import { Alert, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { AppButton } from '@shared/ui/actions';
+import type { Page, StockMovement, StockPosition } from './inventory.api';
+
+export function Paging({ pagination, page, change }: { pagination?: Page; page: number; change: (page: number) => void }) {
+  return <Stack direction="row" spacing={2}><AppButton disabled={page <= 1} onClick={() => change(page - 1)}>Previous</AppButton><Typography>Page {page} · {pagination?.total ?? 0} records</Typography><AppButton disabled={!pagination || page * pagination.limit >= pagination.total} onClick={() => change(page + 1)}>Next</AppButton></Stack>;
+}
+export function PositionsTable({ rows }: { rows: StockPosition[] }) {
+  return <><Table aria-label="Stock by warehouse"><TableHead><TableRow>{['Warehouse', 'Item', 'On hand', 'Reserved', 'Available', 'Valuation', 'Average cost', 'Reorder level', 'Status'].map((value) => <TableCell key={value}>{value}</TableCell>)}</TableRow></TableHead><TableBody>{rows.map((row) => <TableRow key={row.id}><TableCell>{row.warehouse.name}</TableCell><TableCell>{row.item.name}</TableCell><TableCell>{row.onHand}</TableCell><TableCell>{row.reserved}</TableCell><TableCell>{row.available}</TableCell><TableCell>{row.currency} {row.value}</TableCell><TableCell>{row.averageCost}</TableCell><TableCell>{row.reorderLevel}</TableCell><TableCell>{!row.reconciled ? 'Reconciliation required' : row.lowStock ? 'Low stock' : 'In stock'}</TableCell></TableRow>)}</TableBody></Table>{rows.some((row) => !row.reconciled) ? <Alert severity="error">Stock projections differ from ledger or active reservations. Resolve reconciliation before further posting.</Alert> : null}</>;
+}
+export function MovementTable({ rows }: { rows: StockMovement[] }) {
+  return <Table aria-label="Stock movement ledger"><TableHead><TableRow>{['Movement', 'Posted', 'Warehouse', 'Item', 'Event', 'Source', 'Quantity', 'Value', 'Original', 'Reason'].map((value) => <TableCell key={value}>{value}</TableCell>)}</TableRow></TableHead><TableBody>{rows.map((row) => <TableRow key={row.id}><TableCell>{row.id}</TableCell><TableCell>{new Date(row.postedAt).toLocaleString()}</TableCell><TableCell>{row.position.warehouseId}</TableCell><TableCell>{row.position.itemId}</TableCell><TableCell>{row.eventType}</TableCell><TableCell>{row.sourceType} #{row.sourceId} / {row.sourceLineId}</TableCell><TableCell>{row.quantity}</TableCell><TableCell>{row.position.currency} {row.value}</TableCell><TableCell>{row.originalMovementId ?? '—'}</TableCell><TableCell>{row.reason}</TableCell></TableRow>)}</TableBody></Table>;
+}

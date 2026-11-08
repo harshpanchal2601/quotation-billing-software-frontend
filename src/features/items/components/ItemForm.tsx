@@ -59,6 +59,7 @@ export function ItemForm({
     resolver: zodResolver(itemFormSchema),
     defaultValues: {
       name: '',
+      kind: 'GOODS',
       categoryId: null,
       measurementUnitId: undefined as unknown as number,
       shortDescription: '',
@@ -78,6 +79,7 @@ export function ItemForm({
     if (initialValues) {
       reset({
         name: initialValues.name,
+        kind: initialValues.kind,
         categoryId: initialValues.category?.id ?? null,
         measurementUnitId: initialValues.measurementUnit.id,
         shortDescription: initialValues.shortDescription ?? '',
@@ -103,6 +105,7 @@ export function ItemForm({
             </Typography>
 
             <Stack spacing={2.5}>
+              <TextField select label="Item kind" value={watch('kind')} onChange={(event) => setValue('kind', event.target.value as ItemFormValues['kind'], { shouldDirty: true, shouldValidate: true })} disabled={isSubmitting || initialValues?.stockTracking} helperText="Goods may optionally track stock after creation. Services never require inventory."><MenuItem value="GOODS">Goods</MenuItem><MenuItem value="SERVICE">Service</MenuItem></TextField>
               <ControlledTextField
                 control={control}
                 name="name"

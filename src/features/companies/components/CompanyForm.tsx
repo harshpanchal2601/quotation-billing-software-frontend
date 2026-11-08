@@ -29,6 +29,7 @@ const emptyCompanyCreateValues: CompanyCreateFormValues = {
   legalName: '',
   website: '',
   isActive: true,
+  isSupplier: false,
   gstin: '',
   pan: '',
   notes: '',
@@ -150,6 +151,7 @@ function CompanyFields<TFieldValues extends CompanyCreateFormValues | CompanyUpd
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
           <ControlledTextField control={control} name={'website' as FieldPath<TFieldValues>} label="Website" disabled={disabled} />
           <ControlledCheckbox control={control} name={'isActive' as FieldPath<TFieldValues>} label="Active company" disabled={disabled} />
+          <ControlledCheckbox control={control} name={'isSupplier' as FieldPath<TFieldValues>} label="Also a supplier" disabled={disabled} />
         </Stack>
       </FormSection>
       <FormSection title="Legal and tax information">
@@ -184,6 +186,7 @@ function companyToUpdateValues(company: CompanyDetail): CompanyUpdateFormValues 
     legalName: company.legalName ?? '',
     website: company.website ?? '',
     isActive: company.isActive,
+    isSupplier: company.isSupplier,
     gstin: company.gstin ?? '',
     pan: company.pan ?? '',
     notes: company.notes ?? '',

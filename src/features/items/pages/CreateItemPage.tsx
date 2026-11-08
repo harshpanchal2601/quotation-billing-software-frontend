@@ -22,6 +22,7 @@ export function CreateItemPage() {
     mutationFn: (values: ItemFormValues) =>
       createItemRequest({
         name: values.name,
+        kind: values.kind,
         categoryId: values.categoryId,
         measurementUnitId: values.measurementUnitId,
         shortDescription: values.shortDescription || null,

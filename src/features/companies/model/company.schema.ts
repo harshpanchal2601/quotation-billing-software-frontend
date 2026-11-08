@@ -32,6 +32,7 @@ export const companyBaseSchema = z.object({
   legalName: optionalText(191),
   website: websiteSchema,
   isActive: z.boolean(),
+  isSupplier: z.boolean().default(false),
   gstin: gstinSchema,
   pan: panSchema,
   notes: optionalText(5000),
@@ -75,6 +76,7 @@ export type CompanyUpdateSubmitValues = {
   legalName?: string;
   website?: string;
   isActive: boolean;
+  isSupplier?: boolean;
   gstin?: string;
   pan?: string;
   notes?: string;
@@ -97,6 +99,7 @@ export function toCompanyUpdateSubmitValues(values: CompanyUpdateFormValues): Co
     ...(legalName ? { legalName } : {}),
     ...(website ? { website } : {}),
     isActive: values.isActive,
+    isSupplier: values.isSupplier,
     ...(gstin ? { gstin } : {}),
     ...(pan ? { pan } : {}),
     ...(notes ? { notes } : {}),

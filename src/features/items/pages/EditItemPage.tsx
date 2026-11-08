@@ -35,6 +35,7 @@ export function EditItemPage() {
     mutationFn: (values: ItemFormValues) =>
       updateItemRequest(itemId, {
         name: values.name,
+        kind: values.kind,
         categoryId: values.categoryId,
         measurementUnitId: values.measurementUnitId,
         shortDescription: values.shortDescription || null,

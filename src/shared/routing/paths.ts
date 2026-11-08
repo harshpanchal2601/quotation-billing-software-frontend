@@ -14,6 +14,8 @@ export const paths = {
   billingSchedules: '/billing-schedules',
   crm: '/crm',
   salesOrders: '/sales-orders',
+  inventory: '/inventory',
+  purchasing: '/purchasing',
   portalAccess: '/portal-access',
   customerPortal: '/customer-portal',
   companies: '/companies',

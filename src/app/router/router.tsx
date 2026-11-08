@@ -95,6 +95,8 @@ function lazyPage(element: React.ReactNode) {
   return <Suspense fallback={<FullPageLoader />}>{element}</Suspense>;
 }
 
+const InventoryPage = lazy(() => import('@features/inventory').then((module) => ({ default: module.InventoryPage })));
+const PurchasingPage = lazy(() => import('@features/purchasing').then((module) => ({ default: module.PurchasingPage })));
 const CrmPage = lazy(() => import('@features/crm').then((module) => ({ default: module.CrmPage })));
 const SalesOrdersPage = lazy(() => import('@features/sales-orders').then((module) => ({ default: module.SalesOrdersPage })));
 const SalesOrderDetailsPage = lazy(() => import('@features/sales-orders').then((module) => ({ default: module.SalesOrderDetailsPage })));
@@ -139,6 +141,8 @@ export const router = createBrowserRouter([
               { path: paths.categories, element: <AccessRoute permissions={[PERMISSIONS.CATALOG_VIEW]}>{lazyPage(<CategoriesPage />)}</AccessRoute> },
               { path: paths.measurementUnits, element: <AccessRoute permissions={[PERMISSIONS.CATALOG_VIEW]}>{lazyPage(<MeasurementUnitsPage />)}</AccessRoute> },
               { path: paths.quotations, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_VIEW]}>{lazyPage(<QuotationsPage />)}</AccessRoute> },
+              { path: paths.inventory, element: <AccessRoute permissions={[PERMISSIONS.INVENTORY_VIEW]}>{lazyPage(<InventoryPage />)}</AccessRoute> },
+              { path: paths.purchasing, element: <AccessRoute permissions={[PERMISSIONS.PURCHASING_VIEW, PERMISSIONS.SUPPLIER_BILLS_VIEW, PERMISSIONS.EXPENSES_VIEW]}>{lazyPage(<PurchasingPage />)}</AccessRoute> },
               { path: paths.crm, element: <AccessRoute permissions={[PERMISSIONS.CRM_VIEW]}>{lazyPage(<CrmPage />)}</AccessRoute> },
               { path: paths.salesOrders, element: <AccessRoute permissions={[PERMISSIONS.SALES_ORDERS_VIEW]}>{lazyPage(<SalesOrdersPage />)}</AccessRoute> },
               { path: `${paths.salesOrders}/:id`, element: <AccessRoute permissions={[PERMISSIONS.SALES_ORDERS_VIEW]}>{lazyPage(<SalesOrderDetailsPage />)}</AccessRoute> },

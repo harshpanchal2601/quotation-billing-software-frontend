@@ -25,6 +25,7 @@ import { toApiError } from '@shared/api/apiClient';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
 import { ReceivablesPanel } from '@features/payments';
 import { CustomerTimeline } from '@features/crm';
+import { SupplierPurchasingPanel } from '@features/purchasing';
 import { createCompanyAddressRequest, deleteCompanyAddressRequest, setPrimaryCompanyAddressRequest, updateCompanyAddressRequest } from '../api/addresses.api';
 import { deleteCompanyRequest, getCompanyRequest, updateCompanyStatusRequest } from '../api/companies.api';
 import { createCompanyContactRequest, deleteCompanyContactRequest, setPrimaryCompanyContactRequest, updateCompanyContactRequest } from '../api/contacts.api';
@@ -158,6 +159,7 @@ export function CompanyDetailsPage() {
           <Stack direction="row" spacing={1} useFlexGap alignItems="center" flexWrap="wrap">
             <Typography component="h1" variant="h1">{company.name}</Typography>
             <CompanyStatusChip isActive={company.isActive} />
+            {company.isSupplier ? <Typography>Supplier</Typography> : null}
           </Stack>
           <Typography color="text.secondary">{company.companyCode}</Typography>
         </Box>
@@ -184,7 +186,7 @@ export function CompanyDetailsPage() {
         <Tab label="Addresses" value="addresses" />
         <Tab label="Quotations" value="quotations" />
       </Tabs>
-      {selectedTab === 'overview' ? <><CompanyOverview company={company} /><ReceivablesPanel companyId={company.id} /><CustomerTimeline key={company.id} companyId={company.id} /></> : null}
+      {selectedTab === 'overview' ? <><CompanyOverview company={company} />{company.isSupplier ? <SupplierPurchasingPanel key={company.id} supplierId={company.id} /> : null}<ReceivablesPanel companyId={company.id} /><CustomerTimeline key={company.id} companyId={company.id} /></> : null}
       {selectedTab === 'contacts' ? (
         <ContactsSection
           contacts={company.contacts}

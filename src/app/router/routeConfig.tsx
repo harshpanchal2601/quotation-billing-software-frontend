@@ -41,6 +41,8 @@ export const navigationItems: NavigationItem[] = [
   { title: 'Create Quotation', path: paths.newQuotation, icon: NoteAddOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_CREATE] },
   { title: 'Invoices', path: paths.invoices, icon: DescriptionOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.INVOICES_VIEW] },
   { title: 'CRM & Follow-ups', path: paths.crm, icon: GroupOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.CRM_VIEW] },
+  { title: 'Inventory', path: paths.inventory, icon: Inventory2OutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.INVENTORY_VIEW] },
+  { title: 'Purchasing & Expenses', path: paths.purchasing, icon: BusinessOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PURCHASING_VIEW, PERMISSIONS.SUPPLIER_BILLS_VIEW, PERMISSIONS.EXPENSES_VIEW] },
   { title: 'Sales Orders', path: paths.salesOrders, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.SALES_ORDERS_VIEW] },
   { title: 'Customer Portal Access', path: paths.portalAccess, icon: GroupOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.PORTAL_MANAGE] },
   { title: 'Customer Payments', path: paths.payments, icon: AccountBalanceOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PAYMENTS_VIEW] },
