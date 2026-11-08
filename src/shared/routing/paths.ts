@@ -1,4 +1,6 @@
 export const paths = {
+  assistant: '/assistant',
+  assistantSettings: '/settings/assistant',
   automation: '/settings/automation',
   approvals: '/approvals',
   login: '/login',

@@ -8,9 +8,10 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
-import { PERMISSIONS, useHasPermission } from '@features/auth';
+import { PERMISSIONS, useAuth, useHasPermission } from '@features/auth';
+import { readAssistantDraft } from '@shared/routing/assistantDraft';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
@@ -35,6 +36,8 @@ export function InvoicesPage({ scope = 'invoices' }: { scope?: BillingScope }) {
 }
 export function InvoiceEditorPage({ scope = 'invoices', editing = false }: { scope?: BillingScope; editing?: boolean }) {
   const firmId = useBillingFirmId(); const { id } = useParams(); const documentId = Number(id); const navigate = useNavigate(); const client = useQueryClient();
+  const { state } = useLocation(); const { user } = useAuth();
+  const assistantDraft = !editing && scope === 'invoices' ? readAssistantDraft(state, firmId, user?.id, 'INVOICE') : undefined;
   const settings = useQuery({ queryKey: invoicesQueryKeys.settings(firmId), queryFn: ({ signal }) => getBillingSettings(signal) });
   const detail = useQuery({ queryKey: invoicesQueryKeys.detail(firmId, scope, documentId), queryFn: ({ signal }) => getBillingDocument(scope, documentId, signal), enabled: editing && Number.isSafeInteger(documentId) && documentId > 0 });
   const save = useMutation({ mutationFn: ({ input, key }: { input: InvoiceDraft; key: string }) => editing ? updateBillingDraft(scope, documentId, { ...input, expectedVersion: detail.data!.version, refreshCustomFields: false }) : createBillingDraft(scope, { ...input, idempotencyKey: key }), onSuccess: (document) => { void client.invalidateQueries({ queryKey: invoicesQueryKeys.firm(firmId) }); navigate(`/${scope}/${document.id}`); } });
@@ -43,5 +46,5 @@ export function InvoiceEditorPage({ scope = 'invoices', editing = false }: { sco
   if (settings.isError || (editing && detail.isError)) return <ErrorState message={toApiError(settings.error ?? detail.error).message} />;
   const document = editing ? detail.data : undefined;
   if (document && (document.status !== 'DRAFT' || document.sourceQuotationId || document.sourceProformaId || document.sourceInvoiceId)) return <Alert severity="info">Financial values on this document are locked. <AppButton onClick={() => navigate(`/${scope}/${document.id}`)}>Open document</AppButton></Alert>;
-  return <PageContainer><PageHeader title={`${editing ? 'Edit' : 'Create'} ${scope === 'proformas' ? 'Proforma' : 'Invoice'} Draft`} actions={<AppButton onClick={() => navigate(`/${scope}`)}>Back to list</AppButton>} /><InvoiceDraftForm key={`${firmId}:${document?.id ?? 'new'}:${document?.version ?? 0}`} scope={scope} settings={settings.data!} document={document} pending={save.isPending} error={save.error} onSave={(input, key) => save.mutate({ input, key })} /></PageContainer>;
+  return <PageContainer><PageHeader title={`${editing ? 'Edit' : 'Create'} ${scope === 'proformas' ? 'Proforma' : 'Invoice'} Draft`} actions={<AppButton onClick={() => navigate(`/${scope}`)}>Back to list</AppButton>} /><InvoiceDraftForm key={`${firmId}:${user?.id}:${document?.id ?? 'new'}:${document?.version ?? 0}`} scope={scope} settings={settings.data!} document={document} assistantDraft={assistantDraft} pending={save.isPending} error={save.error} onSave={(input, key) => save.mutate({ input, key })} /></PageContainer>;
 }

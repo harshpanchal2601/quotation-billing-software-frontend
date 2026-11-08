@@ -17,6 +17,7 @@ import type { OverrideInput, SubscriptionInput } from './subscriptions.types';
 import type { PlatformFirm } from './platform.types';
 import { usePlatformOperation } from './usePlatformOperation';
 import { UsageEventsPanel } from './UsageEventsPanel';
+import { AssistantModeControls } from './AssistantModeControls';
 
 function dateValue(value: string) { return value === '' ? null : new Date(value).toISOString(); }
 
@@ -87,6 +88,7 @@ function FirmSubscriptionEditor({ firmId }: { firmId: number }) {
     {details.isError ? <ErrorState message="Firm subscription could not be loaded." onRetry={() => { void details.refetch(); }} /> : null}
     {details.data ? <EffectiveAccessPanel access={details.data.access} /> : null}
     <TextField required label="Reason for firm change" value={reason} onChange={(event) => setReason(event.target.value)} helperText="At least 10 characters. All actions are recorded in platform audit history." />
+    {details.data ? <AssistantModeControls firmId={firmId} access={details.data.access} reason={reason} pending={operation.isPending} onChange={(work) => operation.mutate(work)} /> : null}
     <AppButton disabled={!allowedAction || details.data === undefined} onClick={() => operation.mutate(() => api.reconcile(firmId, reason))}>Reconcile managed usage</AppButton>
     <Typography variant="h6">Assign plan revision or update lifecycle</Typography>
     {plans.isError || plan.isError ? <ErrorState message="Plans could not be loaded." onRetry={() => { void plans.refetch(); if (planId !== null) void plan.refetch(); }} /> : null}

@@ -27,9 +27,12 @@ function initialDraft(settings: SettingsResponse, document?: InvoiceDocument): I
   };
   return { companyId: 0, billingAddressId: 0, shippingAddressId: null, invoiceDate: billingDateToday(), dueDate: null, customerReference: '', paymentTerms: settings.config.paymentInstructions, notes: '', supply: { isExempt: settings.config.registration !== 'REGULAR', placeOfSupplyStateCode: '', placeOfSupplyBasis: 'GOODS_MOVEMENT', explanation: '' }, customFieldValues: {}, lines: [emptyLine()] };
 }
-export function InvoiceDraftForm({ scope, settings, document, onSave, pending, error }: { scope: BillingScope; settings: SettingsResponse; document?: InvoiceDocument; onSave: (input: InvoiceDraft, idempotencyKey: string) => void; pending: boolean; error?: unknown }) {
+export function InvoiceDraftForm({ scope, settings, document, assistantDraft, onSave, pending, error }: { scope: BillingScope; settings: SettingsResponse; document?: InvoiceDocument; assistantDraft?: Pick<InvoiceDraft, 'companyId' | 'lines'>; onSave: (input: InvoiceDraft, idempotencyKey: string) => void; pending: boolean; error?: unknown }) {
   const firmId = useBillingFirmId();
-  const [form, setForm] = useState(() => initialDraft(settings, document));
+  const [form, setForm] = useState(() => {
+    const initial = initialDraft(settings, document);
+    return !document && assistantDraft ? { ...initial, companyId: assistantDraft.companyId, lines: assistantDraft.lines.map((line) => ({ ...line, taxRate: settings.config.registration === 'REGULAR' ? line.taxRate : '0' })) } : initial;
+  });
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [customerSearch, setCustomerSearch] = useState('');
   const [catalogSearch, setCatalogSearch] = useState('');

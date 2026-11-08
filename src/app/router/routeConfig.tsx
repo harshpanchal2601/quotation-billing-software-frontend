@@ -37,6 +37,8 @@ export const navigationItems: NavigationItem[] = [
   { title: 'Subscriptions', path: paths.platformSubscriptions, icon: BusinessOutlinedIcon, section: 'Platform', accountTypes: ['SUPER_ADMIN'], tenantScoped: false },
   { title: 'Subscription & Usage', path: paths.firmEntitlements, icon: AssessmentOutlinedIcon, section: 'System', accountTypes: ['FIRM_ADMIN', 'FIRM_USER'] },
   { title: 'Dashboard', path: paths.dashboard, icon: DashboardOutlinedIcon, section: 'Main', permissions: [PERMISSIONS.DASHBOARD_VIEW] },
+  { title: 'Business Assistant', path: paths.assistant, icon: AssessmentOutlinedIcon, section: 'Main', permissions: [PERMISSIONS.ASSISTANT_LOCAL, PERMISSIONS.ASSISTANT_LLM], accountTypes: ['FIRM_ADMIN', 'FIRM_USER'] },
+  { title: 'Assistant Settings', path: paths.assistantSettings, icon: TuneOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.ASSISTANT_SETTINGS_MANAGE], accountTypes: ['FIRM_ADMIN'] },
   { title: 'Quotations', path: paths.quotations, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_VIEW] },
   { title: 'Create Quotation', path: paths.newQuotation, icon: NoteAddOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_CREATE] },
   { title: 'Invoices', path: paths.invoices, icon: DescriptionOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.INVOICES_VIEW] },

@@ -20,6 +20,8 @@ const BusinessSettingsPage = lazy(() =>
 );
 const AutomationPage = lazy(() => import('@features/automation').then((module) => ({ default: module.AutomationPage })));
 const ApprovalsPage = lazy(() => import('@features/automation').then((module) => ({ default: module.ApprovalsPage })));
+const AssistantPage = lazy(() => import('@features/assistant').then((module) => ({ default: module.AssistantPage })));
+const AssistantSettingsPage = lazy(() => import('@features/assistant').then((module) => ({ default: module.AssistantSettingsPage })));
 const QuotationSettingsPage = lazy(() =>
   import('@features/settings').then((module) => ({ default: module.QuotationSettingsPage })),
 );
@@ -132,6 +134,8 @@ export const router = createBrowserRouter([
               { path: paths.businessSettings, element: <AccessRoute permissions={[PERMISSIONS.FIRM_PROFILE_MANAGE]}>{lazyPage(<BusinessSettingsPage />)}</AccessRoute> },
               { path: paths.automation, element: <AccessRoute accountTypes={['FIRM_ADMIN']} permissions={[PERMISSIONS.AUTOMATION_MANAGE]}>{lazyPage(<AutomationPage />)}</AccessRoute> },
               { path: paths.approvals, element: <AccessRoute accountTypes={['FIRM_ADMIN', 'FIRM_USER']} permissions={[PERMISSIONS.AUTOMATION_VIEW]}>{lazyPage(<ApprovalsPage />)}</AccessRoute> },
+              { path: paths.assistant, element: <AccessRoute accountTypes={['FIRM_ADMIN', 'FIRM_USER']} permissions={[PERMISSIONS.ASSISTANT_LOCAL, PERMISSIONS.ASSISTANT_LLM]}>{lazyPage(<AssistantPage />)}</AccessRoute> },
+              { path: paths.assistantSettings, element: <AccessRoute accountTypes={['FIRM_ADMIN']} permissions={[PERMISSIONS.ASSISTANT_SETTINGS_MANAGE]}>{lazyPage(<AssistantSettingsPage />)}</AccessRoute> },
               { path: paths.quotationSettings, element: <AccessRoute permissions={[PERMISSIONS.QUOTATION_SETTINGS_MANAGE]}>{lazyPage(<QuotationSettingsPage />)}</AccessRoute> },
               { path: paths.bankDetails, element: <AccessRoute permissions={[PERMISSIONS.BANK_DETAILS_MANAGE]}>{lazyPage(<BankDetailsPage />)}</AccessRoute> },
               { path: paths.companies, element: <AccessRoute permissions={[PERMISSIONS.COMPANIES_VIEW]}>{lazyPage(<CompaniesPage />)}</AccessRoute> },

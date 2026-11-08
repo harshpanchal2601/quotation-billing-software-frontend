@@ -1,4 +1,7 @@
 export const PERMISSIONS = {
+  ASSISTANT_LOCAL: 'assistant.local',
+  ASSISTANT_LLM: 'assistant.llm',
+  ASSISTANT_SETTINGS_MANAGE: 'assistant.settings.manage',
   AUTOMATION_MANAGE: 'automation.manage',
   AUTOMATION_VIEW: 'automation.view',
   DASHBOARD_VIEW: 'dashboard.view',

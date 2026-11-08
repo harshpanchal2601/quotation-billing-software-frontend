@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@features/auth';
+import { useFirmId } from '@shared/tenancy/useFirmId';
+import { readAssistantDraft } from '@shared/routing/assistantDraft';
 
 import { getQuotationSettingsRequest } from '@features/settings';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
@@ -13,6 +16,8 @@ import type { QuotationFormSubmitValues } from '../model/quotations.schema';
 
 export function CreateQuotationPage() {
   const navigate = useNavigate();
+  const { state } = useLocation(); const { user } = useAuth(); const firmId = useFirmId();
+  const assistantDraft = readAssistantDraft(state, firmId, user?.id, 'QUOTATION');
   const queryClient = useQueryClient();
 
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -65,6 +70,7 @@ export function CreateQuotationPage() {
   });
 
   const initialValues: Partial<QuotationFormSubmitValues> = {
+    ...(assistantDraft ? { companyId: assistantDraft.companyId, items: assistantDraft.lines.map((line, index) => ({ itemId: line.itemId, itemName: line.itemName, measurementUnit: line.measurementUnit, quantity: line.quantity, unitRate: line.unitRate, gstRate: line.taxRate, discountType: line.discountType, discountValue: line.discountValue, sortOrder: index })) } : {}),
     taxMode: quotationSettings?.defaultTaxMode || 'CGST_SGST',
     deliveryTerms: quotationSettings?.defaultDeliveryTerms || '',
     dispatchTerms: quotationSettings?.defaultDispatchTerms || '',
@@ -85,6 +91,7 @@ export function CreateQuotationPage() {
       />
 
       <QuotationForm
+        key={`${firmId}:${user?.id}`}
         initialValues={initialValues}
         defaultValidityDays={quotationSettings?.defaultValidityDays ?? 30}
         isSubmitting={createMutation.isPending}
