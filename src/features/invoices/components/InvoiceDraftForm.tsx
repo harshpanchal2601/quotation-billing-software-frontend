@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { toApiError } from '@shared/api/apiClient';
+import { billingDateToday } from '@shared/dates/billingDate';
 import { AppButton } from '@shared/ui/actions';
 import { getBillingAddresses, getBillingCustomers, getBillingItems, previewBillingDraft } from '../api/invoices.api';
 import type { BillingScope, InvoiceDocument, InvoiceDraft, InvoiceLine, SettingsResponse } from '../model/invoices.types';
@@ -24,7 +25,7 @@ function initialDraft(settings: SettingsResponse, document?: InvoiceDocument): I
     supply: document.supplySnapshot, customFieldValues: document.customFieldValues,
     lines: document.lines.map((line) => ({ itemId: line.itemId, itemName: line.itemName, description: line.description, hsnCode: line.hsnCode, supplyType: line.supplyType, measurementUnit: line.measurementUnit, quantity: line.quantity, unitRate: line.unitRate, discountType: line.discountType, discountValue: line.discountValue, taxRate: line.taxRate })),
   };
-  return { companyId: 0, billingAddressId: 0, shippingAddressId: null, invoiceDate: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()), dueDate: null, customerReference: '', paymentTerms: settings.config.paymentInstructions, notes: '', supply: { isExempt: settings.config.registration !== 'REGULAR', placeOfSupplyStateCode: '', placeOfSupplyBasis: 'GOODS_MOVEMENT', explanation: '' }, customFieldValues: {}, lines: [emptyLine()] };
+  return { companyId: 0, billingAddressId: 0, shippingAddressId: null, invoiceDate: billingDateToday(), dueDate: null, customerReference: '', paymentTerms: settings.config.paymentInstructions, notes: '', supply: { isExempt: settings.config.registration !== 'REGULAR', placeOfSupplyStateCode: '', placeOfSupplyBasis: 'GOODS_MOVEMENT', explanation: '' }, customFieldValues: {}, lines: [emptyLine()] };
 }
 export function InvoiceDraftForm({ scope, settings, document, onSave, pending, error }: { scope: BillingScope; settings: SettingsResponse; document?: InvoiceDocument; onSave: (input: InvoiceDraft, idempotencyKey: string) => void; pending: boolean; error?: unknown }) {
   const firmId = useBillingFirmId();

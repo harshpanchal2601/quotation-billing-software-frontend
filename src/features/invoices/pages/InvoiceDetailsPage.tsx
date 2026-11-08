@@ -18,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
+import { InvoiceSettlementPanel } from '@features/payments';
 import { toApiError } from '@shared/api/apiClient';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { FullPageLoader } from '@shared/components/common/FullPageLoader';
@@ -45,13 +46,14 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
   const firmId = useBillingFirmId(); const client = useQueryClient(); const navigate = useNavigate();
   const canEdit = useHasPermission(scopePermissions[scope].edit); const canIssue = useHasPermission(scopePermissions[scope].issue); const canVoid = useHasPermission(scopePermissions[scope].void); const canDocuments = useHasPermission(scopePermissions[scope].documents);
   const canCreateInvoice = useHasPermission(PERMISSIONS.INVOICES_CREATE); const canAdjust = useHasPermission(PERMISSIONS.ADJUSTMENTS_MANAGE);
+  const canRecurring = useHasPermission(PERMISSIONS.BILLING_RECURRING);
   const [customValues, setCustomValues] = useState<CustomValues>(document.customFieldValues);
   const [confirmIssue, setConfirmIssue] = useState(false); const [voidOpen, setVoidOpen] = useState(false); const [adjustOpen, setAdjustOpen] = useState(false);
   const [voidReason, setVoidReason] = useState(''); const [voidConfirmed, setVoidConfirmed] = useState(false);
   const [conversionKey] = useState(() => crypto.randomUUID()); const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   useEffect(() => () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); }, [pdfUrl]);
   const documents = useQuery({ queryKey: ['billing', firmId, scope, document.id, 'pdfs'], queryFn: ({ signal }) => listBillingPdfs(scope, document.id, signal), enabled: canDocuments });
-  const mutation = useMutation({ mutationFn: (action: () => Promise<unknown>) => action(), onSuccess: () => { void client.invalidateQueries({ queryKey: invoicesQueryKeys.firm(firmId) }); setConfirmIssue(false); setVoidOpen(false); } });
+  const mutation = useMutation({ mutationFn: (action: () => Promise<unknown>) => action(), onSuccess: () => { void client.invalidateQueries({ queryKey: invoicesQueryKeys.firm(firmId) }); void client.invalidateQueries({ queryKey: ['payments', firmId] }); setConfirmIssue(false); setVoidOpen(false); } });
   const draft = document.status === 'DRAFT'; const sourceLocked = Boolean(document.sourceQuotationId || document.sourceProformaId || document.sourceInvoiceId);
   async function openPdf(pdfId: number, download: boolean) {
     const blob = await fetchBillingPdf(scope, document.id, pdfId); const url = URL.createObjectURL(blob);
@@ -64,6 +66,7 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
     {document.status === 'VOID' ? <Alert severity="warning">Voided: {document.voidReason}. The original issue snapshot and document history are preserved.</Alert> : null}
     <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap">
       {draft && canEdit && !sourceLocked ? <AppButton onClick={() => navigate(`/${scope}/${document.id}/edit`)}>Edit draft</AppButton> : null}
+      {draft && document.kind === 'INVOICE' && !sourceLocked && canRecurring && canCreateInvoice ? <AppButton onClick={() => navigate(`/billing-schedules?sourceDraftId=${document.id}`)}>Create recurring schedule</AppButton> : null}
       {draft && canIssue ? <AppButton variant="contained" onClick={() => setConfirmIssue(true)}>Issue {document.kind === 'PROFORMA' ? 'proforma' : 'document'}</AppButton> : null}
       {!draft && document.status === 'ISSUED' && canVoid && scope !== 'billing-adjustments' ? <AppButton color="error" onClick={() => setVoidOpen(true)}>Void document</AppButton> : null}
       {document.status === 'ISSUED' && canDocuments ? <AppButton isLoading={mutation.isPending} onClick={() => mutation.mutate(() => generateBillingPdf(scope, document.id))}>Generate PDF version</AppButton> : null}
@@ -82,6 +85,7 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
     {draft && canEdit ? <AppButton isLoading={mutation.isPending} onClick={() => mutation.mutate(() => updateCustomValues(scope, document, customValues))}>Save additional values</AppButton> : null}
     {draft && canEdit ? <AppButton onClick={() => navigate(`/${scope}/${document.id}/fields`)}>Review latest custom-field configuration</AppButton> : null}
     {canDocuments ? <><Typography variant="h6">PDF history</Typography>{documents.isError ? <Alert severity="error">{toApiError(documents.error).message}</Alert> : documents.data?.length === 0 ? <Typography>No PDF versions yet.</Typography> : documents.data?.map((pdf) => <Stack key={pdf.id} direction="row" spacing={2} alignItems="center"><Typography>Version {pdf.versionNumber} · {new Date(pdf.generatedAt).toLocaleString()} · {pdf.fileSize} bytes</Typography><AppButton onClick={() => mutation.mutate(() => openPdf(pdf.id, false))}>Preview</AppButton><AppButton onClick={() => mutation.mutate(() => openPdf(pdf.id, true))}>Download</AppButton></Stack>)}</> : null}
+    {document.kind === 'INVOICE' && document.status === 'ISSUED' ? <InvoiceSettlementPanel invoiceId={document.id} /> : null}
     <Typography variant="h6">Status history</Typography>{document.statusHistory.map((history) => <Typography key={history.version}>Version {history.version}: {history.fromStatus || 'Created'} → {history.toStatus} · Actor #{history.changedById} · {new Date(history.changedAt).toLocaleString()}</Typography>)}
     <Dialog open={confirmIssue} onClose={() => setConfirmIssue(false)}><DialogTitle>Issue this document?</DialogTitle><DialogContent><Typography>Confirm total {document.currency} {document.grandTotal}. The server assigns its issue date and number. Financial values and custom fields become immutable.</Typography></DialogContent><DialogActions><AppButton onClick={() => setConfirmIssue(false)}>Cancel</AppButton><AppButton variant="contained" isLoading={mutation.isPending} onClick={() => mutation.mutate(() => issueBillingDocument(scope, document))}>Confirm issuance</AppButton></DialogActions></Dialog>
     <Dialog open={voidOpen} onClose={() => setVoidOpen(false)}><DialogTitle>Void an unreported document</DialogTitle><DialogContent><Stack spacing={2} sx={{ pt: 1 }}><Typography>This is limited to cancellation on the issue date. Use a credit/debit note for later corrections.</Typography><TextField label="Cancellation reason" required multiline value={voidReason} onChange={(event) => setVoidReason(event.target.value)} /><FormControlLabel control={<Checkbox checked={voidConfirmed} onChange={(event) => setVoidConfirmed(event.target.checked)} />} label="The supply is cancelled and this document has not been reported in GST returns." /></Stack></DialogContent><DialogActions><AppButton onClick={() => setVoidOpen(false)}>Close</AppButton><AppButton color="error" disabled={!voidConfirmed || voidReason.trim().length < 5} isLoading={mutation.isPending} onClick={() => mutation.mutate(() => voidBillingDocument(scope, document, voidReason))}>Void</AppButton></DialogActions></Dialog>

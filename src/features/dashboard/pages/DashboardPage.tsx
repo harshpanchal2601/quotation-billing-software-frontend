@@ -21,6 +21,7 @@ import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@shared/routing/paths';
 import { useAuth } from '@features/auth';
+import { ReceivablesPanel } from '@features/payments';
 import { formatCurrency } from '@features/quotations';
 import { getDashboardOverviewRequest } from '../api/dashboard.api';
 import { DashboardMetricCard } from '../components/DashboardMetricCard';
@@ -130,6 +131,7 @@ export function DashboardPage() {
         }
       />
 
+      <ReceivablesPanel compact />
       {/* Period Filter */}
       <DashboardPeriodFilter
         period={range.period}

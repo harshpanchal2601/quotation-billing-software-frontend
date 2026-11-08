@@ -19,6 +19,7 @@ vi.mock('@features/auth', async (original) => ({ ...(await original<typeof impor
 vi.mock('@shared/tenancy/entitlements', async (original) => ({ ...(await original<typeof import('@shared/tenancy/entitlements')>()), useEntitlements: () => ({ isPending: false, isError: false, data: { permissions: Object.fromEntries([...access.permissions].map((permission) => [permission, access.entitled])) } }) }));
 vi.mock('./model/invoices.query-keys', async (original) => ({ ...(await original<typeof import('./model/invoices.query-keys')>()), useBillingFirmId: () => 1 }));
 vi.mock('./api/invoices.api');
+vi.mock('@features/payments', () => ({ InvoiceSettlementPanel: () => null }));
 const settings: SettingsResponse = { version: 3, states: { '24': 'Gujarat', '27': 'Maharashtra' }, config: { schemaVersion: 1, registration: 'REGULAR', sellerStateCode: '24', einvoiceRequired: false, prefixes: { INVOICE: 'INV', PROFORMA: 'PF', CREDIT_NOTE: 'CN', DEBIT_NOTE: 'DN' }, template: 'STANDARD', primaryColour: '#168A56', paymentInstructions: '', termsAndConditions: '', customFields: [{ key: 'cf_order', label: 'Purchase order', type: 'TEXT', required: true, showOnPdf: true, width: 'FULL', options: [] }] } };
 const document: InvoiceDocument = {
   id: 11, firmId: 1, kind: 'INVOICE', status: 'ISSUED', version: 2, documentNumber: 'INV/2627/000001', companyId: 1, invoiceDate: '2026-10-27', dueDate: null, currency: 'INR', customerReference: null, paymentTerms: null, notes: null,

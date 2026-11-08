@@ -23,6 +23,7 @@ import { paths } from '@shared/routing/paths';
 import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
+import { ReceivablesPanel } from '@features/payments';
 import { createCompanyAddressRequest, deleteCompanyAddressRequest, setPrimaryCompanyAddressRequest, updateCompanyAddressRequest } from '../api/addresses.api';
 import { deleteCompanyRequest, getCompanyRequest, updateCompanyStatusRequest } from '../api/companies.api';
 import { createCompanyContactRequest, deleteCompanyContactRequest, setPrimaryCompanyContactRequest, updateCompanyContactRequest } from '../api/contacts.api';
@@ -182,7 +183,7 @@ export function CompanyDetailsPage() {
         <Tab label="Addresses" value="addresses" />
         <Tab label="Quotations" value="quotations" />
       </Tabs>
-      {selectedTab === 'overview' ? <CompanyOverview company={company} /> : null}
+      {selectedTab === 'overview' ? <><CompanyOverview company={company} /><ReceivablesPanel companyId={company.id} /></> : null}
       {selectedTab === 'contacts' ? (
         <ContactsSection
           contacts={company.contacts}

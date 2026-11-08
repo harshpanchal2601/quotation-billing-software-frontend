@@ -40,6 +40,9 @@ export const navigationItems: NavigationItem[] = [
   { title: 'Quotations', path: paths.quotations, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_VIEW] },
   { title: 'Create Quotation', path: paths.newQuotation, icon: NoteAddOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_CREATE] },
   { title: 'Invoices', path: paths.invoices, icon: DescriptionOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.INVOICES_VIEW] },
+  { title: 'Customer Payments', path: paths.payments, icon: AccountBalanceOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PAYMENTS_VIEW] },
+  { title: 'Receivables & Ageing', path: paths.receivables, icon: AssessmentOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PAYMENTS_VIEW] },
+  { title: 'Recurring Drafts', path: paths.billingSchedules, icon: NoteAddOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.BILLING_RECURRING] },
   { title: 'Proformas', path: paths.proformas, icon: NoteAddOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PROFORMAS_VIEW] },
   { title: 'Credit & Debit Notes', path: paths.billingAdjustments, icon: AssessmentOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.ADJUSTMENTS_VIEW] },
   { title: 'Billing Configuration', path: paths.billingSettings, icon: TuneOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.BILLING_SETTINGS_MANAGE, PERMISSIONS.INVOICE_FIELDS_MANAGE] },
@@ -80,6 +83,7 @@ export function getRouteTitle(pathname: string) {
   if (/^\/(invoices|proformas|billing-adjustments)\/\d+\/fields$/.test(pathname)) return 'Review Invoice Fields';
   if (/^\/(invoices|proformas)\/\d+\/edit$/.test(pathname)) return 'Edit Draft';
   if (/^\/(invoices|proformas|billing-adjustments)\/\d+$/.test(pathname)) return 'Billing Document Details';
+  if (/^\/payments\/\d+$/.test(pathname)) return 'Customer Receipt Details';
   if (/^\/quotations\/\d+\/edit$/.test(pathname)) return 'Edit Quotation';
   if (/^\/quotations\/\d+$/.test(pathname)) return 'Quotation Details';
   return navigationItems.find((item) => item.path === pathname)?.title ?? 'Page not found';

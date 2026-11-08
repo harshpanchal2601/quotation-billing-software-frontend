@@ -1,5 +1,4 @@
-import { useAuth } from '@features/auth';
-import { useSelectedFirm } from '@shared/tenancy/selectedFirm';
+export { useFirmId as useBillingFirmId } from '@shared/tenancy/useFirmId';
 import type { BillingScope } from './invoices.types';
 
 export const invoicesQueryKeys = {
@@ -9,7 +8,3 @@ export const invoicesQueryKeys = {
   detail: (firmId: number | null | undefined, scope: BillingScope, id: number) => ['billing', firmId, scope, 'detail', id] as const,
   settings: (firmId: number | null | undefined) => ['billing', firmId, 'settings'] as const,
 };
-export function useBillingFirmId() {
-  const { user } = useAuth(); const selected = useSelectedFirm();
-  return user?.accountType === 'SUPER_ADMIN' ? selected?.id : user?.firmId;
-}

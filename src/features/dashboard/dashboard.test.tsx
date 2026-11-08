@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DashboardPage } from './pages/DashboardPage';
 import * as dashboardApi from './api/dashboard.api';
 import type { DashboardOverviewData } from './model/dashboard.types';
+vi.mock('@features/payments', () => ({ ReceivablesPanel: () => null }));
 
 vi.mock('@features/auth', () => ({
   useAuth: () => ({

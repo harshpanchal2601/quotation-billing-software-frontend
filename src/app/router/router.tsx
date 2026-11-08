@@ -86,6 +86,10 @@ const InvoiceEditorPage = lazy(() => import('@features/invoices').then((module) 
 const InvoiceDetailsPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoiceDetailsPage })));
 const InvoiceFieldsReviewPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoiceFieldsReviewPage })));
 const BillingSettingsPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.BillingSettingsPage })));
+const PaymentsPage = lazy(() => import('@features/payments').then((module) => ({ default: module.PaymentsPage })));
+const PaymentDetailsPage = lazy(() => import('@features/payments').then((module) => ({ default: module.PaymentDetailsPage })));
+const ReceivablesPage = lazy(() => import('@features/payments').then((module) => ({ default: module.ReceivablesPage })));
+const BillingSchedulesPage = lazy(() => import('@features/billing-schedules').then((module) => ({ default: module.BillingSchedulesPage })));
 
 function lazyPage(element: React.ReactNode) {
   return <Suspense fallback={<FullPageLoader />}>{element}</Suspense>;
@@ -129,6 +133,10 @@ export const router = createBrowserRouter([
               { path: paths.measurementUnits, element: <AccessRoute permissions={[PERMISSIONS.CATALOG_VIEW]}>{lazyPage(<MeasurementUnitsPage />)}</AccessRoute> },
               { path: paths.quotations, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_VIEW]}>{lazyPage(<QuotationsPage />)}</AccessRoute> },
               { path: paths.billingSettings, element: <AccessRoute permissions={[PERMISSIONS.BILLING_SETTINGS_MANAGE, PERMISSIONS.INVOICE_FIELDS_MANAGE]}>{lazyPage(<BillingSettingsPage />)}</AccessRoute> },
+              { path: paths.payments, element: <AccessRoute permissions={[PERMISSIONS.PAYMENTS_VIEW]}>{lazyPage(<PaymentsPage />)}</AccessRoute> },
+              { path: `${paths.payments}/:id`, element: <AccessRoute permissions={[PERMISSIONS.PAYMENTS_VIEW]}>{lazyPage(<PaymentDetailsPage />)}</AccessRoute> },
+              { path: paths.receivables, element: <AccessRoute permissions={[PERMISSIONS.PAYMENTS_VIEW]}>{lazyPage(<ReceivablesPage />)}</AccessRoute> },
+              { path: paths.billingSchedules, element: <AccessRoute permissions={[PERMISSIONS.BILLING_RECURRING]}><AccessRoute permissions={[PERMISSIONS.INVOICES_CREATE]}>{lazyPage(<BillingSchedulesPage />)}</AccessRoute></AccessRoute> },
               ...([
                 { scope: 'invoices' as const, view: PERMISSIONS.INVOICES_VIEW, create: PERMISSIONS.INVOICES_CREATE, edit: PERMISSIONS.INVOICES_EDIT },
                 { scope: 'proformas' as const, view: PERMISSIONS.PROFORMAS_VIEW, create: PERMISSIONS.PROFORMAS_MANAGE, edit: PERMISSIONS.PROFORMAS_MANAGE },

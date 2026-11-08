@@ -39,6 +39,7 @@ const addressesApi = vi.hoisted(() => ({
 vi.mock('./api/companies.api', () => companiesApi);
 vi.mock('./api/contacts.api', () => contactsApi);
 vi.mock('./api/addresses.api', () => addressesApi);
+vi.mock('@features/payments', () => ({ ReceivablesPanel: () => null }));
 vi.mock('@features/auth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@features/auth')>()),
   useHasPermission: () => true,
