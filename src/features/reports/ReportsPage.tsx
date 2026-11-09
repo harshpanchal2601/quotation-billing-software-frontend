@@ -63,7 +63,25 @@ function ReportsWorkspace() {
         <TextField type="date" label="Through date" value={draft.dateTo} onChange={(event) => setDraft({ ...draft, dateTo: event.target.value })} InputLabelProps={{ shrink: true }} required />
         <TextField label="Currency (optional)" value={draft.currency ?? ''} onChange={(event) => setDraft({ ...draft, currency: event.target.value })} inputProps={{ maxLength: 3 }} helperText="Leave empty to report every currency separately." />
       </Stack>
-      <Stack direction="row" useFlexGap flexWrap="wrap">{(Object.keys(REPORT_SECTION_LABELS) as ReportSectionKey[]).map((key) => <FormControlLabel key={key} label={REPORT_SECTION_LABELS[key]} control={<Checkbox checked={draft.sections.includes(key)} onChange={(_, checked) => setDraft({ ...draft, sections: checked ? [...draft.sections, key] : draft.sections.filter((value) => value !== key) })} />)}</Stack>
+      <Stack direction="row" useFlexGap flexWrap="wrap">
+        {(Object.keys(REPORT_SECTION_LABELS) as ReportSectionKey[]).map((key) => (
+          <FormControlLabel
+            key={key}
+            label={REPORT_SECTION_LABELS[key]}
+            control={
+              <Checkbox
+                checked={draft.sections.includes(key)}
+                onChange={(_, checked) => setDraft({
+                  ...draft,
+                  sections: checked
+                    ? [...draft.sections, key]
+                    : draft.sections.filter((value) => value !== key),
+                })}
+              />
+            }
+          />
+        ))}
+      </Stack>
       <Stack direction="row" spacing={1}><AppButton type="submit" disabled={overview.isFetching}>Apply filters</AppButton><AppButton variant="outlined" onClick={() => void overview.refetch()} disabled={overview.isFetching}>Refresh</AppButton></Stack>
     </Stack>
     {formError ? <Alert severity="error">{formError}</Alert> : null}
