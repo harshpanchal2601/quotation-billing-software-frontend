@@ -108,6 +108,30 @@ function DocumentReview({ companyId, onReview }: { companyId?: number; onReview:
   function draft(result: Extraction, kind: 'INVOICE' | 'QUOTATION'): Draft { return { kind, unsaved: true, companyId: companyId!, customer: '', subject: '', text: '', href: kind === 'INVOICE' ? '/invoices/new' : '/quotations/new', lines: result.candidates.filter((row) => checked.includes(row.sourceLine)).map((row) => ({ itemId: null, itemName: row.itemName, quantity: row.quantity, unitRate: row.unitRate, taxRate: '0', measurementUnit: 'NOS', supplyType: 'GOODS', discountType: 'NONE', discountValue: '0' })) }; }
   return <Stack spacing={1}><Typography variant="h6">Review document text</Typography><Typography>Paste text copied from a PDF or email as description | quantity | unit rate. Raw PDF files, email accounts and external document connections are not connected.</Typography><TextField select label="Source" value={source} onChange={(event) => { setSource(event.target.value as typeof source); extract.reset(); }}><MenuItem value="PDF_TEXT">Copied PDF text</MenuItem><MenuItem value="EMAIL_TEXT">Copied email text</MenuItem></TextField><TextField multiline minRows={3} label="Untrusted source text" value={text} inputProps={{ maxLength: 30000 }} onChange={(event) => { setText(event.target.value); extract.reset(); setChecked([]); }} /><AppButton disabled={!text.trim()} isLoading={extract.isPending} onClick={() => extract.mutate()}>Extract candidates for review</AppButton>
     {extract.isError ? <Alert severity="error">{toApiError(extract.error).message}</Alert> : null}
-    {extract.data ? <><Alert severity="info">{extract.data.message}{extract.data.truncated ? ' Only the first 500 source lines were inspected.' : ''}</Alert>{extract.data.candidates.map((row) => <FormControlLabel key={row.sourceLine} label={`${row.itemName} · quantity ${row.quantity} · rate ${row.unitRate}`} control={<Checkbox checked={checked.includes(row.sourceLine)} onChange={(_, enabled) => setChecked((current) => enabled ? [...current, row.sourceLine] : current.filter((id) => id !== row.sourceLine))} />)}<Typography>Check the candidate lines to copy to an editor, then review currency, unit, goods/service type and taxes before saving. Select a customer above first.</Typography><Stack direction="row" spacing={1}>{(['QUOTATION', 'INVOICE'] as const).map((kind) => <AppButton key={kind} disabled={!companyId || checked.length === 0 || checked.length > 100} onClick={() => onReview(draft(extract.data!, kind))}>Review {kind.toLowerCase()}</AppButton>)}</Stack></> : null}
+    {extract.data ? (
+      <>
+        <Alert severity="info">{extract.data.message}{extract.data.truncated ? ' Only the first 500 source lines were inspected.' : ''}</Alert>
+        {extract.data.candidates.map((row) => (
+          <FormControlLabel
+            key={row.sourceLine}
+            label={`${row.itemName} · quantity ${row.quantity} · rate ${row.unitRate}`}
+            control={
+              <Checkbox
+                checked={checked.includes(row.sourceLine)}
+                onChange={(_, enabled) => setChecked((current) => enabled ? [...current, row.sourceLine] : current.filter((id) => id !== row.sourceLine))}
+              />
+            }
+          />
+        ))}
+        <Typography>Check the candidate lines to copy to an editor, then review currency, unit, goods/service type and taxes before saving. Select a customer above first.</Typography>
+        <Stack direction="row" spacing={1}>
+          {(['QUOTATION', 'INVOICE'] as const).map((kind) => (
+            <AppButton key={kind} disabled={!companyId || checked.length === 0 || checked.length > 100} onClick={() => onReview(draft(extract.data!, kind))}>
+              Review {kind.toLowerCase()}
+            </AppButton>
+          ))}
+        </Stack>
+      </>
+    ) : null}
   </Stack>;
 }

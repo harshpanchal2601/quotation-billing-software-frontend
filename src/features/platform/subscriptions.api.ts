@@ -1,5 +1,5 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
-import type { FeatureDefinition, OverrideInput, Plan, PlanDetail, PlanVersion, PlanVersionInput, SubscriptionAuditEvent, SubscriptionDetails, SubscriptionInput } from './subscriptions.types';
+import type { FeatureDefinition, OverrideInput, Plan, PlanDetail, PlanVersion, PlanVersionInput, SubscriptionAuditEvent, SubscriptionDetails, SubscriptionInput, SubscriptionOptions } from './subscriptions.types';
 
 async function read<T>(url: string, signal?: AbortSignal) {
   return (await apiClient.get<ApiSuccessResponse<T>>(url, { signal })).data.data;
@@ -8,6 +8,7 @@ async function write<T = unknown>(method: 'post' | 'put' | 'patch' | 'delete', u
   return (await apiClient.request<ApiSuccessResponse<T>>({ method, url, data })).data.data;
 }
 export const subscriptionsApi = {
+  options: (signal?: AbortSignal) => read<SubscriptionOptions>('/platform/subscription-options', signal),
   features: (signal?: AbortSignal) => read<{ features: FeatureDefinition[] }>('/platform/features', signal),
   plans: (page = 1, signal?: AbortSignal) => read<{ plans: Plan[]; total: number }>(`/platform/plans?page=${page}&limit=50`, signal),
   plan: (id: number, signal?: AbortSignal) => read<PlanDetail>(`/platform/plans/${id}`, signal),

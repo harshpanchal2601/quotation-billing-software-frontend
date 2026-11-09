@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { AppButton } from '@shared/ui/actions';
-import { ErrorState } from '@shared/components/common/ErrorState';
+import TableCell from '@mui/material/TableCell';
+import TableRow from '@mui/material/TableRow';
 import { subscriptionsApi } from './subscriptions.api';
+import { PlatformSection } from './PlatformSection';
+import { PlatformPagination, PlatformTable } from './PlatformTable';
 
 export function UsageEventsPanel({ firmId }: { firmId: number }) {
   const [page, setPage] = useState(1);
   const usage = useQuery({ queryKey: ['platform', 'usage-events', firmId, page], queryFn: ({ signal }) => subscriptionsApi.usageEvents(firmId, page, signal) });
-  return <Stack spacing={2}><Typography variant="h6">Usage accounting history</Typography>
-    {usage.isError ? <ErrorState message="Usage events could not be loaded." onRetry={() => { void usage.refetch(); }} /> : null}
-    {usage.data?.events.map((event) => <Typography key={event.id}>{new Date(event.createdAt).toLocaleString()} · {event.resource} · {event.delta} · {event.eventId}</Typography>)}
-    <Stack direction="row" spacing={2}><AppButton disabled={page === 1} onClick={() => setPage(page - 1)}>Previous usage</AppButton><Typography>Page {page}</Typography><AppButton disabled={page * 20 >= (usage.data?.total ?? 0)} onClick={() => setPage(page + 1)}>Next usage</AppButton></Stack>
-  </Stack>;
+  return (
+    <PlatformSection title="Usage accounting history" description="Resource changes recorded for the selected firm.">
+      <PlatformTable label="Usage events" isLoading={usage.isPending} isError={usage.isError} isEmpty={!usage.data?.events.length} emptyMessage="No usage events" errorMessage="Usage events could not be loaded." onRetry={() => { void usage.refetch(); }} columns={[{ key: 'date', label: 'Date' }, { key: 'resource', label: 'Resource' }, { key: 'delta', label: 'Change', align: 'right' }, { key: 'event', label: 'Event reference' }]} pagination={<PlatformPagination label="Usage events" page={page} totalPages={Math.ceil((usage.data?.total ?? 0) / 20)} onChange={setPage} />}>
+        {usage.data?.events.map((event) => <TableRow key={event.id}><TableCell>{new Date(event.createdAt).toLocaleString()}</TableCell><TableCell>{event.resource}</TableCell><TableCell align="right">{event.delta}</TableCell><TableCell sx={{ overflowWrap: 'anywhere' }}>{event.eventId}</TableCell></TableRow>)}
+      </PlatformTable>
+    </PlatformSection>
+  );
 }

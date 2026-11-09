@@ -1,17 +1,24 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { AppButton } from '@shared/ui/actions';
-import { ErrorState } from '@shared/components/common/ErrorState';
+import TableCell from '@mui/material/TableCell';
+import TableRow from '@mui/material/TableRow';
 import { subscriptionsApi } from './subscriptions.api';
+import { PlatformSection } from './PlatformSection';
+import { PlatformPagination, PlatformTable } from './PlatformTable';
 
 export function PlatformAuditPanel({ firmId }: { firmId: number | null }) {
   const [page, setPage] = useState(1);
   const audit = useQuery({ queryKey: ['platform', 'subscription-audit', firmId, page], queryFn: ({ signal }) => subscriptionsApi.audit(firmId, page, signal) });
-  return <Stack spacing={2}><Typography variant="h6">Platform subscription audit</Typography>
-    {audit.isError ? <ErrorState message="Platform audit could not be loaded." onRetry={() => { void audit.refetch(); }} /> : null}
-    {audit.data?.events.map((event) => <details key={event.id}><summary>{new Date(event.createdAt).toLocaleString()} · {event.kind} · actor {event.authorId}{event.firmId ? ` · firm ${event.firmId}` : ''}</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(event.payload, null, 2)}</pre></details>)}
-    <Stack direction="row" spacing={2}><AppButton disabled={page === 1} onClick={() => setPage(page - 1)}>Previous events</AppButton><Typography>Page {page}</Typography><AppButton disabled={page * 20 >= (audit.data?.total ?? 0)} onClick={() => setPage(page + 1)}>Next events</AppButton></Stack>
-  </Stack>;
+  return (
+    <PlatformSection title="Platform subscription audit" description="Audited changes include the responsible platform administrator and recorded change details.">
+      <PlatformTable label="Platform audit" isLoading={audit.isPending} isError={audit.isError} isEmpty={!audit.data?.events.length} emptyMessage="No platform audit events" errorMessage="Platform audit could not be loaded." onRetry={() => { void audit.refetch(); }} columns={[{ key: 'date', label: 'Date' }, { key: 'kind', label: 'Operation' }, { key: 'actor', label: 'Actor' }, { key: 'firm', label: 'Firm' }, { key: 'details', label: 'Details' }]} pagination={<PlatformPagination label="Audit events" page={page} totalPages={Math.ceil((audit.data?.total ?? 0) / 20)} onChange={setPage} />}>
+        {audit.data?.events.map((event) => (
+          <TableRow key={event.id}>
+            <TableCell>{new Date(event.createdAt).toLocaleString()}</TableCell><TableCell>{event.kind.replace(/_/g, ' ')}</TableCell><TableCell>{event.authorId}</TableCell><TableCell>{event.firmId ?? 'Platform'}</TableCell>
+            <TableCell sx={{ minWidth: 220, maxWidth: 500 }}><details><summary>View changes</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(event.payload, null, 2)}</pre></details></TableCell>
+          </TableRow>
+        ))}
+      </PlatformTable>
+    </PlatformSection>
+  );
 }
