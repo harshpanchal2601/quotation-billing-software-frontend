@@ -19,6 +19,8 @@ const BusinessSettingsPage = lazy(() =>
   import('@features/settings').then((module) => ({ default: module.BusinessSettingsPage })),
 );
 const AutomationPage = lazy(() => import('@features/automation').then((module) => ({ default: module.AutomationPage })));
+const ReportsPage = lazy(() => import('@features/reports').then((module) => ({ default: module.ReportsPage })));
+const ManufacturingPage = lazy(() => import('@features/manufacturing').then((module) => ({ default: module.ManufacturingPage })));
 const ApprovalsPage = lazy(() => import('@features/automation').then((module) => ({ default: module.ApprovalsPage })));
 const AssistantPage = lazy(() => import('@features/assistant').then((module) => ({ default: module.AssistantPage })));
 const AssistantSettingsPage = lazy(() => import('@features/assistant').then((module) => ({ default: module.AssistantSettingsPage })));
@@ -151,6 +153,8 @@ export const router = createBrowserRouter([
               { path: paths.quotations, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_VIEW]}>{lazyPage(<QuotationsPage />)}</AccessRoute> },
               { path: paths.inventory, element: <AccessRoute permissions={[PERMISSIONS.INVENTORY_VIEW]}>{lazyPage(<InventoryPage />)}</AccessRoute> },
               { path: paths.purchasing, element: <AccessRoute permissions={[PERMISSIONS.PURCHASING_VIEW, PERMISSIONS.SUPPLIER_BILLS_VIEW, PERMISSIONS.EXPENSES_VIEW]}>{lazyPage(<PurchasingPage />)}</AccessRoute> },
+              { path: paths.reports, element: <AccessRoute permissions={[PERMISSIONS.REPORTS_VIEW]}>{lazyPage(<ReportsPage />)}</AccessRoute> },
+              { path: paths.manufacturing, element: <AccessRoute permissions={[PERMISSIONS.MANUFACTURING_VIEW]}>{lazyPage(<ManufacturingPage />)}</AccessRoute> },
               { path: paths.crm, element: <AccessRoute permissions={[PERMISSIONS.CRM_VIEW]}>{lazyPage(<CrmPage />)}</AccessRoute> },
               { path: paths.salesOrders, element: <AccessRoute permissions={[PERMISSIONS.SALES_ORDERS_VIEW]}>{lazyPage(<SalesOrdersPage />)}</AccessRoute> },
               { path: `${paths.salesOrders}/:id`, element: <AccessRoute permissions={[PERMISSIONS.SALES_ORDERS_VIEW]}>{lazyPage(<SalesOrderDetailsPage />)}</AccessRoute> },

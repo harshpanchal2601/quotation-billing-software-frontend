@@ -17,6 +17,8 @@ const landingCandidates = [
   [PERMISSIONS.AUDIT_VIEW, paths.auditLogs],
   [PERMISSIONS.AUTOMATION_MANAGE, paths.automation],
   [PERMISSIONS.AUTOMATION_VIEW, paths.approvals],
+  [PERMISSIONS.REPORTS_VIEW, paths.reports],
+  [PERMISSIONS.MANUFACTURING_VIEW, paths.manufacturing],
 ] as const;
 
 export function getDefaultAuthenticatedPath(user: Pick<AuthUser, 'accountType' | 'permissions'>) {

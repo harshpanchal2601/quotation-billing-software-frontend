@@ -5,6 +5,8 @@ export const paths = {
   approvals: '/approvals',
   login: '/login',
   dashboard: '/dashboard',
+  reports: '/reports',
+  manufacturing: '/manufacturing',
   changePassword: '/change-password',
   quotations: '/quotations',
   newQuotation: '/quotations/new',
