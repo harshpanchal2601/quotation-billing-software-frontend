@@ -7,6 +7,9 @@ import { useFirmId } from '@shared/tenancy/useFirmId';
 import { AppButton } from '@shared/ui/actions';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { ReportSections } from './ReportSections';
+import { AccountingExportPanel } from './AccountingExportPanel';
+import { reportWords } from './reports.localization';
+import { ExportJobsPanel } from './ExportJobsPanel';
 import { deleteReportView, downloadReport, loadReport, loadSavedReports, reportsKeys, saveReportView } from './reports.api';
 import { REPORT_SECTION_LABELS, type ReportFilters, type ReportSectionKey, type SavedReportView } from './reports.types';
 
@@ -23,12 +26,14 @@ export function ReportsPage() {
 function ReportsWorkspace() {
   const firmId = useFirmId(); const { user } = useAuth(); const cache = useQueryClient();
   const canExport = useHasPermission(PERMISSIONS.REPORTS_EXPORT);
+  const canAccounting = useHasPermission(PERMISSIONS.ACCOUNTING_EXPORT);
   const scope = reportsKeys.firm(firmId, user?.id);
   const [filters, setFilters] = useState(initialFilters);
   const [draft, setDraft] = useState(filters);
   const [formError, setFormError] = useState('');
   const [name, setName] = useState(''); const [view, setView] = useState<SavedReportView | undefined>();
   const [page, setPage] = useState(1); const [downloadError, setDownloadError] = useState(''); const [downloading, setDownloading] = useState(false);
+  const [format, setFormat] = useState<'csv' | 'xlsx' | 'pdf'>('csv');
   const download = useRef<AbortController | null>(null);
   useEffect(() => () => download.current?.abort(), []);
   const overview = useQuery({ queryKey: [...scope, 'overview', filters], queryFn: ({ signal }) => loadReport(filters, signal), enabled: firmId != null, staleTime: 30_000, retry: false });
@@ -41,27 +46,30 @@ function ReportsWorkspace() {
     event.preventDefault();
     if (!draft.dateFrom || !draft.dateTo || draft.dateFrom > draft.dateTo || draft.sections.length === 0) { setFormError('Choose a valid date range and at least one report.'); return; }
     if (draft.currency && !/^[A-Za-z]{3}$/.test(draft.currency)) { setFormError('Currency must contain three letters.'); return; }
+    try { if (draft.timezone) new Intl.DateTimeFormat('en', { timeZone: draft.timezone }); } catch { setFormError('Use a supported IANA timezone.'); return; }
     setFormError(''); setFilters({ ...draft, currency: draft.currency?.trim().toUpperCase() || undefined });
   };
   const exportCsv = async () => {
     const controller = new AbortController(); download.current = controller; setDownloading(true); setDownloadError('');
     try {
-      const blob = await downloadReport(filters, controller.signal);
+      const blob = await downloadReport(filters, controller.signal, format);
       if (controller.signal.aborted) return;
       const url = URL.createObjectURL(blob); const link = document.createElement('a');
-      link.href = url; link.download = `reports-${filters.dateFrom}-${filters.dateTo}.csv`; document.body.appendChild(link);
+      link.href = url; link.download = `reports-${filters.dateFrom}-${filters.dateTo}.${format}`; document.body.appendChild(link);
       try { link.click(); } finally { link.remove(); URL.revokeObjectURL(url); }
     } catch (error) { if (!controller.signal.aborted) setDownloadError(toApiError(error).message); }
     finally { if (!controller.signal.aborted) setDownloading(false); }
   };
   return <PageContainer>
-    <PageHeader title="Business reports" description="Source records with explicit date rules and separate currencies" actions={canExport ? <AppButton onClick={() => void exportCsv()} disabled={downloading || overview.isFetching || !overview.data}>{downloading ? 'Exporting…' : 'Export CSV'}</AppButton> : undefined} />
+    <PageHeader title={reportWords(filters.language).title} description="Source records with explicit date rules and separate currencies" actions={canExport ? <Stack direction="row" spacing={1}><TextField select size="small" label="Export format" value={format} disabled={downloading} onChange={(event) => setFormat(event.target.value as typeof format)}><MenuItem value="csv">CSV</MenuItem><MenuItem value="xlsx">XLSX</MenuItem><MenuItem value="pdf">PDF</MenuItem></TextField><AppButton onClick={() => void exportCsv()} disabled={downloading || overview.isFetching || !overview.data}>{downloading ? 'Exporting…' : `Export ${format.toUpperCase()}`}</AppButton></Stack> : undefined} />
     <Typography color="text.secondary">Period activity uses UTC calendar boundaries. Receivables show current balances. Stock shows closing valuation. Values retain source precision and currencies are never combined.</Typography>
     <Stack component="form" onSubmit={apply} spacing={2}>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         <TextField type="date" label="From date" value={draft.dateFrom} onChange={(event) => setDraft({ ...draft, dateFrom: event.target.value })} InputLabelProps={{ shrink: true }} required />
         <TextField type="date" label="Through date" value={draft.dateTo} onChange={(event) => setDraft({ ...draft, dateTo: event.target.value })} InputLabelProps={{ shrink: true }} required />
         <TextField label="Currency (optional)" value={draft.currency ?? ''} onChange={(event) => setDraft({ ...draft, currency: event.target.value })} inputProps={{ maxLength: 3 }} helperText="Leave empty to report every currency separately." />
+        <TextField select label="Report presentation" value={draft.locale ?? ''} onChange={(event) => { const locale = event.target.value as ReportFilters['locale']; setDraft(locale ? { ...draft, locale, language: locale.startsWith('hi') ? 'hi' : locale.startsWith('gu') ? 'gu' : 'en', timezone: draft.timezone || 'UTC' } : { ...draft, locale: undefined, language: undefined, timezone: undefined }); }}><MenuItem value="">Source values</MenuItem><MenuItem value="en-IN">English (India)</MenuItem><MenuItem value="en-US">English (United States)</MenuItem><MenuItem value="en-GB">English (United Kingdom)</MenuItem><MenuItem value="hi-IN">हिन्दी</MenuItem><MenuItem value="gu-IN">ગુજરાતી</MenuItem></TextField>
+        {draft.locale ? <TextField label="Report display timezone" value={draft.timezone ?? 'UTC'} onChange={(event) => setDraft({ ...draft, timezone: event.target.value })} helperText="IANA timezone; calculation periods retain their source calendars." /> : null}
       </Stack>
       <Stack direction="row" useFlexGap flexWrap="wrap">
         {(Object.keys(REPORT_SECTION_LABELS) as ReportSectionKey[]).map((key) => (
@@ -101,7 +109,9 @@ function ReportsWorkspace() {
       <Stack direction="row" spacing={1}><AppButton disabled={busy || !name.trim()} onClick={() => save.mutate(undefined)}>Save as new</AppButton>{view ? <><AppButton variant="outlined" disabled={busy || !name.trim()} onClick={() => save.mutate(view)}>Update view</AppButton><AppButton variant="outlined" color="error" disabled={busy} onClick={() => remove.mutate(view)}>Delete view</AppButton></> : null}</Stack>
       {save.isSuccess ? <Alert severity="success">Report view saved.</Alert> : null}
     </Stack>
-    {overview.isFetching ? <Typography role="status">Loading source reports…</Typography> : overview.isSuccess ? <><Typography variant="caption">Firm #{overview.data.firmId} · Applied period {overview.data.dateFrom} to {overview.data.dateTo} · Generated {overview.data.generatedAt}</Typography><ReportSections sections={overview.data.sections} /></> : null}
+    {overview.isFetching ? <Typography role="status">Loading source reports…</Typography> : overview.isSuccess ? <><Typography variant="caption">Firm #{overview.data.firmId} · Applied period {overview.data.dateFrom} to {overview.data.dateTo} · Generated {overview.data.generatedAt}</Typography><ReportSections sections={overview.data.sections} presentation={overview.data.localizationSnapshot} /></> : null}
     {overview.isError ? <AppButton onClick={() => void overview.refetch()}>Retry reports</AppButton> : null}
+    {canAccounting ? <AccountingExportPanel dateFrom={filters.dateFrom} dateTo={filters.dateTo} /> : null}
+    {canExport ? <ExportJobsPanel filters={filters} format={format} /> : null}
   </PageContainer>;
 }

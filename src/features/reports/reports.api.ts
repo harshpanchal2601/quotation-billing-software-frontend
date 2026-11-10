@@ -18,7 +18,7 @@ export async function saveReportView(name: string, filters: ReportFilters, exist
 export async function deleteReportView(view: Pick<SavedReportView, 'id' | 'version'>) {
   await apiClient.delete(`/reports/saved-views/${view.id}`, { data: { expectedVersion: view.version } });
 }
-export async function downloadReport(filters: ReportFilters, signal?: AbortSignal) {
-  const response = await apiClient.get<string>('/reports/export.csv', { params: params(filters), signal, responseType: 'text', timeout: 35_000 });
-  return new Blob([response.data], { type: 'text/csv;charset=utf-8' });
+export async function downloadReport(filters: ReportFilters, signal?: AbortSignal, format: 'csv' | 'xlsx' | 'pdf' = 'csv') {
+  const response = await apiClient.get<Blob>(`/reports/export.${format}`, { params: params(filters), signal, responseType: 'blob', timeout: 90_000 });
+  return response.data;
 }

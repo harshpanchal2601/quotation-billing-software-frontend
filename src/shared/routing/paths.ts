@@ -6,6 +6,8 @@ export const paths = {
   login: '/login',
   dashboard: '/dashboard',
   reports: '/reports',
+  imports: '/imports',
+  connections: '/settings/connections',
   manufacturing: '/manufacturing',
   changePassword: '/change-password',
   quotations: '/quotations',

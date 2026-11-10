@@ -12,4 +12,9 @@ describe('Wave 10 landing routes', () => {
     expect(getDefaultAuthenticatedPath({ accountType: 'FIRM_USER', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.REPORTS_VIEW] })).toBe(paths.dashboard);
     expect(getDefaultAuthenticatedPath({ accountType: 'SUPER_ADMIN', permissions: [PERMISSIONS.REPORTS_VIEW] })).toBe(paths.platformFirms);
   });
+  it('provides reachable workspaces for import and integration-only staff grants', () => {
+    expect(getDefaultAuthenticatedPath({ accountType: 'FIRM_USER', permissions: [PERMISSIONS.IMPORTS_MANAGE] })).toBe(paths.imports);
+    expect(getDefaultAuthenticatedPath({ accountType: 'FIRM_USER', permissions: [PERMISSIONS.API_KEYS_MANAGE] })).toBe(paths.connections);
+    expect(getDefaultAuthenticatedPath({ accountType: 'FIRM_USER', permissions: [PERMISSIONS.WEBHOOKS_MANAGE] })).toBe(paths.connections);
+  });
 });

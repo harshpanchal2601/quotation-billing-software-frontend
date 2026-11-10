@@ -20,6 +20,8 @@ const BusinessSettingsPage = lazy(() =>
 );
 const AutomationPage = lazy(() => import('@features/automation').then((module) => ({ default: module.AutomationPage })));
 const ReportsPage = lazy(() => import('@features/reports').then((module) => ({ default: module.ReportsPage })));
+const ImportsPage = lazy(() => import('@features/imports').then((module) => ({ default: module.ImportsPage })));
+const ConnectionsPage = lazy(() => import('@features/connections').then((module) => ({ default: module.ConnectionsPage })));
 const ManufacturingPage = lazy(() => import('@features/manufacturing').then((module) => ({ default: module.ManufacturingPage })));
 const ApprovalsPage = lazy(() => import('@features/automation').then((module) => ({ default: module.ApprovalsPage })));
 const AssistantPage = lazy(() => import('@features/assistant').then((module) => ({ default: module.AssistantPage })));
@@ -131,6 +133,8 @@ export const router = createBrowserRouter([
               { path: paths.platformSubscriptions, element: <AccessRoute accountTypes={['SUPER_ADMIN']} tenantScoped={false}>{lazyPage(<PlatformSubscriptionsPage />)}</AccessRoute> },
               { path: paths.firmEntitlements, element: <AccessRoute>{lazyPage(<FirmEntitlementsPage />)}</AccessRoute> },
               { path: paths.dashboard, element: <AccessRoute permissions={[PERMISSIONS.DASHBOARD_VIEW]}><DashboardPage /></AccessRoute> },
+              { path: paths.imports, element: <AccessRoute permissions={[PERMISSIONS.IMPORTS_MANAGE]}>{lazyPage(<ImportsPage />)}</AccessRoute> },
+              { path: paths.connections, element: <AccessRoute permissions={[PERMISSIONS.API_KEYS_MANAGE, PERMISSIONS.WEBHOOKS_MANAGE, PERMISSIONS.FIRM_PROFILE_MANAGE]}>{lazyPage(<ConnectionsPage />)}</AccessRoute> },
               { path: paths.changePassword, element: <ChangePasswordPage /> },
               { path: paths.accessDenied, element: <AccessDeniedPage /> },
               { path: paths.businessSettings, element: <AccessRoute permissions={[PERMISSIONS.FIRM_PROFILE_MANAGE]}>{lazyPage(<BusinessSettingsPage />)}</AccessRoute> },

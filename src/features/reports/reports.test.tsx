@@ -13,6 +13,7 @@ vi.mock('@features/auth', async (original) => ({ ...(await original<typeof impor
   useHasPermission: (...permissions: string[]) => permissions.some((permission) => access.permissions.has(permission)),
 }));
 vi.mock('./reports.api', async (original) => ({ ...(await original<typeof import('./reports.api')>()), loadReport: vi.fn(), loadSavedReports: vi.fn(), saveReportView: vi.fn(), deleteReportView: vi.fn(), downloadReport: vi.fn() }));
+vi.mock('./ExportJobsPanel', () => ({ ExportJobsPanel: () => null }));
 const report = (value = '9007199254740993.123', firmId = 1): ReportOverview => ({
   schemaVersion: 1, firmId, generatedAt: '2026-11-09T12:00:00.000Z', dateFrom: '2026-11-01', dateTo: '2026-11-09', currency: null, currencyPolicy: 'SEGMENTED_NO_CONVERSION',
   sections: [
@@ -76,7 +77,7 @@ describe('Wave 10 business report workspace', () => {
       const applied = vi.mocked(api.loadReport).mock.calls[0]![0];
       fireEvent.change(screen.getByLabelText('Currency (optional)'), { target: { value: 'USD' } });
       await userEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
-      await waitFor(() => expect(api.downloadReport).toHaveBeenCalledWith(applied, expect.any(AbortSignal)));
+      await waitFor(() => expect(api.downloadReport).toHaveBeenCalledWith(applied, expect.any(AbortSignal), 'csv'));
       expect(create).toHaveBeenCalledTimes(1); expect(revoke).toHaveBeenCalledWith('blob:report');
     } finally { vi.unstubAllGlobals(); }
   });

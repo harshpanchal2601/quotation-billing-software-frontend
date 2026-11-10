@@ -38,6 +38,8 @@ export const navigationItems: NavigationItem[] = [
   { title: 'Subscription & Usage', path: paths.firmEntitlements, icon: AssessmentOutlinedIcon, section: 'System', accountTypes: ['FIRM_ADMIN', 'FIRM_USER'] },
   { title: 'Dashboard', path: paths.dashboard, icon: DashboardOutlinedIcon, section: 'Main', permissions: [PERMISSIONS.DASHBOARD_VIEW] },
   { title: 'Business Reports', path: paths.reports, icon: AssessmentOutlinedIcon, section: 'Main', permissions: [PERMISSIONS.REPORTS_VIEW] },
+  { title: 'Import Center', path: paths.imports, icon: Inventory2OutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.IMPORTS_MANAGE] },
+  { title: 'API & Webhooks', path: paths.connections, icon: SettingsOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.API_KEYS_MANAGE, PERMISSIONS.WEBHOOKS_MANAGE, PERMISSIONS.FIRM_PROFILE_MANAGE] },
   { title: 'Manufacturing', path: paths.manufacturing, icon: Inventory2OutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.MANUFACTURING_VIEW] },
   { title: 'Business Assistant', path: paths.assistant, icon: AssessmentOutlinedIcon, section: 'Main', permissions: [PERMISSIONS.ASSISTANT_LOCAL, PERMISSIONS.ASSISTANT_LLM], accountTypes: ['FIRM_ADMIN', 'FIRM_USER'] },
   { title: 'Assistant Settings', path: paths.assistantSettings, icon: TuneOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.ASSISTANT_SETTINGS_MANAGE], accountTypes: ['FIRM_ADMIN'] },

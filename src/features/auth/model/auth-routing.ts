@@ -18,6 +18,9 @@ const landingCandidates = [
   [PERMISSIONS.AUTOMATION_MANAGE, paths.automation],
   [PERMISSIONS.AUTOMATION_VIEW, paths.approvals],
   [PERMISSIONS.REPORTS_VIEW, paths.reports],
+  [PERMISSIONS.IMPORTS_MANAGE, paths.imports],
+  [PERMISSIONS.API_KEYS_MANAGE, paths.connections],
+  [PERMISSIONS.WEBHOOKS_MANAGE, paths.connections],
   [PERMISSIONS.MANUFACTURING_VIEW, paths.manufacturing],
 ] as const;
 

@@ -37,6 +37,7 @@ function BusinessPolicyForm({ configuration, reload }: { configuration: Business
   });
   const dirty = JSON.stringify(policy) !== JSON.stringify(configuration.policy);
   const sales = policy.sales ?? { preset: 'MIXED' as const, ordersEnabled: true, portalEnabled: true };
+  const presentation = policy.presentation ?? { language: 'en' as const, locale: 'en-IN' as const, timezone: 'Asia/Kolkata' };
   const validRate = policy.tax.id === 'none' || /^(?:100(?:\.00?)?|\d{1,2}(?:\.\d{1,2})?)$/.test(policy.tax.rate);
   const error = mutation.isError ? toApiError(mutation.error) : null;
   return (
@@ -60,6 +61,11 @@ function BusinessPolicyForm({ configuration, reload }: { configuration: Business
       </TextField>
       {policy.tax.id === 'india-gst' ? <TextField label="Default GST percentage" value={policy.tax.rate} error={!validRate} helperText={!validRate ? 'Enter 0 to 100 with up to two decimal places.' : 'The owning document records its confirmed rate.'} disabled={mutation.isPending} onChange={(event) => { if (policy.tax.id === 'india-gst') setPolicy({ ...policy, tax: { ...policy.tax, rate: event.target.value } }); }} /> : null}
       <FormControlLabel label="In-app notifications" control={<Switch checked={policy.inAppNotifications} disabled={mutation.isPending} onChange={(_, checked) => setPolicy({ ...policy, inAppNotifications: checked })} />} />
+      <Typography variant="body2">Presentation choices apply to new issue snapshots. Existing legal dates, amounts, currency and tax meanings are preserved. Legal document wording remains English.</Typography>
+      <TextField select label="Document presentation locale" value={presentation.locale} disabled={mutation.isPending} onChange={(event) => { const locale = event.target.value as typeof presentation.locale; setPolicy({ ...policy, presentation: { ...presentation, locale, language: locale.startsWith('hi') ? 'hi' : locale.startsWith('gu') ? 'gu' : 'en' } }); }}>
+        <MenuItem value="en-IN">English (India)</MenuItem><MenuItem value="en-US">English (United States)</MenuItem><MenuItem value="en-GB">English (United Kingdom)</MenuItem><MenuItem value="hi-IN">हिन्दी (भारत)</MenuItem><MenuItem value="gu-IN">ગુજરાતી (ભારત)</MenuItem>
+      </TextField>
+      <TextField label="Presentation IANA timezone" value={presentation.timezone} disabled={mutation.isPending} onChange={(event) => setPolicy({ ...policy, presentation: { ...presentation, timezone: event.target.value } })} helperText="For timestamp presentation only. India fiscal issuance and date-only values retain their established calendar rules." />
       <TextField select label="Sales business preset" value={sales.preset} disabled={mutation.isPending} onChange={(event) => { const preset = event.target.value as typeof sales.preset; setPolicy({ ...policy, sales: { preset, ordersEnabled: preset !== 'SERVICE', portalEnabled: true } }); }}><MenuItem value="SERVICE">Services — direct invoicing</MenuItem><MenuItem value="TRADING">Trading — order and delivery</MenuItem><MenuItem value="MANUFACTURING">Manufacturing — order and production delivery</MenuItem><MenuItem value="MIXED">Mixed goods and services</MenuItem></TextField>
       <FormControlLabel label="Sales orders and completion records" control={<Switch checked={sales.ordersEnabled} disabled={mutation.isPending} onChange={(_, checked) => setPolicy({ ...policy, sales: { ...sales, ordersEnabled: checked } })} />} />
       <FormControlLabel label="Customer portal" control={<Switch checked={sales.portalEnabled} disabled={mutation.isPending} onChange={(_, checked) => setPolicy({ ...policy, sales: { ...sales, portalEnabled: checked } })} />} />

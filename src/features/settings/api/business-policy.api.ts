@@ -7,6 +7,7 @@ export type BusinessPolicy = {
   grandTotal: 'MINOR_UNIT' | 'WHOLE_UNIT';
   tax: { id: 'none'; version: 1 } | { id: 'india-gst'; version: 1; country: 'IN'; mode: 'CGST_SGST' | 'IGST'; rate: string };
   inAppNotifications: boolean;
+  presentation?: { language: 'en' | 'hi' | 'gu'; locale: 'en-IN' | 'en-US' | 'en-GB' | 'hi-IN' | 'gu-IN'; timezone: string };
   sales?: { preset: 'SERVICE' | 'TRADING' | 'MANUFACTURING' | 'MIXED'; ordersEnabled: boolean; portalEnabled: boolean };
 };
 export type BusinessPolicyConfiguration = { version: number; policy: BusinessPolicy };
