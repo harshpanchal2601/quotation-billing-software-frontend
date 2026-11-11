@@ -6,33 +6,32 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import type { ReactNode } from 'react';
-import { EmptyState } from '@shared/components/common/EmptyState';
+import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { ErrorState } from '@shared/components/common/ErrorState';
-import { DataTableShell, TableSkeleton } from '@shared/ui/tables';
+import { DataTableShell, EmptyTableRow, TableSkeleton } from '@shared/ui/tables';
 
 type Column = { key: string; label: string; align?: 'left' | 'right' | 'center' };
 
-export function PlatformTable({ label, columns, children, isLoading = false, isError = false, isEmpty, emptyMessage, errorMessage = 'Data could not be loaded.', onRetry, pagination, minWidth = 720 }: {
+export function PlatformTable({ label, columns, children, isLoading = false, isError = false, isEmpty, emptyMessage, errorMessage = 'Data could not be loaded.', onRetry, pagination, minWidth = 720, rowNumberStart = 1 }: {
   label: string; columns: readonly Column[]; children: ReactNode; isLoading?: boolean; isError?: boolean;
   isEmpty: boolean; emptyMessage: string; errorMessage?: string; onRetry?: () => void;
-  pagination?: ReactNode; minWidth?: number;
+  pagination?: ReactNode; minWidth?: number; rowNumberStart?: number;
 }) {
   return (
     <>
       <DataTableShell
         isLoading={isLoading}
         isError={isError}
-        isEmpty={isEmpty}
+        isEmpty={false}
         loadingContent={<TableSkeleton rowCount={4} />}
         errorContent={<ErrorState message={errorMessage} onRetry={onRetry} />}
-        emptyContent={<EmptyState title={emptyMessage} description="Records will appear here when available." />}
+        emptyContent={null}
       >
         <Table aria-label={label} size="small" sx={{ minWidth, '& td': { verticalAlign: 'top' }, '& td, & th': { py: 1.5 } }}>
           <TableHead>
-            <TableRow>{columns.map((column) => <TableCell key={column.key} align={column.align}>{column.label}</TableCell>)}</TableRow>
+            <TableRow><TableCell scope="col" align="right">No.</TableCell>{columns.map((column) => <TableCell scope="col" key={column.key} align={column.align}>{column.label}</TableCell>)}</TableRow>
           </TableHead>
-          <TableBody>{children}</TableBody>
+          <TableBody>{isEmpty ? <EmptyTableRow columnCount={columns.length + 1} description={emptyMessage} /> : Children.toArray(children).map((row, index) => isValidElement(row) ? cloneElement(row as ReactElement<{ children?: ReactNode }>, {}, <TableCell align="right">{rowNumberStart + index}</TableCell>, row.props.children) : row)}</TableBody>
         </Table>
       </DataTableShell>
       {!isLoading && !isError ? pagination : null}

@@ -1,3 +1,5 @@
+export type QuotationHistoryParams = { page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' };
+
 export interface GeneratedDocumentHistoryItem {
   id: number;
   quotationId: number;

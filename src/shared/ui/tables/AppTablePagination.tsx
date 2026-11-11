@@ -7,6 +7,7 @@ export type AppTablePaginationProps = {
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
   rowsPerPageOptions?: number[];
+  hasNextPage?: boolean;
   sx?: TablePaginationProps['sx'];
 };
 
@@ -17,6 +18,7 @@ export function AppTablePagination({
   onPageChange,
   onRowsPerPageChange,
   rowsPerPageOptions = [10, 20, 50],
+  hasNextPage,
   sx,
 }: AppTablePaginationProps) {
   return (
@@ -26,6 +28,7 @@ export function AppTablePagination({
       page={page - 1}
       rowsPerPage={rowsPerPage}
       rowsPerPageOptions={rowsPerPageOptions}
+      {...(hasNextPage === undefined ? {} : { nextIconButtonProps: { disabled: !hasNextPage } })}
       onPageChange={(_event, nextPage) => onPageChange(nextPage + 1)}
       onRowsPerPageChange={(event) => onRowsPerPageChange(Number(event.target.value))}
       sx={[

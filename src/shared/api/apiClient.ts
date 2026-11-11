@@ -1,3 +1,4 @@
+export type ApiPagination = { page: number; limit: number; total: number; totalPages: number };
 import axios, {
   AxiosError,
   type AxiosInstance,
@@ -47,14 +48,32 @@ export function setAuthenticationFailureHandler(handler: (() => void) | null) {
   authenticationFailureHandler = handler;
 }
 
-export const apiClient: AxiosInstance = axios.create({
-  baseURL: resolveApiBaseUrl(import.meta.env),
-  withCredentials: true,
-  timeout: 15_000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+export const API_REQUEST_TIMEOUTS = { standard: 15_000, pdfGeneration: 120_000 } as const;
+
+export function createHttpClient(): AxiosInstance {
+  const client = axios.create({
+    baseURL: resolveApiBaseUrl(import.meta.env),
+    withCredentials: true,
+    timeout: API_REQUEST_TIMEOUTS.standard,
+    headers: { 'Content-Type': 'application/json' },
+  });
+  // Downloads use Blob responses even when the server returns a JSON error.
+  // Decode only bounded error envelopes; keep successful file bytes untouched.
+  client.interceptors.response.use(undefined, async (error: AxiosError<unknown>) => {
+    const response = error.response;
+    const body = response?.data;
+    if (body instanceof Blob && body.size <= 64 * 1024 && /json/i.test(String(response?.headers['content-type'] ?? body.type))) {
+      try {
+        const parsed: unknown = JSON.parse(await body.text());
+        if (isRecord(parsed) && parsed.success === false && typeof parsed.message === 'string' && response) response.data = parsed;
+      } catch { /* A malformed error body retains the existing safe fallback. */ }
+    }
+    return Promise.reject(error);
+  });
+  return client;
+}
+
+export const apiClient: AxiosInstance = createHttpClient();
 
 apiClient.interceptors.request.use((config) => {
   const selectedFirm = getSelectedFirm();
@@ -124,7 +143,7 @@ function normaliseApiErrorMessage(
 ) {
   if (axios.isCancel(error) || error.code === AxiosError.ERR_CANCELED) return '';
   if (error.code === AxiosError.ECONNABORTED || error.code === 'ETIMEDOUT') {
-    return 'The request took too long. Please try again.';
+    return 'The request took too long. Check the latest records before retrying a save.';
   }
 
   if (statusCode >= 500) return fallbackMessageForStatus(statusCode);
@@ -142,7 +161,7 @@ function fallbackMessageForStatus(statusCode: number) {
   if (statusCode === 403) return 'You do not have permission to perform this action.';
   if (statusCode === 404) return 'The requested record could not be found.';
   if (statusCode === 408) return 'The request took too long. Please try again.';
-  if (statusCode === 409) return 'A record with these details already exists.';
+  if (statusCode === 409) return 'This action conflicts with the latest record. Refresh the records and try again.';
   if (statusCode === 413) return 'The selected file is too large.';
   if (statusCode === 415) return 'This file type is not supported.';
   if (statusCode === 429) return 'Too many requests. Please wait a moment and try again.';

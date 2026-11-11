@@ -117,7 +117,7 @@ export function PlatformPlansPage() {
       {operation.isSuccess ? <Alert severity="success">Platform change saved.</Alert> : null}
       <PlatformSection title="Plan catalog" description="Select a plan to manage its revisions. Published revisions stay attached to existing subscriptions until you explicitly reassign them.">
         <PlatformTable
-          label="Plans" isLoading={plans.isPending} isError={plans.isError} isEmpty={!plans.data?.plans.length}
+          rowNumberStart={(page - 1) * 50 + 1} label="Plans" isLoading={plans.isPending} isError={plans.isError} isEmpty={!plans.data?.plans.length}
           errorMessage="Plans could not be loaded." onRetry={() => { void plans.refetch(); }} emptyMessage="No plans created"
           columns={[{ key: 'name', label: 'Plan' }, { key: 'slug', label: 'Slug' }, { key: 'type', label: 'Type' }, { key: 'status', label: 'Availability' }, { key: 'actions', label: 'Actions', align: 'right' }]}
           pagination={<PlatformPagination label="Plans" page={page} totalPages={Math.ceil((plans.data?.total ?? 0) / 50)} onChange={setPage} disabled={operation.isPending} />}

@@ -1,17 +1,17 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import { definitionPaths, type Approval, type Command, type Definition, type DefinitionKind, type FieldRecord, type FieldValues, type Preference, type PublishedDefinition, type Run } from '../model/automation.types';
 
-async function get<T>(path: string) { return (await apiClient.get<ApiSuccessResponse<T>>(path)).data.data; }
+async function get<T>(path: string, params?: Record<string, string | number | undefined>) { return (await apiClient.get<ApiSuccessResponse<T>>(path, { params })).data.data; }
 async function post<T>(path: string, body: unknown) { return (await apiClient.post<ApiSuccessResponse<T>>(path, body)).data.data; }
 export const listDefinitions = (kind: DefinitionKind) => get<{ definitions: PublishedDefinition[] }>(definitionPaths[kind]).then((data) => data.definitions);
-export const listVersions = (kind: DefinitionKind, key: string, page = 1) => get<{ versions: PublishedDefinition[] }>(`${definitionPaths[kind]}/${encodeURIComponent(key)}?page=${page}`).then((data) => data.versions);
+export const listVersions = (kind: DefinitionKind, key: string, page = 1, sorting: { sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}) => get<{ versions: PublishedDefinition[] }>(`${definitionPaths[kind]}/${encodeURIComponent(key)}`, { page, ...sorting }).then((data) => data.versions);
 export const publishDefinition = (kind: DefinitionKind, key: string, expectedVersion: number, definition: Definition) => post<{ definition: PublishedDefinition }>(`${definitionPaths[kind]}/${encodeURIComponent(key)}/publish`, { expectedVersion, definition });
 export const rollbackDefinition = (kind: DefinitionKind, key: string, expectedVersion: number, version: number) => post(`${definitionPaths[kind]}/${encodeURIComponent(key)}/rollback`, { expectedVersion, version });
 export const previewDefinition = (kind: DefinitionKind, key: string, definition: Definition, event?: unknown) => post<{ preview: unknown }>(`${definitionPaths[kind]}/${encodeURIComponent(key)}/preview`, { definition, event }).then((data) => data.preview);
-export const listRuns = (page: number) => get<{ runs: Run[] }>(`/automation/runs?page=${page}`).then((data) => data.runs);
+export const listRuns = (page: number, sorting: { sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}) => get<{ runs: Run[] }>('/automation/runs', { page, ...sorting }).then((data) => data.runs);
 export const controlRun = (id: string, command: 'RETRY' | 'CANCEL') => post(`/automation/runs/${id}/${command}`, {});
 export const listRecipients = () => get<{ recipients: Array<{ id: number; name: string }> }>('/automation/recipients').then((data) => data.recipients);
-export const listApprovals = (page: number) => get<{ approvals: Approval[] }>(`/approvals?page=${page}`).then((data) => data.approvals);
+export const listApprovals = (page: number, sorting: { sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}) => get<{ approvals: Approval[] }>('/approvals', { page, ...sorting }).then((data) => data.approvals);
 export const decideApproval = (id: string, decision: string, reason: string) => post(`/approvals/${id}/decisions`, { decision, reason });
 function preferenceValues({ enabled, utcOffsetMinutes, quietStartMinute, quietEndMinute }: Preference): Preference { return { enabled, utcOffsetMinutes, quietStartMinute, quietEndMinute }; }
 export const getPreferences = () => get<{ preference: Preference | null }>('/automation/preferences').then((data) => data.preference === null ? null : preferenceValues(data.preference));

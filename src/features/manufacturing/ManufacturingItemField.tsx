@@ -13,7 +13,7 @@ export function ManufacturingItemField({ name, label }: { name: string; label: s
   useEffect(() => { const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 250); return () => window.clearTimeout(timer); }, [search]);
   const query = useQuery({ queryKey: [...manufacturingKeys.firm(firmId, user?.id), 'items', debouncedSearch], queryFn: ({ signal }) => manufacturingItems(debouncedSearch, signal), enabled: firmId != null });
   const options = value && !query.data?.some((row) => row.id === value.id) ? [value, ...(query.data ?? [])] : query.data ?? [];
-  return <Stack spacing={1}>
+  return <Stack spacing={1} useFlexGap>
     <input type="hidden" name={name} value={value?.id ?? ''} />
     <Autocomplete options={options} value={value} inputValue={search} filterOptions={(rows) => rows} getOptionLabel={(row) => `${row.itemCode} · ${row.name}`} isOptionEqualToValue={(left, right) => left.id === right.id} loading={query.isFetching} onInputChange={(_, text, reason) => { if (reason !== 'reset') { setSearch(text); if (reason === 'input') setValue(null); } }} onChange={(_, choice) => { setValue(choice); setSearch(choice ? `${choice.itemCode} · ${choice.name}` : ''); }} renderInput={(params) => <TextField {...params} label={label} required helperText="Select a tracked goods item. Type to search the catalogue." />} />
     {query.isError ? <Alert severity="error">{toApiError(query.error).message}</Alert> : null}

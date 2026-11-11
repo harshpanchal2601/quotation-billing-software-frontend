@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { formatBusinessAction } from '@shared/ui/display';
 import { AppButton } from '@shared/ui/actions';
 import { actions, triggers, type ApprovalPolicy, type CustomField, type Definition, type DefinitionKind, type DocumentTemplate, type FieldConfiguration, type Step, type Workflow } from '../model/automation.types';
 
@@ -17,7 +18,7 @@ export function DefinitionEditor({ kind, value, onChange, recipients }: { kind: 
 }
 function ApprovalEditor({ value, onChange }: { value: ApprovalPolicy; onChange: (value: ApprovalPolicy) => void }) {
   return <Stack spacing={2}>
-    <TextField select label="Action requiring approval" value={value.action} onChange={(event) => onChange({ enabled: value.enabled, action: event.target.value as ApprovalPolicy['action'], authority: 'OTHER_FIRM_ADMIN', expiresAfterHours: value.expiresAfterHours })}>{actions.map((action) => <MenuItem key={action} value={action}>{label(action)}</MenuItem>)}</TextField>
+    <TextField select label="Action requiring approval" value={value.action} onChange={(event) => onChange({ enabled: value.enabled, action: event.target.value as ApprovalPolicy['action'], authority: 'OTHER_FIRM_ADMIN', expiresAfterHours: value.expiresAfterHours })}>{actions.map((action) => <MenuItem key={action} value={action}>{formatBusinessAction(action)}</MenuItem>)}</TextField>
     <Typography>A different active firm administrator decides. Approval is tied to the exact action and record version.</Typography>
     <TextField label="Approval expires after hours" type="number" value={value.expiresAfterHours} onChange={(event) => onChange({ ...value, expiresAfterHours: Number(event.target.value) })} />
     {value.action !== 'STOCK_ADJUST' ? <><TextField label="Minimum total requiring approval (optional)" value={value.minimumAmount ?? ''} onChange={(event) => { const next = { ...value }; delete next.minimumAmount; delete next.currency; onChange(event.target.value ? { ...next, minimumAmount: event.target.value, currency: value.currency ?? 'INR' } : next); }} />{value.minimumAmount !== undefined ? <TextField label="Threshold currency" value={value.currency ?? ''} onChange={(event) => onChange({ ...value, currency: event.target.value.toUpperCase() })} /> : null}</> : null}
@@ -56,7 +57,7 @@ function WorkflowEditor({ value, onChange, recipients, reminder }: { value: Work
   function target(labelText: string, selected: string, update: (id: string) => void) { return <TextField select label={labelText} value={selected} onChange={(event) => update(event.target.value)}>{value.steps.map((step, index) => <MenuItem key={step.id} value={step.id}>{index + 1}. {label(step.type)}</MenuItem>)}</TextField>; }
   return <Stack spacing={2}>
     <TextField label="Name" value={value.name} onChange={(event) => onChange({ ...value, name: event.target.value })} />
-    <TextField select label="When this happens" value={value.trigger} onChange={(event) => onChange({ ...value, trigger: event.target.value as Workflow['trigger'] })}>{triggers.map((trigger) => <MenuItem key={trigger} value={trigger}>{label(trigger)}</MenuItem>)}</TextField>
+    <TextField select label="When this happens" value={value.trigger} onChange={(event) => onChange({ ...value, trigger: event.target.value as Workflow['trigger'] })}>{triggers.map((trigger) => <MenuItem key={trigger} value={trigger}>{formatBusinessAction(trigger)}</MenuItem>)}</TextField>
     <TextField label="Reminder delay in minutes" type="number" value={value.delayMinutes} onChange={(event) => onChange({ ...value, delayMinutes: Number(event.target.value) })} />
     <TextField label="Expires after minutes" type="number" value={value.expiresAfterMinutes} onChange={(event) => onChange({ ...value, expiresAfterMinutes: Number(event.target.value) })} />
     {target('First step', value.entry, (entry) => onChange({ ...value, entry }))}

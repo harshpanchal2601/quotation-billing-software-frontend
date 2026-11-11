@@ -14,7 +14,7 @@ import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
+import { AppTablePagination, DataTableShell, TableSkeleton, TableSortControls, type TableSorting } from '@shared/ui/tables';
 import {
   deleteCategoryRequest,
   listCategoriesRequest,
@@ -28,14 +28,11 @@ import { CategoryFormDialog } from '../components/CategoryFormDialog';
 import { CategoryTable } from '../components/CategoryTable';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
 
-const sortOptions = [
-  { value: 'name:asc', label: 'Name A–Z' },
-  { value: 'name:desc', label: 'Name Z–A' },
-  { value: 'slug:asc', label: 'Slug A–Z' },
-  { value: 'slug:desc', label: 'Slug Z–A' },
-  { value: 'createdAt:desc', label: 'Newest first' },
-  { value: 'createdAt:asc', label: 'Oldest first' },
-  { value: 'updatedAt:desc', label: 'Recently updated' },
+const sortFields = [
+  { key: 'name', label: 'Category name' },
+  { key: 'slug', label: 'Category code' },
+  { key: 'createdAt', label: 'Created date' },
+  { key: 'updatedAt', label: 'Updated date' },
 ] as const;
 
 export function CategoriesPage() {
@@ -55,15 +52,23 @@ export function CategoriesPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const params = parseCategoryListParams(searchParams);
+  const sorting: TableSorting = {
+    sortBy: params.sortBy,
+    sortOrder: params.sortOrder,
+    fields: sortFields,
+    onChange: ({ sortBy, sortOrder }) => updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 }),
+  };
 
   useEffect(() => setSearchInput(searchParams.get('search') ?? ''), [searchParams]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      updateSearchParams(setSearchParams, { search: searchInput.trim() || undefined, page: 1 });
+      const nextSearch = searchInput.trim();
+      if (nextSearch === (searchParams.get('search') ?? '')) return;
+      updateSearchParams(setSearchParams, { search: nextSearch || undefined, page: 1 });
     }, 350);
     return () => window.clearTimeout(timeout);
-  }, [searchInput, setSearchParams]);
+  }, [searchInput, searchParams, setSearchParams]);
 
   const query = useQuery({
     queryKey: categoriesQueryKeys.list(params),
@@ -92,7 +97,6 @@ export function CategoriesPage() {
     onError: (error) => setPageError(toApiError(error).message),
   });
 
-  const sortValue = `${params.sortBy}:${params.sortOrder}`;
   const isFiltered = Boolean(params.search || params.isActive !== undefined);
   const busyCategoryId = statusMutation.isPending
     ? statusMutation.variables?.id
@@ -130,7 +134,7 @@ export function CategoriesPage() {
           label="Search categories"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Search by name, slug or description"
+          placeholder="Search by name, category code or description"
           fullWidth
         />
 
@@ -150,29 +154,11 @@ export function CategoriesPage() {
           <MenuItem value="true">Active</MenuItem>
           <MenuItem value="false">Inactive</MenuItem>
         </TextField>
-
-        <TextField
-          select
-          label="Sort"
-          value={sortValue}
-          onChange={(event) => {
-            const [sortBy, sortOrder] = event.target.value.split(':') as [
-              CategoryListParams['sortBy'],
-              CategoryListParams['sortOrder'],
-            ];
-            updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
-          }}
-          sx={{ minWidth: { xs: 0, md: 200 }, width: { xs: '100%', md: 'auto' } }}
-        >
-          {sortOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
       </Stack>
 
+      <TableSortControls {...sorting} />
       <DataTableShell
+        wrapInTableContainer={false}
         isLoading={query.isPending}
         isError={query.isError}
         isEmpty={Boolean(query.data && query.data.categories.length === 0)}
@@ -212,10 +198,12 @@ export function CategoriesPage() {
         {query.data && query.data.categories.length > 0 ? (
           <>
           <Typography color="text.secondary">
-            {query.data.pagination.total} category(ies) found
+            {query.data.pagination.total} categories found
           </Typography>
 
           <CategoryTable
+            sorting={sorting}
+            rowNumberStart={((params.page ?? 1) - 1) * (params.limit ?? 20) + 1}
             categories={query.data.categories}
             busyCategoryId={busyCategoryId}
             canManage={canManage}

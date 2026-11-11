@@ -1,17 +1,10 @@
 import Box from '@mui/material/Box';
 import type { ReactNode } from 'react';
-import { FormSection, type FormSectionProps } from '@shared/forms';
+import type { FormSectionProps } from '@shared/forms';
+import { DetailSection } from '@shared/ui/layout';
 
-export function PlatformSection({ sx, ...props }: FormSectionProps) {
-  return (
-    <FormSection
-      {...props}
-      sx={[
-        { p: { xs: 2, md: 3 }, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper', minWidth: 0 },
-        ...(Array.isArray(sx) ? sx : [sx]),
-      ]}
-    />
-  );
+export function PlatformSection(props: FormSectionProps) {
+  return <DetailSection {...props} />;
 }
 
 export function PlatformFormGrid({ children }: { children: ReactNode }) {

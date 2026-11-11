@@ -27,14 +27,12 @@ import { productBrand } from '@shared/components/brand/brand';
 import { UserAvatar } from '@shared/components/common/UserAvatar';
 import { AppIconButton } from '@shared/ui/actions';
 
-import { canAccessNavigationItem, getRouteTitle, navigationItems, paths } from '../router/routeConfig';
+import { canAccessNavigationItem, getNavigationDestination, getRouteTitle, navigationItems, navigationSections, paths } from '../router/routeConfig';
 import { designTokens } from '../theme/tokens';
 import { AppBreadcrumbs } from './AppBreadcrumbs';
 import { switchSelectedFirm, useSelectedFirm } from '@shared/tenancy/selectedFirm';
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import { useEntitlements } from '@shared/tenancy/entitlements';
-
-const sections = ['Platform', 'Main', 'Quotation Management', 'Master Management', 'Configuration', 'System'] as const;
 
 export function AppLayout() {
   const theme = useTheme();
@@ -48,7 +46,7 @@ export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const activeNavigationPath = navigationItems.find((item) => item.path === location.pathname)?.path
-    ?? navigationItems.find((item) => location.pathname.startsWith(`${item.path}/`))?.path;
+    ?? navigationItems.filter((item) => location.pathname.startsWith(`${item.path}/`)).sort((left, right) => right.path.length - left.path.length)[0]?.path;
 
   useEffect(() => {
     document.title = `${getRouteTitle(location.pathname)} | ${productBrand.name}`;
@@ -92,7 +90,7 @@ export function AppLayout() {
       </Box>
       <Divider />
       <Box component="nav" flex={1} py={1.5} overflow="auto">
-        {sections.map((section) => {
+        {navigationSections.map((section) => {
           const items = navigationItems.filter(
             (item) => item.section === section && user !== null && canAccessNavigationItem(item, user, selectedFirm !== null, access.data),
           );
@@ -115,8 +113,7 @@ export function AppLayout() {
                   <MenuItem
                     key={item.path}
                     component={NavLink}
-                    to={item.path}
-                    end
+                    to={user ? getNavigationDestination(item, user, access.data) : item.path}
                     selected={activeNavigationPath === item.path}
                     onClick={() => setMobileOpen(false)}
                     sx={{ mx: 1, my: 0.25, borderRadius: 2 }}

@@ -16,6 +16,21 @@ describe('apiClient', () => {
     expect(sessionStorage.length).toBe(0);
   });
 
+  it('shares HTTP configuration while leaving portal sessions free of internal firm headers', async () => {
+    const { apiClient, createHttpClient } = await import('./apiClient');
+    const { setSelectedFirm } = await import('../tenancy/selectedFirm');
+    setSelectedFirm({ id: 1, name: 'Internal firm' });
+    const portal = createHttpClient();
+    expect(portal).not.toBe(apiClient);
+    expect(portal.defaults.baseURL).toBe(apiClient.defaults.baseURL);
+    expect(portal.defaults.withCredentials).toBe(true);
+    expect(portal.defaults.timeout).toBe(apiClient.defaults.timeout);
+    await portal.get('/portal/session', { adapter: async (config) => {
+      expect(config.headers.get('x-firm-id')).toBeUndefined();
+      return { config, data: {}, status: 200, statusText: 'OK', headers: {} };
+    } });
+  });
+
   it('discards a delayed tenant response after firm selection changes', async () => {
     const { apiClient } = await import('./apiClient');
     const { setSelectedFirm } = await import('../tenancy/selectedFirm');
@@ -61,6 +76,52 @@ describe('apiClient', () => {
       apiClient.defaults.adapter = previousAdapter;
       setAuthenticationFailureHandler(null);
     }
+  });
+
+  it('decodes a download error envelope without changing successful file bytes', async () => {
+    const { createHttpClient, toApiError } = await import('./apiClient');
+    const client = createHttpClient();
+    const message = 'A billing source has an invalid issue snapshot; reconcile it before export';
+    const body = new Blob([JSON.stringify({ success: false, message })], { type: 'application/json' });
+    Object.defineProperty(body, 'text', { value: async () => JSON.stringify({ success: false, message }) });
+    const failure = await client.get('/accounting-exports/export.csv', { responseType: 'blob', adapter: async (config) => {
+      throw new axios.AxiosError('Request failed', undefined, config, undefined, { config, data: body, status: 409, statusText: 'Conflict', headers: { 'content-type': 'application/json' } });
+    } }).catch((error: unknown) => error);
+    expect(toApiError(failure)).toMatchObject({ message, isConflict: true });
+    const file = new Blob(['private file'], { type: 'text/csv' });
+    const response = await client.get('/export.csv', { responseType: 'blob', adapter: async (config) => ({ config, data: file, status: 200, statusText: 'OK', headers: { 'content-type': 'text/csv' } }) });
+    expect(response.data).toBe(file);
+  });
+
+  it('retains safe fallbacks for malformed or internal download errors', async () => {
+    const { createHttpClient, toApiError } = await import('./apiClient');
+    const client = createHttpClient();
+    for (const text of ['not JSON', JSON.stringify({ success: false, message: 'Prisma SQL insert error' })]) {
+      const body = new Blob([text], { type: 'application/json' });
+      Object.defineProperty(body, 'text', { value: async () => text });
+      const failure = await client.get('/export.csv', { responseType: 'blob', adapter: async (config) => {
+        throw new axios.AxiosError('Request failed', undefined, config, undefined, { config, data: body, status: 409, statusText: 'Conflict', headers: { 'content-type': 'application/json' } });
+      } }).catch((error: unknown) => error);
+      expect(toApiError(failure).message).toBe('This action conflicts with the latest record. Refresh the records and try again.');
+    }
+  });
+
+  it('rejects an old-firm error after its asynchronous download decoding', async () => {
+    const { apiClient } = await import('./apiClient');
+    const { setSelectedFirm } = await import('../tenancy/selectedFirm');
+    setSelectedFirm({ id: 1, name: 'Firm A' });
+    let finish!: (text: string) => void;
+    let started!: () => void;
+    const ready = new Promise<void>((resolve) => { started = resolve; });
+    const body = new Blob(['error'], { type: 'application/json' });
+    Object.defineProperty(body, 'text', { value: () => new Promise<string>((resolve) => { finish = resolve; started(); }) });
+    const result = apiClient.get('/export.csv', { responseType: 'blob', adapter: async (config) => {
+      throw new axios.AxiosError('Request failed', undefined, config, undefined, { config, data: body, status: 409, statusText: 'Conflict', headers: { 'content-type': 'application/json' } });
+    } }).catch((error: unknown) => error);
+    await ready;
+    setSelectedFirm({ id: 2, name: 'Firm B' });
+    finish(JSON.stringify({ success: false, message: 'Private firm A reason' }));
+    expect(axios.isCancel(await result)).toBe(true);
   });
 
   it('converts safe backend errors into frontend API errors', async () => {
@@ -186,7 +247,7 @@ describe('apiClient', () => {
       cancelled: true,
     });
     expect(toApiError(timeoutError)).toMatchObject({
-      message: 'The request took too long. Please try again.',
+      message: 'The request took too long. Check the latest records before retrying a save.',
       retryable: true,
       cancelled: false,
     });

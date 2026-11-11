@@ -3,25 +3,19 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
+import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
+import { RecordTable, RowActionsMenu, type TableSorting } from '@shared/ui/tables';
 import type { QuotationListItem } from '../model/quotations.types';
 import { formatCurrency } from '../model/quotations.utils';
 import { QuotationStatusChip } from './QuotationStatusChip';
 
 type QuotationTableProps = {
+  rowNumberStart?: number;
   quotations: QuotationListItem[];
+  sorting?: TableSorting;
   returnState?: { from: string };
   onOpenStatusDialog: (quotation: QuotationListItem) => void;
   onOpenDeleteDialog: (quotation: QuotationListItem) => void;
@@ -31,7 +25,9 @@ type QuotationTableProps = {
 };
 
 export function QuotationTable({
+  rowNumberStart = 1,
   quotations,
+  sorting,
   returnState,
   onOpenStatusDialog,
   onOpenDeleteDialog,
@@ -39,138 +35,46 @@ export function QuotationTable({
   canUpdateStatus = false,
   canDelete = false,
 }: QuotationTableProps) {
-  const theme = useTheme();
-  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
-  const navigate = useNavigate();
-
-  if (isCompact) {
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {quotations.map((quo) => (
-          <Card
-            key={quo.id}
-            variant="outlined"
-            onClick={() => navigate(`/quotations/${quo.id}`, { state: returnState })}
-            sx={{ cursor: 'pointer', '&:hover': { borderColor: 'primary.main' } }}
-          >
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, gap: 1 }}>
-                <Box sx={{ minWidth: 0, flex: 1, pr: 1 }}>
-                  <Typography variant="subtitle1" fontWeight={700} color="primary.main" sx={{ wordBreak: 'break-word' }}>
-                    {quo.quotationNumber}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Revision #{quo.revisionNumber}
-                  </Typography>
-                  <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ wordBreak: 'break-word' }}>
-                    {quo.companyNameSnapshot}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                  <QuotationStatusChip status={quo.status} />
-                  <QuotationActionsMenu
-                    quotation={quo}
-                    returnState={returnState}
-                    onOpenStatusDialog={onOpenStatusDialog}
-                    onOpenDeleteDialog={onOpenDeleteDialog}
-                    canEdit={canEdit}
-                    canUpdateStatus={canUpdateStatus}
-                    canDelete={canDelete}
-                  />
-                </Box>
-              </Box>
-
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mt: 2, gap: 1 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 0 }}>
-                  {new Date(quo.quotationDate).toLocaleDateString()} • {quo.itemCount} items
-                </Typography>
-                <Typography variant="subtitle2" fontWeight={700} sx={{ textAlign: 'right', wordBreak: 'break-word' }}>
-                  {formatCurrency(quo.grandTotal, quo.currency)}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
-    );
-  }
-
   return (
-    <DataTableShell
-      isLoading={false}
-      isError={false}
-      isEmpty={false}
-      loadingContent={null}
-      errorContent={null}
-      emptyContent={null}
-      tableContainerProps={{ component: Box, sx: { border: '1px solid', borderColor: 'divider', borderRadius: 2 } }}
-    >
-      <Table size="medium" sx={{ minWidth: 920 }}>
-        <TableHead sx={{ bgcolor: 'grey.50' }}>
-          <TableRow>
-            <TableCell sx={{ fontWeight: 700 }}>Quotation Number</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Customer</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Quote Date</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Valid Until</TableCell>
-            <TableCell align="center" sx={{ fontWeight: 700 }}>Items</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 700 }}>Grand Total</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {quotations.map((quo) => (
-            <TableRow
-              key={quo.id}
-              hover
-              onClick={() => navigate(`/quotations/${quo.id}`, { state: returnState })}
-              sx={{ cursor: 'pointer' }}
-            >
-              <TableCell sx={{ fontWeight: 600, color: 'primary.main', wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ wordBreak: 'break-word' }}>
-                  {quo.quotationNumber}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Revision #{quo.revisionNumber}
-                </Typography>
-              </TableCell>
-              <TableCell sx={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                <Typography variant="body2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
-                  {quo.companyNameSnapshot}
-                </Typography>
-                {quo.companyGstinSnapshot ? (
-                  <Typography variant="caption" color="text.secondary">
-                    GSTIN: {quo.companyGstinSnapshot}
-                  </Typography>
-                ) : null}
-              </TableCell>
-              <TableCell>{new Date(quo.quotationDate).toLocaleDateString()}</TableCell>
-              <TableCell>
-                {quo.validUntil ? new Date(quo.validUntil).toLocaleDateString() : '-'}
-              </TableCell>
-              <TableCell align="center">{quo.itemCount}</TableCell>
-              <TableCell>
-                <QuotationStatusChip status={quo.status} />
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700 }}>
-                {formatCurrency(quo.grandTotal, quo.currency)}
-              </TableCell>
-              <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                <QuotationActionsMenu
-                  quotation={quo}
-                  returnState={returnState}
-                  onOpenStatusDialog={onOpenStatusDialog}
-                  onOpenDeleteDialog={onOpenDeleteDialog}
-                  canEdit={canEdit}
-                  canUpdateStatus={canUpdateStatus}
-                  canDelete={canDelete}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </DataTableShell>
+    <RecordTable
+      rows={quotations}
+      rowKey={(quotation) => quotation.id}
+      label="Quotations"
+      rowNumberStart={rowNumberStart}
+      sorting={sorting}
+      showSortControls={false}
+      columns={[
+        {
+          key: 'quotationNumber', label: 'Quotation number', sortKey: 'quotationNumber', minWidth: 240,
+          render: (quotation) => (
+            <Box>
+              <Link component={RouterLink} to={`/quotations/${quotation.id}`} state={returnState} variant="body2" fontWeight={700} color="primary.main" underline="hover">
+                {quotation.quotationNumber}
+              </Link>
+              <Typography variant="caption" color="text.secondary" display="block">Revision #{quotation.revisionNumber}</Typography>
+            </Box>
+          ),
+        },
+        {
+          key: 'customer', label: 'Customer', minWidth: 200,
+          render: (quotation) => (
+            <Box>
+              <Typography variant="body2" fontWeight={600}>{quotation.companyNameSnapshot}</Typography>
+              {quotation.companyGstinSnapshot ? <Typography variant="caption" color="text.secondary">GSTIN: {quotation.companyGstinSnapshot}</Typography> : null}
+            </Box>
+          ),
+        },
+        { key: 'quotationDate', label: 'Quote date', sortKey: 'quotationDate', noWrap: true, minWidth: 124, render: (quotation) => new Date(quotation.quotationDate).toLocaleDateString() },
+        { key: 'validUntil', label: 'Valid until', sortKey: 'validUntil', noWrap: true, minWidth: 124, render: (quotation) => quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : '-' },
+        { key: 'itemCount', label: 'Items', align: 'center', minWidth: 72, render: (quotation) => quotation.itemCount },
+        { key: 'status', label: 'Status', noWrap: true, minWidth: 140, render: (quotation) => <QuotationStatusChip status={quotation.status} /> },
+        { key: 'grandTotal', label: 'Grand total', sortKey: 'grandTotal', align: 'right', minWidth: 160, render: (quotation) => <Typography variant="body2" fontWeight={700}>{formatCurrency(quotation.grandTotal, quotation.currency)}</Typography> },
+        {
+          key: 'actions', label: 'Actions', align: 'right', minWidth: 80,
+          render: (quotation) => <QuotationActionsMenu quotation={quotation} returnState={returnState} onOpenStatusDialog={onOpenStatusDialog} onOpenDeleteDialog={onOpenDeleteDialog} canEdit={canEdit} canUpdateStatus={canUpdateStatus} canDelete={canDelete} />,
+        },
+      ]}
+    />
   );
 }
 

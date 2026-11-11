@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 import type { DialogProps } from '@mui/material/Dialog';
-import type { FormEvent, ReactNode } from 'react';
+import type { FormEvent, ReactNode, Ref } from 'react';
 import { useId } from 'react';
 
 import { AppDialog } from './AppDialog';
@@ -15,6 +15,8 @@ export type FormDialogShellProps = {
   isSubmitting?: boolean;
   maxWidth?: DialogProps['maxWidth'];
   fullWidth?: DialogProps['fullWidth'];
+  fullScreen?: DialogProps['fullScreen'];
+  formRef?: Ref<HTMLFormElement>;
 };
 
 export function FormDialogShell({
@@ -27,6 +29,8 @@ export function FormDialogShell({
   isSubmitting = false,
   maxWidth = 'sm',
   fullWidth = true,
+  fullScreen,
+  formRef,
 }: FormDialogShellProps) {
   const formId = useId();
 
@@ -38,11 +42,14 @@ export function FormDialogShell({
       preventClose={isSubmitting}
       maxWidth={maxWidth}
       fullWidth={fullWidth}
+      fullScreen={fullScreen}
       contentDividers
       actions={actions(formId)}
     >
-      <Box component="form" id={formId} onSubmit={onSubmit}>
-        {children}
+      <Box component="form" ref={formRef} id={formId} onSubmit={onSubmit}>
+        <Box component="fieldset" disabled={isSubmitting} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
+          {children}
+        </Box>
       </Box>
     </AppDialog>
   );

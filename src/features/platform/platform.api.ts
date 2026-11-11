@@ -8,9 +8,11 @@ type FirmListResponse = {
 
 export const platformFirmQueryKey = ['platform', 'firms'] as const;
 
-export async function listPlatformFirmsRequest() {
+export type FirmListParams = { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' };
+
+export async function listPlatformFirmsRequest(params: FirmListParams = {}, signal?: AbortSignal) {
   const response = await apiClient.get<ApiSuccessResponse<FirmListResponse>>('/platform/firms', {
-    params: { page: 1, limit: 100 },
+    params: { page: 1, limit: 20, ...params }, signal,
   });
   return response.data.data;
 }

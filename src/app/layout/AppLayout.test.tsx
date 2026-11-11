@@ -8,7 +8,7 @@ import { AppLayout } from './AppLayout';
 vi.mock('@shared/tenancy/entitlements', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@shared/tenancy/entitlements')>()),
   useEntitlements: () => ({ data: { permissions: Object.fromEntries([
-    'dashboard.view', 'companies.view', 'items.view', 'catalog.view', 'quotations.view',
+    'invoices.view', 'payments.view', 'dashboard.view', 'companies.view', 'items.view', 'catalog.view', 'quotations.view',
     'quotations.create', 'firm.profile.manage', 'firm.quotation-settings.manage',
     'firm.bank-details.manage', 'firm.users.manage', 'firm.roles.manage', 'audit.view',
   ].map((permission) => [permission, true])) } }),
@@ -29,7 +29,7 @@ vi.mock('@features/auth', async (importOriginal) => ({
       firm: { id: 1, name: 'Example Firm', slug: 'example-firm' },
       firmRole: null,
       permissions: [
-        'dashboard.view', 'companies.view', 'items.view', 'catalog.view', 'quotations.view',
+        'invoices.view', 'payments.view', 'dashboard.view', 'companies.view', 'items.view', 'catalog.view', 'quotations.view',
         'quotations.create', 'firm.profile.manage', 'firm.quotation-settings.manage',
         'firm.bank-details.manage', 'firm.users.manage', 'firm.roles.manage', 'audit.view',
       ],
@@ -46,6 +46,7 @@ describe('AppLayout', () => {
     expect(screen.getAllByText('Quotation Management').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Master Management').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Configuration').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Billing').length).toBeGreaterThan(0);
     expect(screen.getAllByText('System').length).toBeGreaterThan(0);
     expect(screen.getAllByRole('menuitem', { name: /dashboard/i })[0]).toHaveAttribute('aria-current', 'page');
   });
@@ -59,16 +60,13 @@ describe('AppLayout', () => {
     expect(screen.getByRole('menuitem', { name: /change password/i })).toBeInTheDocument();
   });
 
-  it('selects only Create Quotation on its own route', () => {
+  it('keeps one Quotations destination active while creating a quotation', () => {
     renderWithProviders(<AppLayout />, { route: '/quotations/new' });
     for (const link of screen.getAllByRole('menuitem', { name: /^quotations$/i })) {
-      expect(link).not.toHaveClass('Mui-selected');
-      expect(link).not.toHaveAttribute('aria-current');
-    }
-    for (const link of screen.getAllByRole('menuitem', { name: /^create quotation$/i })) {
       expect(link).toHaveClass('Mui-selected');
       expect(link).toHaveAttribute('aria-current', 'page');
     }
+    expect(screen.queryByRole('menuitem', { name: /^create quotation$/i })).not.toBeInTheDocument();
     expect(document.title).toBe('Create Quotation | QuoteMerit');
   });
 });

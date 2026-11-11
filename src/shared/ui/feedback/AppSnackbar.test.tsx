@@ -12,7 +12,7 @@ describe('AppSnackbar', () => {
   it('renders a filled success alert by default', () => {
     render(<AppSnackbar open message="Saved." onClose={vi.fn()} />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Saved.');
+    expect(screen.getByRole('status')).toHaveTextContent('Saved.');
   });
 
   it('supports closing from the alert close button', async () => {

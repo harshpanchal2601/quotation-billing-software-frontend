@@ -1,12 +1,15 @@
-import { Alert, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Link as MuiLink, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
 import { toApiError } from '@shared/api/apiClient';
+import { ErrorState } from '@shared/components/common/ErrorState';
 import { useFirmId } from '@shared/tenancy/useFirmId';
+import { formatRecordStatus } from '@shared/ui/display';
 import { AppButton } from '@shared/ui/actions';
-import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { RecordPagination, RecordTable, useTableSort } from '@shared/ui/tables';
+import { DetailSection, PageContainer, PageHeader } from '@shared/ui/layout';
 import { getReceivables } from './payments.api';
 import { paymentsKeys } from './payments.queries';
 
@@ -18,15 +21,24 @@ export function ReceivablesPanel({ companyId, compact = false }: { companyId?: n
 function Balances({ companyId, compact }: { companyId?: number; compact: boolean }) {
   const firmId = useFirmId(); const [page, setPage] = useState(1);
   const canViewInvoices = useHasPermission(PERMISSIONS.INVOICES_VIEW);
-  const params = { page, limit: compact ? 1 : 20, ...(companyId ? { companyId } : {}) };
+  const sorting = useTableSort([{ key: 'id', label: 'Record number' }, { key: 'documentNumber', label: 'Invoice number' }, { key: 'companyName', label: 'Customer' }, { key: 'dueDate', label: 'Due date' }, { key: 'currency', label: 'Currency' }, { key: 'outstanding', label: 'Outstanding amount' }], { onChange: () => setPage(1) });
+  const params = { page, sortBy: sorting.sortBy, sortOrder: sorting.sortOrder, limit: compact ? 1 : 20, ...(companyId ? { companyId } : {}) };
   const query = useQuery({ queryKey: paymentsKeys.receivables(firmId, params), queryFn: ({ signal }) => getReceivables(params, signal), enabled: firmId != null });
-  if (query.isError) return <Alert severity="error">{toApiError(query.error).message}</Alert>;
+  if (query.isError) return <ErrorState message={toApiError(query.error).message} onRetry={() => void query.refetch()} />;
   if (!query.data) return <Typography>Loading receivables…</Typography>;
-  return <Stack spacing={2}><Typography variant="h6">{companyId ? 'Customer balance' : 'Receivables'} · {query.data.asOf} ({query.data.timezone})</Typography>
-    {query.data.buckets.length === 0 ? <Typography>No outstanding invoices.</Typography> : query.data.buckets.map((bucket) => <Typography key={`${bucket.currency}:${bucket.bucket}`}>{bucket.currency} {bucket.amount} · {bucket.bucket.replace(/_/g, ' ')} · {bucket.count} invoice(s)</Typography>)}
-    {query.data.customerCredits.map((credit) => <Typography key={credit.currency}>Unapplied credit: {credit.currency} {credit.unapplied}</Typography>)}
+  return <DetailSection title={companyId ? 'Customer balance' : 'Receivables'} description={`As of ${query.data.asOf} (${query.data.timezone})`}>
+    <RecordTable rows={query.data.buckets} label="Ageing by currency" rowKey={(bucket) => `${bucket.currency}:${bucket.bucket}`} emptyMessage="No outstanding invoices." columns={[
+      { key: 'currency', label: 'Currency', sortValue: (row) => row.currency, render: (row) => row.currency }, { key: 'bucket', label: 'Ageing bucket', sortValue: (row) => row.bucket, render: (row) => row.bucket.replace(/_/g, ' ') },
+      { key: 'amount', label: 'Outstanding', align: 'right', sortValue: (row) => row.amount, render: (row) => row.amount }, { key: 'count', label: 'Invoices', align: 'right', sortValue: (row) => row.count, render: (row) => row.count },
+    ]} />
+    <RecordTable rows={query.data.customerCredits} label="Available customer credit" rowKey={(credit) => credit.currency} emptyMessage="No available customer credit." columns={[
+      { key: 'currency', label: 'Currency', sortValue: (row) => row.currency, render: (row) => row.currency }, { key: 'amount', label: 'Available credit', align: 'right', sortValue: (row) => row.unapplied, render: (row) => row.unapplied },
+    ]} />
     <AppButton component={Link} to={compact ? '/receivables' : companyId ? `/payments?companyId=${companyId}` : '/payments'}>{compact ? 'View receivables' : 'View customer receipts'}</AppButton>
-    {!compact ? <><Stack sx={{ overflowX: 'auto' }}><Table aria-label="Outstanding invoices"><TableHead><TableRow>{['Invoice', 'Customer', 'Due', 'Outstanding', 'Settlement'].map((label) => <TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>{query.data.receivables.map((invoice) => <TableRow key={invoice.id}><TableCell>{canViewInvoices ? <Link to={`/invoices/${invoice.id}`}>{invoice.documentNumber}</Link> : invoice.documentNumber}</TableCell><TableCell>{invoice.companyName}</TableCell><TableCell>{invoice.dueDate || 'No due date'}</TableCell><TableCell>{invoice.currency} {invoice.outstanding}</TableCell><TableCell>{invoice.settlementStatus}{invoice.overdue ? ' · Past due' : ''}</TableCell></TableRow>)}</TableBody></Table></Stack>
-      <Stack direction="row" spacing={2}><AppButton disabled={page === 1} onClick={() => setPage(page - 1)}>Previous invoices</AppButton><Typography>Page {page}</Typography><AppButton disabled={page >= query.data.pagination.totalPages} onClick={() => setPage(page + 1)}>Next invoices</AppButton></Stack></> : null}
-  </Stack>;
+    {!compact ? <><RecordTable rows={query.data.receivables} label="Outstanding invoices" sorting={sorting} rowNumberStart={(page - 1) * 20 + 1} rowKey={(invoice) => invoice.id} emptyMessage="No outstanding invoices match these filters." columns={[
+      { key: 'documentNumber', label: 'Invoice', sortKey: 'documentNumber', render: (invoice) => canViewInvoices ? <MuiLink component={Link} to={`/invoices/${invoice.id}`}>{invoice.documentNumber}</MuiLink> : invoice.documentNumber },
+      { key: 'companyName', label: 'Customer', sortKey: 'companyName', render: (invoice) => invoice.companyName }, { key: 'dueDate', label: 'Due', sortKey: 'dueDate', render: (invoice) => invoice.dueDate || 'No due date' },
+      { key: 'outstanding', label: 'Outstanding', sortKey: 'outstanding', align: 'right', render: (invoice) => `${invoice.currency} ${invoice.outstanding}` }, { key: 'status', label: 'Settlement', render: (invoice) => `${formatRecordStatus(invoice.settlementStatus)}${invoice.overdue ? ' · Past due' : ''}` },
+    ]} /><RecordPagination pagination={query.data.pagination} page={page} change={setPage} /></> : null}
+  </DetailSection>;
 }

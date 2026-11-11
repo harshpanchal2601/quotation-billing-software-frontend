@@ -117,7 +117,7 @@ describe('Quotation Attachments Frontend Component', () => {
     expect(screen.getByText(/Are you sure you want to delete/i)).toBeInTheDocument();
   });
 
-  it('shows row-level download loading for the selected attachment only', async () => {
+  it('prevents overlapping downloads while keeping the active file identifiable', async () => {
     const pendingDownload = deferred<{ blob: Blob; filename: string }>();
     vi.mocked(attachmentsApi.downloadQuotationAttachmentBlobRequest).mockReturnValue(pendingDownload.promise);
 
@@ -128,8 +128,9 @@ describe('Quotation Attachments Frontend Component', () => {
     const downloadButtons = screen.getAllByRole('button', { name: /download/i });
     await user.click(downloadButtons[0]!);
 
-    expect(screen.getByRole('button', { name: /downloading/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Download technical-specs.docx' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Download layout-drawing.pdf' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Download technical-specs.docx' })).toBeDisabled();
+    expect(attachmentsApi.downloadQuotationAttachmentBlobRequest).toHaveBeenCalledTimes(1);
   });
 });
 

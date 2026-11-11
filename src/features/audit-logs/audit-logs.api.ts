@@ -17,9 +17,10 @@ type AuditLogResponse = {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 };
 
-export async function listAuditLogsRequest(page: number, limit: number) {
+export async function listAuditLogsRequest(page: number, limit: number, sort?: { sortBy: string; sortOrder: 'asc' | 'desc' }, signal?: AbortSignal) {
   const response = await apiClient.get<ApiSuccessResponse<AuditLogResponse>>('/audit-logs', {
-    params: { page, limit },
+    params: { page, limit, ...sort },
+    signal,
   });
   return response.data.data;
 }

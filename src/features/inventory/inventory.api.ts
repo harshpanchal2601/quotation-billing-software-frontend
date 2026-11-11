@@ -1,8 +1,8 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 export type Warehouse = { id: number; code: string; name: string; isActive: boolean };
 export type StockPosition = { id: number; warehouseId: number; itemId: number; warehouse: Warehouse; item: { name: string; itemCode: string }; currency: string; onHand: string; reserved: string; available: string; value: string; averageCost: string; reorderLevel: string; lowStock: boolean; reconciled: boolean; openingQuantity: string; closingQuantity: string; openingValue: string; closingValue: string };
-export type StockMovement = { id: number; quantity: string; value: string; sourceType: string; sourceId: number; sourceLineId: number; eventType: string; originalMovementId: number | null; reason: string; actorId: number; postedAt: string; position: { warehouseId: number; itemId: number; currency: string } };
-export type StockReservation = { id: number; salesOrderId: number; salesOrderLineId: number; quantity: string; remaining: string; status: string };
+export type StockMovement = { id: number; quantity: string; value: string; sourceType: string; sourceId: number; sourceLineId: number; eventType: string; originalMovementId: number | null; reason: string; actorId: number; postedAt: string; position: { warehouseId: number; itemId: number; currency: string; warehouse: { code: string; name: string }; item: { itemCode: string; name: string } } };
+export type StockReservation = { id: number; salesOrderId: number; salesOrderLineId: number; quantity: string; remaining: string; status: string; position?: { warehouse: { code: string; name: string }; item: { itemCode: string; name: string } } };
 export type Page = { page: number; limit: number; total: number };
 export const inventoryKeys = { firm: (firmId: number | null | undefined) => ['inventory', firmId] as const };
 export async function listWarehouses(signal?: AbortSignal, search = '') { return (await apiClient.get<ApiSuccessResponse<{ warehouses: Warehouse[] }>>('/warehouses', { signal, params: { search } })).data.data.warehouses; }

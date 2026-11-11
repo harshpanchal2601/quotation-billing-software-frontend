@@ -11,10 +11,12 @@ import {
 } from '../api/auth.api';
 import { AuthContext, type AuthContextValue } from './auth-context';
 import type { AuthUser } from '../model/auth.types';
-import { setSelectedFirm } from '@shared/tenancy/selectedFirm';
+import { setSelectedFirm, useSelectedFirm } from '@shared/tenancy/selectedFirm';
+import { FirmIdContext } from '@shared/tenancy/useFirmId';
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
+  const selectedFirm = useSelectedFirm();
   const [authError, setAuthError] = useState<ApiError | null>(null);
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
   const clearAuthError = useCallback(() => setAuthError(null), []);
@@ -113,5 +115,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     ],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const firmId = value.user?.accountType === 'SUPER_ADMIN' ? selectedFirm?.id : value.user?.firmId;
+  const firmContext = useMemo(() => ({ firmId }), [firmId]);
+  return <AuthContext.Provider value={value}><FirmIdContext.Provider value={firmContext}>{children}</FirmIdContext.Provider></AuthContext.Provider>;
 }

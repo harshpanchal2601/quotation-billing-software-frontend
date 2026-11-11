@@ -13,7 +13,7 @@ import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
+import { AppTablePagination, DataTableShell, TableSkeleton, TableSortControls, type TableSorting } from '@shared/ui/tables';
 import { paths } from '@shared/routing/paths';
 import { getCurrentListReturnState } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -27,18 +27,13 @@ import { itemsQueryKeys } from '../model/items.query-keys';
 import type { ItemListItem, ItemListParams } from '../model/items.types';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
 
-const sortOptions = [
-  { value: 'createdAt:desc', label: 'Newest first' },
-  { value: 'createdAt:asc', label: 'Oldest first' },
-  { value: 'updatedAt:desc', label: 'Recently updated' },
-  { value: 'name:asc', label: 'Item name A–Z' },
-  { value: 'name:desc', label: 'Item name Z–A' },
-  { value: 'itemCode:asc', label: 'Item code (ascending)' },
-  { value: 'itemCode:desc', label: 'Item code (descending)' },
-  { value: 'defaultRate:asc', label: 'Rate (low to high)' },
-  { value: 'defaultRate:desc', label: 'Rate (high to low)' },
-  { value: 'gstRate:asc', label: 'GST (low to high)' },
-  { value: 'gstRate:desc', label: 'GST (high to low)' },
+const sortFields = [
+  { key: 'name', label: 'Item name' },
+  { key: 'itemCode', label: 'Item code' },
+  { key: 'defaultRate', label: 'Default rate' },
+  { key: 'gstRate', label: 'GST rate' },
+  { key: 'createdAt', label: 'Created date' },
+  { key: 'updatedAt', label: 'Updated date' },
 ] as const;
 
 export function ItemsPage() {
@@ -56,6 +51,12 @@ export function ItemsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const params = parseItemListParams(searchParams);
+  const sorting: TableSorting = {
+    sortBy: params.sortBy,
+    sortOrder: params.sortOrder,
+    fields: sortFields,
+    onChange: ({ sortBy, sortOrder }) => updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 }),
+  };
 
   useEffect(() => setSearchInput(searchParams.get('search') ?? ''), [searchParams]);
 
@@ -104,7 +105,6 @@ export function ItemsPage() {
     onError: (error) => setPageError(toApiError(error).message),
   });
 
-  const sortValue = `${params.sortBy}:${params.sortOrder}`;
   const isFiltered = Boolean(
     params.search ||
       params.categoryId !== undefined ||
@@ -131,7 +131,7 @@ export function ItemsPage() {
           <AppButton
             variant="contained"
             startIcon={<AddOutlinedIcon />}
-            onClick={() => navigate(`${paths.items}/new`)}
+            onClick={() => navigate(`${paths.items}/new`, { state: listReturnState })}
           >
             Add Item
           </AppButton>
@@ -254,30 +254,12 @@ export function ItemsPage() {
             }}
             sx={{ width: { xs: '100%', md: 140 } }}
           />
-
-          <TextField
-            select
-            label="Sort"
-            value={sortValue}
-            onChange={(event) => {
-              const [sortBy, sortOrder] = event.target.value.split(':') as [
-                ItemListParams['sortBy'],
-                ItemListParams['sortOrder'],
-              ];
-              updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
-            }}
-            sx={{ minWidth: { xs: 0, md: 200 }, width: { xs: '100%', md: 'auto' } }}
-          >
-            {sortOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
         </Stack>
       </Stack>
 
+      <TableSortControls {...sorting} />
       <DataTableShell
+        wrapInTableContainer={false}
         isLoading={query.isPending}
         isError={query.isError}
         isEmpty={Boolean(query.data && query.data.items.length === 0)}
@@ -318,10 +300,12 @@ export function ItemsPage() {
         {query.data && query.data.items.length > 0 ? (
           <>
           <Typography color="text.secondary">
-            {query.data.pagination.total} item(s) found
+            {query.data.pagination.total} items found
           </Typography>
 
           <ItemTable
+            sorting={sorting}
+            rowNumberStart={((params.page ?? 1) - 1) * (params.limit ?? 20) + 1}
             items={query.data.items}
             busyItemId={busyItemId}
             canManage={canManage}

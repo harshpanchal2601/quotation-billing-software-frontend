@@ -94,6 +94,7 @@ export type QuotationHistoryParams = {
   status?: QuotationStatus;
   dateFrom?: string;
   dateTo?: string;
+  sortBy?: 'quotationNumber' | 'revisionNumber' | 'quotationDate' | 'validUntil' | 'status' | 'currency' | 'grandTotal' | 'createdAt';
   sortOrder: 'asc' | 'desc';
 };
 

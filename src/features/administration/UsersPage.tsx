@@ -1,25 +1,22 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import Alert from '@mui/material/Alert';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
-import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
+import { paths } from '@shared/routing/paths';
 import { AppButton } from '@shared/ui/actions';
 import { AppDialog, ConfirmDialog } from '@shared/ui/dialogs';
-import { AppStatusChip } from '@shared/ui/display';
+import { AppStatusChip, formatRecordStatus } from '@shared/ui/display';
 import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { DataTableShell, TableSkeleton } from '@shared/ui/tables';
+import { DataTableShell, RecordTable, TableSkeleton } from '@shared/ui/tables';
 import {
   administrationQueryKeys,
   createFirmUserRequest,
@@ -162,49 +159,38 @@ export function UsersPage() {
       <PageHeader
         title="Firm Users"
         description={`Manage the firm administrator and up to ${Math.max(0, (usersQuery.data?.userLimit ?? 4) - 1)} basic user accounts.`}
-        actions={<AppButton variant="contained" startIcon={<AddOutlinedIcon />} disabled={atLimit || rolesQuery.data?.length === 0} onClick={openCreate}>Add User</AppButton>}
+        actions={<AppButton variant="contained" startIcon={<AddOutlinedIcon />} disabled={atLimit || usersQuery.isPending || usersQuery.isError || rolesQuery.isPending || rolesQuery.isError || rolesQuery.data?.length === 0} onClick={openCreate}>Add User</AppButton>}
       />
       {usersQuery.data ? <Typography color="text.secondary">{usersQuery.data.userCount} of {usersQuery.data.userLimit} accounts in use</Typography> : null}
+      {atLimit ? <Alert severity="info">The firm has reached its user limit. Remove an unused account, or review the subscription before adding another user.</Alert> : null}
+      {rolesQuery.isError ? <ErrorState message="Roles could not be loaded. Retry before adding or assigning a user." onRetry={() => { void rolesQuery.refetch(); }} /> : null}
+      {rolesQuery.isSuccess && rolesQuery.data.length === 0 ? <Alert severity="info" action={<AppButton component={Link} to={paths.firmRoles}>Create role</AppButton>}>Create a role with the required permissions before adding a user.</Alert> : null}
       <DataTableShell
+        wrapInTableContainer={false}
         isLoading={usersQuery.isPending}
         isError={usersQuery.isError}
-        isEmpty={usersQuery.data?.users.length === 0}
+        isEmpty={false}
         loadingContent={<TableSkeleton />}
         errorContent={<ErrorState message={toApiError(usersQuery.error).message} />}
-        emptyContent={<EmptyState title="No users found" description="The firm administrator account should appear here." />}
+        emptyContent={null}
       >
-        {usersQuery.data?.users.length ? (
-          <Table aria-label="Firm users" sx={{ minWidth: 960 }}>
-            <TableHead><TableRow><TableCell>User</TableCell><TableCell>Username</TableCell><TableCell>Role</TableCell><TableCell>Status</TableCell><TableCell align="right">Actions</TableCell></TableRow></TableHead>
-            <TableBody>{usersQuery.data.users.map((user) => (
-              <TableRow key={user.id} hover>
-                <TableCell><Typography fontWeight={700}>{user.name}</Typography><Typography variant="caption" color="text.secondary">{user.email}</Typography></TableCell>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.accountType === 'FIRM_ADMIN' ? 'Firm Administrator' : user.firmRole?.name ?? 'Unassigned'}</TableCell>
-                <TableCell><Stack direction="row" spacing={1} alignItems="center"><AppStatusChip label={user.status} variant={user.status === 'ACTIVE' ? 'success' : 'warning'} />{user.mustChangePassword ? <Typography variant="caption">Password change required</Typography> : null}</Stack></TableCell>
-                <TableCell align="right">
-                  {user.accountType === 'FIRM_USER' ? <Stack direction="row" spacing={1} justifyContent="flex-end">
-                    <AppButton size="small" onClick={() => openEdit(user)}>Edit</AppButton>
-                    <AppButton size="small" onClick={() => openReset(user)}>Reset Password</AppButton>
-                    <AppButton size="small" color={user.status === 'ACTIVE' ? 'warning' : 'success'} onClick={() => { clearErrors(); setStatusTarget(user); }}>{user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</AppButton>
-                    <AppButton size="small" color="error" onClick={() => { clearErrors(); setDeleteTarget(user); }}>Delete</AppButton>
-                  </Stack> : null}
-                </TableCell>
-              </TableRow>
-            ))}</TableBody>
-          </Table>
-        ) : null}
+        <RecordTable rows={usersQuery.data?.users ?? []} label="Firm users" rowKey={(user) => user.id} emptyMessage="No users found." columns={[
+          { key: 'name', label: 'User', sortValue: (user) => user.name, render: (user) => <Stack><Typography fontWeight={700}>{user.name}</Typography><Typography variant="caption" color="text.secondary">{user.email}</Typography></Stack> }, { key: 'username', label: 'Username', sortValue: (user) => user.username, render: (user) => user.username },
+          { key: 'role', label: 'Role', sortValue: (user) => user.accountType === 'FIRM_ADMIN' ? 'Firm Administrator' : user.firmRole?.name, render: (user) => user.accountType === 'FIRM_ADMIN' ? 'Firm Administrator' : user.firmRole?.name ?? 'Unassigned' },
+          { key: 'status', label: 'Status', sortValue: (user) => user.status, render: (user) => <Stack spacing={1}><AppStatusChip label={formatRecordStatus(user.status)} variant={user.status === 'ACTIVE' ? 'success' : 'warning'} />{user.mustChangePassword ? <Typography variant="caption">Password change required</Typography> : null}</Stack> },
+          { key: 'actions', label: 'Actions', render: (user) => user.accountType === 'FIRM_USER' ? <Stack direction={{ xs: 'column', sm: 'row' }} useFlexGap flexWrap="wrap" spacing={1}><AppButton size="small" onClick={() => openEdit(user)}>Edit</AppButton><AppButton size="small" onClick={() => openReset(user)}>Reset Password</AppButton><AppButton size="small" color={user.status === 'ACTIVE' ? 'warning' : 'success'} onClick={() => { clearErrors(); setStatusTarget(user); }}>{user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</AppButton><AppButton size="small" color="error" onClick={() => { clearErrors(); setDeleteTarget(user); }}>Delete</AppButton></Stack> : '—' },
+        ]} />
       </DataTableShell>
 
       <AppDialog open={createOpen} title="Add firm user" onClose={closeCreate} fullWidth maxWidth="sm" preventClose={createMutation.isPending} actions={<><AppButton onClick={closeCreate} disabled={createMutation.isPending}>Cancel</AppButton><AppButton type="submit" form="create-user-form" variant="contained" isLoading={createMutation.isPending}>Create User</AppButton></>}>
-        <Stack component="form" id="create-user-form" onSubmit={submitCreate} spacing={2} pt={1}>
+        <Stack component="form" id="create-user-form" autoComplete="off" onSubmit={submitCreate} spacing={2} pt={1}>
           <TextField required label="Full name" value={form.name} onChange={(e) => { clearFieldError('name'); setForm((current) => ({ ...current, name: e.target.value })); }} {...fieldFeedback('name')} />
           <TextField required type="email" label="Email" value={form.email} onChange={(e) => { clearFieldError('email'); setForm((current) => ({ ...current, email: e.target.value })); }} {...fieldFeedback('email')} />
-          <TextField required label="Username" value={form.username} onChange={(e) => { clearFieldError('username'); setForm((current) => ({ ...current, username: e.target.value })); }} {...fieldFeedback('username', 'Letters, numbers and spaces are allowed')} />
+          <TextField required autoComplete="off" label="Username" value={form.username} onChange={(e) => { clearFieldError('username'); setForm((current) => ({ ...current, username: e.target.value })); }} {...fieldFeedback('username', 'Letters, numbers, spaces, dots, underscores and hyphens are allowed')} />
           <TextField required select label="Role" value={form.roleId || ''} onChange={(e) => { clearFieldError('roleId'); setForm((current) => ({ ...current, roleId: Number(e.target.value) })); }} {...fieldFeedback('roleId')}>
             {rolesQuery.data?.map((role) => <MenuItem key={role.id} value={role.id}>{role.name}</MenuItem>)}
           </TextField>
-          <TextField required type="password" label="Temporary password" value={form.temporaryPassword} onChange={(e) => { clearFieldError('temporaryPassword'); setForm((current) => ({ ...current, temporaryPassword: e.target.value })); }} {...fieldFeedback('temporaryPassword', '10+ characters with upper/lowercase, number and symbol')} />
+          <TextField required autoComplete="new-password" type="password" label="Temporary password" value={form.temporaryPassword} onChange={(e) => { clearFieldError('temporaryPassword'); setForm((current) => ({ ...current, temporaryPassword: e.target.value })); }} {...fieldFeedback('temporaryPassword', '10+ characters with upper/lowercase, number and symbol')} />
         </Stack>
       </AppDialog>
 
@@ -212,7 +198,7 @@ export function UsersPage() {
         <Stack spacing={2} pt={1}>
           <TextField required label="Full name" value={editForm.name} onChange={(e) => { clearFieldError('name'); setEditForm((current) => ({ ...current, name: e.target.value })); }} {...fieldFeedback('name')} />
           <TextField required type="email" label="Email" value={editForm.email} onChange={(e) => { clearFieldError('email'); setEditForm((current) => ({ ...current, email: e.target.value })); }} {...fieldFeedback('email')} />
-          <TextField required label="Username" value={editForm.username} onChange={(e) => { clearFieldError('username'); setEditForm((current) => ({ ...current, username: e.target.value })); }} {...fieldFeedback('username', 'Letters, numbers and spaces are allowed')} />
+          <TextField required label="Username" value={editForm.username} onChange={(e) => { clearFieldError('username'); setEditForm((current) => ({ ...current, username: e.target.value })); }} {...fieldFeedback('username', 'Letters, numbers, spaces, dots, underscores and hyphens are allowed')} />
           <TextField required select label="Role" value={editForm.roleId || ''} onChange={(e) => { clearFieldError('roleId'); setEditForm((current) => ({ ...current, roleId: Number(e.target.value) })); }} {...fieldFeedback('roleId')}>
             {rolesQuery.data?.map((role) => <MenuItem key={role.id} value={role.id}>{role.name}</MenuItem>)}
           </TextField>
@@ -220,7 +206,7 @@ export function UsersPage() {
       </AppDialog>
 
       <AppDialog open={resetTarget !== null} title="Reset temporary password" onClose={closeReset} fullWidth maxWidth="xs" preventClose={resetMutation.isPending} actions={<><AppButton onClick={closeReset} disabled={resetMutation.isPending}>Cancel</AppButton><AppButton variant="contained" disabled={temporaryPassword.length < 10} isLoading={resetMutation.isPending} onClick={() => resetMutation.mutate()}>Reset Password</AppButton></>}>
-        <Stack spacing={2} pt={1}><Typography color="text.secondary">{resetTarget?.name} will be signed out and required to change this password.</Typography><TextField autoFocus required type="password" label="Temporary password" value={temporaryPassword} onChange={(e) => { clearFieldError('temporaryPassword'); setTemporaryPassword(e.target.value); }} {...fieldFeedback('temporaryPassword')} /></Stack>
+        <Stack spacing={2} pt={1}><Typography color="text.secondary">{resetTarget?.name} will be signed out and required to change this password.</Typography><TextField autoFocus required autoComplete="new-password" type="password" label="Temporary password" value={temporaryPassword} onChange={(e) => { clearFieldError('temporaryPassword'); setTemporaryPassword(e.target.value); }} {...fieldFeedback('temporaryPassword')} /></Stack>
       </AppDialog>
       <ConfirmDialog open={statusTarget !== null} title={statusTarget?.status === 'ACTIVE' ? 'Deactivate user?' : 'Activate user?'} confirmLabel={statusTarget?.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} confirmColor={statusTarget?.status === 'ACTIVE' ? 'warning' : 'success'} isConfirming={statusMutation.isPending} onClose={() => setStatusTarget(null)} onConfirm={() => statusTarget && statusMutation.mutate(statusTarget)}>Changing status revokes this user's active sessions.</ConfirmDialog>
       <ConfirmDialog open={deleteTarget !== null} title="Delete user?" confirmLabel="Delete" confirmColor="error" isConfirming={deleteMutation.isPending} onClose={() => setDeleteTarget(null)} onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}>The user will lose access immediately. Existing business records remain unchanged.</ConfirmDialog>

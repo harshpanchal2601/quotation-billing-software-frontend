@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import type { ApiFieldErrors } from '@shared/api/apiClient';
-import { FormActions } from '@shared/forms';
+import { FormActions, FormExitGuard } from '@shared/forms';
 import { ControlledCheckbox, ControlledTextField } from '@shared/forms/controlled';
 import { AppDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
@@ -70,9 +70,9 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
   }
 
   return (
-    <AppDialog
+    open ? <FormExitGuard dirty={form.formState.isDirty} isSubmitting={isSubmitting} onCancel={onClose}>{(requestClose) => <AppDialog
       open={open}
-      onClose={onClose}
+      onClose={requestClose}
       preventClose={isSubmitting}
       fullWidth
       maxWidth="md"
@@ -81,14 +81,14 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
         <FormActions
           submitLabel={isSubmitting ? 'Saving...' : 'Save account'}
           isSubmitting={isSubmitting}
-          isSubmitDisabled={!form.formState.isValid}
-          onCancel={onClose}
+          isSubmitDisabled={!form.formState.isValid || (bankDetail !== null && !form.formState.isDirty)}
+          onCancel={requestClose}
           submitButtonProps={{ form: 'bank-details-form' }}
         />
       }
     >
         <Typography color="text.secondary" mb={2}>
-          Account numbers are stored as text so leading zeros and bank-specific formats are preserved.
+          Enter the details to show on customer documents. Check the account number and payment identifiers carefully.
         </Typography>
         <Stack component="form" id="bank-details-form" spacing={2} onSubmit={(event) => void form.handleSubmit(handleValidSubmit)(event)} noValidate aria-busy={isSubmitting}>
           <ServerErrorAlert message={errorMessage} />
@@ -125,6 +125,7 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
               control={form.control}
               render={({ field, fieldState }) => (
                 <Autocomplete
+                  fullWidth
                   freeSolo
                   options={accountTypeOptions}
                   value={field.value ?? ''}
@@ -150,7 +151,7 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
               name="branchName"
               control={form.control}
               label="Branch name"
-              autoComplete="address-level2"
+              autoComplete="off"
               disabled={isSubmitting}
             />
           </Stack>
@@ -177,7 +178,7 @@ export function BankDetailsDialog({ open, bankDetail, isSubmitting, errorMessage
             disabled={isSubmitting}
           />
         </Stack>
-    </AppDialog>
+    </AppDialog>}</FormExitGuard> : null
   );
 }
 

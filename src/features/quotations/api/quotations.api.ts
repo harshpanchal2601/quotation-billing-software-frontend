@@ -1,4 +1,4 @@
-import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
+import { apiClient, API_REQUEST_TIMEOUTS, type ApiSuccessResponse } from '@shared/api/apiClient';
 import { omitEmptyParams } from '../model/quotations.utils';
 import type {
   CalculatedQuotationTotals,
@@ -67,7 +67,7 @@ export async function generateQuotationPdfRequest(
       previewUrl: string;
       downloadUrl: string;
     }>
-  >(`/quotations/${quotationId}/pdf`);
+  >(`/quotations/${quotationId}/pdf`, undefined, { timeout: API_REQUEST_TIMEOUTS.pdfGeneration });
   return response.data.data;
 }
 

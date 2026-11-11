@@ -1,17 +1,17 @@
 import NoteAddOutlinedIcon from '@mui/icons-material/NoteAddOutlined';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
-import Typography from '@mui/material/Typography';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
+import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { AppTablePagination, DataTableShell } from '@shared/ui/tables';
+import { AppTablePagination, DataTableShell, type TableSorting } from '@shared/ui/tables';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@shared/routing/paths';
 import { getCurrentListReturnState } from '@shared/routing/returnNavigation';
@@ -28,6 +28,15 @@ import { QuotationTable } from '../components/QuotationTable';
 import { quotationsQueryKeys } from '../model/quotations.query-keys';
 import type { QuotationListItem, QuotationListParams, QuotationStatus } from '../model/quotations.types';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
+
+const quotationSortFields = [
+  { key: 'quotationNumber', label: 'Quotation number' },
+  { key: 'quotationDate', label: 'Quotation date' },
+  { key: 'validUntil', label: 'Valid until' },
+  { key: 'grandTotal', label: 'Grand total' },
+  { key: 'createdAt', label: 'Created date' },
+  { key: 'updatedAt', label: 'Updated date' },
+] as const;
 
 export function QuotationsPage() {
   const canCreate = useHasPermission(PERMISSIONS.QUOTATIONS_CREATE);
@@ -58,8 +67,8 @@ export function QuotationsPage() {
     const validTo = searchParams.get('validTo') || undefined;
     const minTotal = searchParams.get('minTotal') ? Number(searchParams.get('minTotal')) : undefined;
     const maxTotal = searchParams.get('maxTotal') ? Number(searchParams.get('maxTotal')) : undefined;
-    const sortBy = (searchParams.get('sortBy') as QuotationListParams['sortBy']) || 'createdAt';
-    const sortOrder = (searchParams.get('sortOrder') as QuotationListParams['sortOrder']) || 'desc';
+    const sortBy = quotationSortFields.find((field) => field.key === searchParams.get('sortBy'))?.key ?? 'createdAt';
+    const sortOrder: NonNullable<QuotationListParams['sortOrder']> = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
 
     return {
       page,
@@ -140,6 +149,16 @@ export function QuotationsPage() {
     setSearchParams(nextSearchParams);
   };
 
+  const sorting: TableSorting = {
+    sortBy: params.sortBy ?? 'createdAt',
+    sortOrder: params.sortOrder ?? 'desc',
+    fields: quotationSortFields,
+    onChange: ({ sortBy, sortOrder }) => {
+      const field = quotationSortFields.find((candidate) => candidate.key === sortBy);
+      if (field) handleFilterChange({ sortBy: field.key, sortOrder, page: 1 });
+    },
+  };
+
   const handleClearFilters = () => {
     setSearchParams(new URLSearchParams());
   };
@@ -168,7 +187,7 @@ export function QuotationsPage() {
             variant="contained"
             color="primary"
             startIcon={<NoteAddOutlinedIcon />}
-            onClick={() => navigate(paths.newQuotation)}
+            onClick={() => navigate(paths.newQuotation, { state: listReturnState })}
           >
             Create Quotation
           </AppButton>
@@ -178,6 +197,7 @@ export function QuotationsPage() {
       {/* Filters */}
       <QuotationFilters
         params={params}
+        sorting={sorting}
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}
         companyOptions={companyOptions}
@@ -185,6 +205,7 @@ export function QuotationsPage() {
 
       {/* Content State */}
       <DataTableShell
+        wrapInTableContainer={false}
         isLoading={isLoading}
         isError={isError}
         isEmpty={quotations.length === 0}
@@ -197,27 +218,7 @@ export function QuotationsPage() {
           </Box>
         }
         errorContent={<ErrorState message={toApiError(error).message} onRetry={refetch} />}
-        emptyContent={
-          <Box sx={{ p: 6, textAlign: 'center', bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h6" fontWeight={600} gutterBottom>
-            No Quotations Found
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {params.search || params.status || params.companyId
-              ? 'No quotations match the active filters.'
-              : 'You have not created any quotations yet.'}
-          </Typography>
-          {params.search || params.status || params.companyId ? (
-            <AppButton variant="outlined" size="small" onClick={handleClearFilters}>
-              Clear Filters
-            </AppButton>
-          ) : canCreate ? (
-            <AppButton variant="contained" size="small" startIcon={<NoteAddOutlinedIcon />} onClick={() => navigate(paths.newQuotation)}>
-              Create First Quotation
-            </AppButton>
-          ) : null}
-        </Box>
-        }
+        emptyContent={<EmptyState title="No quotations found" description={params.search || params.status || params.companyId ? 'No quotations match the active filters.' : 'You have not created any quotations yet.'} action={params.search || params.status || params.companyId ? <AppButton variant="outlined" size="small" onClick={handleClearFilters}>Clear Filters</AppButton> : canCreate ? <AppButton variant="contained" size="small" startIcon={<NoteAddOutlinedIcon />} onClick={() => navigate(paths.newQuotation, { state: listReturnState })}>Create First Quotation</AppButton> : undefined} />}
         pagination={
           pagination ? (
             <AppTablePagination
@@ -233,6 +234,8 @@ export function QuotationsPage() {
         }
       >
           <QuotationTable
+            sorting={sorting}
+            rowNumberStart={((params.page ?? 1) - 1) * (params.limit ?? 20) + 1}
             quotations={quotations}
             returnState={listReturnState}
             onOpenStatusDialog={(quo) => setStatusDialogTarget(quo)}

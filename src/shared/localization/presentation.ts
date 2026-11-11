@@ -1,7 +1,8 @@
 export type Presentation = { language: 'en' | 'hi' | 'gu'; locale: 'en-IN' | 'en-US' | 'en-GB' | 'hi-IN' | 'gu-IN'; timezone: string };
-export function formatExactDecimal(value: string, locale: Presentation['locale']) {
+export function formatExactDecimal(value: string, locale: Presentation['locale'], minimumFractionDigits = 0) {
   if (!/^-?\d+(?:\.\d+)?$/.test(value)) return value;
-  const [integer = '0', fraction] = value.split('.');
+  const [integer = '0', sourceFraction] = value.split('.');
+  const fraction = minimumFractionDigits > 0 ? (sourceFraction ?? '').padEnd(minimumFractionDigits, '0') : sourceFraction;
   const formatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
   const signed = BigInt(integer);
   const minus = formatter.formatToParts(-1).find((part) => part.type === 'minusSign')?.value ?? '-';

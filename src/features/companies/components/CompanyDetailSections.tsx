@@ -1,17 +1,14 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
-import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
-import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useState, type PropsWithChildren } from 'react';
+import { useState } from 'react';
 
-import { EmptyState } from '@shared/components/common/EmptyState';
+import { DetailActions, DetailFields, DetailSection } from '@shared/ui/layout';
+import { RecordTable } from '@shared/ui/tables';
 import { AppButton } from '@shared/ui/actions';
 import { DeleteConfirmDialog } from '@shared/ui/dialogs';
 import { ServerErrorAlert } from '@shared/ui/feedback';
@@ -25,37 +22,27 @@ type OverviewProps = {
 export function CompanyOverview({ company }: OverviewProps) {
   return (
     <Stack spacing={2}>
-      <InfoPanel title="Company information">
-        <InfoRow label="Company name" value={company.name} />
-        <InfoRow label="Legal name" value={company.legalName} />
-        <InfoRow label="Company code" value={company.companyCode} />
-        <InfoRow label="Website" value={company.website} />
-        <InfoRow label="Status" value={company.isActive ? 'Active' : 'Inactive'} />
-      </InfoPanel>
-      <InfoPanel title="Legal and tax information">
-        <InfoRow label="GSTIN" value={company.gstin} />
-        <InfoRow label="PAN" value={company.pan} />
-      </InfoPanel>
-      <InfoPanel title="Primary summaries">
-        <InfoRow label="Primary contact" value={company.primaryContact ? `${company.primaryContact.name} ${company.primaryContact.phone ?? company.primaryContact.email ?? ''}` : null} />
-        <InfoRow label="Billing address" value={formatAddress(company.primaryBillingAddress)} />
-        <InfoRow label="Shipping address" value={formatAddress(company.primaryShippingAddress)} />
-      </InfoPanel>
-      <InfoPanel title="Quotation summary">
-        <Stack direction="row" spacing={1} flexWrap="wrap">
-          <Chip label={`Total ${company.quotationSummary.total}`} />
-          <Chip label={`Draft ${company.quotationSummary.draft}`} />
-          <Chip label={`Pending ${company.quotationSummary.pending}`} />
-          <Chip label={`Completed ${company.quotationSummary.completed}`} />
-        </Stack>
-      </InfoPanel>
-      <InfoPanel title="Notes">
-        <Typography whiteSpace="pre-line">{company.notes ?? unavailable}</Typography>
-      </InfoPanel>
-      <InfoPanel title="Timeline">
-        <InfoRow label="Created" value={formatReadableDate(company.createdAt)} />
-        <InfoRow label="Updated" value={formatReadableDate(company.updatedAt)} />
-      </InfoPanel>
+      <DetailSection title="Company information"><DetailFields fields={[
+        { label: 'Company name', value: company.name }, { label: 'Legal name', value: company.legalName },
+        { label: 'Company code', value: company.companyCode }, { label: 'Website', value: company.website },
+        { label: 'Status', value: company.isActive ? 'Active' : 'Inactive' }, { label: 'Supplier', value: company.isSupplier ? 'Yes' : 'No' },
+      ]} /></DetailSection>
+      <DetailSection title="Legal and tax information"><DetailFields fields={[
+        { label: 'GSTIN', value: company.gstin }, { label: 'PAN', value: company.pan },
+      ]} /></DetailSection>
+      <DetailSection title="Contact and addresses"><DetailFields columns={3} fields={[
+        { label: 'Primary contact', value: company.primaryContact ? [company.primaryContact.name, company.primaryContact.phone, company.primaryContact.email].filter(Boolean).join(' · ') : null },
+        { label: 'Billing address', value: formatAddress(company.primaryBillingAddress) },
+        { label: 'Shipping address', value: formatAddress(company.primaryShippingAddress) },
+      ]} /></DetailSection>
+      <DetailSection title="Quotation summary"><DetailFields columns={2} fields={[
+        { label: 'Total quotations', value: company.quotationSummary.total }, { label: 'Draft', value: company.quotationSummary.draft },
+        { label: 'Pending', value: company.quotationSummary.pending }, { label: 'Completed', value: company.quotationSummary.completed },
+      ]} /></DetailSection>
+      {company.notes ? <DetailSection title="Notes"><Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{company.notes}</Typography></DetailSection> : null}
+      <DetailSection title="Record information"><DetailFields fields={[
+        { label: 'Created', value: formatReadableDate(company.createdAt) }, { label: 'Last updated', value: formatReadableDate(company.updatedAt) },
+      ]} /></DetailSection>
     </Stack>
   );
 }
@@ -84,30 +71,18 @@ export function ContactsSection({
     <Stack spacing={2}>
       <SectionHeader title="Contacts" actionLabel={canManage ? 'Add contact' : undefined} onAction={canManage ? onAdd : undefined} />
       <ServerErrorAlert message={errorMessage} />
-      {contacts.length === 0 ? <EmptyState title="No contacts yet" description="Add contacts for quotation communication." /> : (
-        <Stack spacing={1.5}>
-          {contacts.map((contact) => (
-            <Paper key={contact.id} variant="outlined" sx={{ p: 2 }}>
-              <Stack spacing={1.5} direction={{ xs: 'column', md: 'row' }} justifyContent="space-between">
-                <Box>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="h3">{contact.name}</Typography>
-                    {contact.isPrimary ? <Chip size="small" icon={<CheckCircleOutlineOutlinedIcon />} color="primary" label="Primary contact" /> : null}
-                  </Stack>
-                  <Typography color="text.secondary">{contact.designation ?? unavailable}</Typography>
-                  <Typography>{contact.email ?? unavailable}</Typography>
-                  <Typography color="text.secondary">Phone: {contact.phone ?? unavailable} · Alternate: {contact.alternatePhone ?? unavailable}</Typography>
-                </Box>
-                {canManage ? <Stack direction="row" spacing={1} flexWrap="wrap">
-                  <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(contact)} disabled={disabled}>Edit</AppButton>
-                  {!contact.isPrimary ? <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(contact)} disabled={disabled}>Set primary</AppButton> : null}
-                  <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(contact)} disabled={disabled}>Delete</AppButton>
-                </Stack> : null}
-              </Stack>
-            </Paper>
-          ))}
-        </Stack>
-      )}
+      <RecordTable rows={contacts} label="Company contacts" rowKey={(contact) => contact.id} emptyMessage="No contacts yet. Add a contact for quotation communication." columns={[
+        { key: 'name', label: 'Name', sortValue: (contact) => contact.name, render: (contact) => <Stack spacing={0.5}><Typography variant="body2" fontWeight={600}>{contact.name}</Typography>{contact.isPrimary ? <Chip size="small" color="primary" label="Primary contact" sx={{ alignSelf: 'flex-start' }} /> : null}</Stack> },
+        { key: 'designation', label: 'Designation', sortValue: (contact) => contact.designation, render: (contact) => contact.designation ?? unavailable },
+        { key: 'email', label: 'Email', sortValue: (contact) => contact.email, render: (contact) => contact.email ?? unavailable },
+        { key: 'phone', label: 'Phone', sortValue: (contact) => contact.phone, render: (contact) => contact.phone ?? unavailable },
+        { key: 'alternatePhone', label: 'Alternate phone', render: (contact) => contact.alternatePhone ?? unavailable },
+        ...(canManage ? [{ key: 'actions', label: 'Actions', render: (contact: CompanyContact) => <DetailActions label={`Actions for ${contact.name}`}>
+          <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(contact)} disabled={disabled}>Edit</AppButton>
+          {!contact.isPrimary ? <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(contact).catch(() => undefined)} disabled={disabled}>Set primary</AppButton> : null}
+          <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(contact)} disabled={disabled}>Delete</AppButton>
+        </DetailActions> }] : []),
+      ]} />
       {canManage ? <DeleteChildDialog
         open={deleting !== null}
         title="Delete contact?"
@@ -147,28 +122,17 @@ export function AddressesSection({
     <Stack spacing={2}>
       <SectionHeader title="Addresses" actionLabel={canManage ? 'Add address' : undefined} onAction={canManage ? onAdd : undefined} />
       <ServerErrorAlert message={errorMessage} />
-      {addresses.length === 0 ? <EmptyState title="No addresses yet" description="Add billing and shipping addresses for quotation snapshots." /> : (
-        <Stack spacing={1.5}>
-          {addresses.map((address) => (
-            <Paper key={address.id} variant="outlined" sx={{ p: 2 }}>
-              <Stack spacing={1.5} direction={{ xs: 'column', md: 'row' }} justifyContent="space-between">
-                <Box>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="h3">{addressTypeLabel(address.addressType)}</Typography>
-                    {address.isPrimary ? <Chip size="small" icon={<CheckCircleOutlineOutlinedIcon />} color="primary" label="Primary address" /> : null}
-                  </Stack>
-                  <Typography color="text.secondary">{formatAddress(address)}</Typography>
-                </Box>
-                {canManage ? <Stack direction="row" spacing={1} flexWrap="wrap">
-                  <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(address)} disabled={disabled}>Edit</AppButton>
-                  {!address.isPrimary ? <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(address)} disabled={disabled}>Set primary</AppButton> : null}
-                  <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(address)} disabled={disabled}>Delete</AppButton>
-                </Stack> : null}
-              </Stack>
-            </Paper>
-          ))}
-        </Stack>
-      )}
+      <RecordTable rows={addresses} label="Company addresses" rowKey={(address) => address.id} emptyMessage="No addresses yet. Add billing and shipping addresses for your documents." columns={[
+        { key: 'type', label: 'Address type', sortValue: (address) => address.addressType, render: (address) => <Stack spacing={0.5}><Typography variant="body2" fontWeight={600}>{addressTypeLabel(address.addressType)}</Typography>{address.isPrimary ? <Chip size="small" color="primary" label="Primary address" sx={{ alignSelf: 'flex-start' }} /> : null}</Stack> },
+        { key: 'address', label: 'Address', sortValue: (address) => formatAddress(address), render: (address) => formatAddress(address) },
+        { key: 'city', label: 'City', sortValue: (address) => address.city, render: (address) => address.city },
+        { key: 'state', label: 'State', sortValue: (address) => address.state, render: (address) => address.state },
+        ...(canManage ? [{ key: 'actions', label: 'Actions', render: (address: CompanyAddress) => <DetailActions label={`Actions for ${addressTypeLabel(address.addressType)} address`}>
+          <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(address)} disabled={disabled}>Edit</AppButton>
+          {!address.isPrimary ? <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => void onSetPrimary(address).catch(() => undefined)} disabled={disabled}>Set primary</AppButton> : null}
+          <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setDeleting(address)} disabled={disabled}>Delete</AppButton>
+        </DetailActions> }] : []),
+      ]} />
       {canManage ? <DeleteChildDialog
         open={deleting !== null}
         title="Delete address?"
@@ -184,31 +148,10 @@ export function AddressesSection({
   );
 }
 
-function InfoPanel({ title, children }: PropsWithChildren<{ title: string }>) {
-  return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <Stack spacing={1.5}>
-        <Typography variant="h3">{title}</Typography>
-        <Divider />
-        {children}
-      </Stack>
-    </Paper>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
-      <Typography color="text.secondary">{label}</Typography>
-      <Typography textAlign={{ sm: 'right' }}>{value && value.trim().length > 0 ? value : unavailable}</Typography>
-    </Stack>
-  );
-}
-
 function SectionHeader({ title, actionLabel, onAction }: { title: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
-      <Typography component="h2" variant="h2">{title}</Typography>
+      <Typography component="h2" variant="subtitle1" fontWeight={700} color="primary.main">{title}</Typography>
       {actionLabel && onAction ? <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={onAction}>{actionLabel}</AppButton> : null}
     </Stack>
   );

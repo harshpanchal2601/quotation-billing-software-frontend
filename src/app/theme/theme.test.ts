@@ -17,10 +17,10 @@ describe('theme', () => {
 
   it('keeps dialogs inside narrow mobile viewports', () => {
     expect(theme.components?.MuiDialog?.styleOverrides?.paper).toMatchObject({
-      maxWidth: 'calc(100% - 16px)',
       maxHeight: 'calc(100% - 16px)',
-      margin: 8,
+      '@media (max-width: 599.95px)': { maxWidth: 'calc(100% - 16px)', margin: 8 },
     });
+    expect(theme.components?.MuiDialog?.styleOverrides?.paper).not.toHaveProperty('maxWidth');
   });
 
   it('makes table containers horizontally scrollable as a shared fallback', () => {

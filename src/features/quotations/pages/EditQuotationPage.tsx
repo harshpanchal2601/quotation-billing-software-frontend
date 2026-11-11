@@ -7,7 +7,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
-import { AppSnackbar } from '@shared/ui/feedback';
+import { paths } from '@shared/routing/paths';
+import { useSaveAndReturn } from '@shared/routing/returnNavigation';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { getQuotationRequest, updateQuotationRequest } from '../api/quotations.api';
 import { QuotationForm } from '../components/QuotationForm';
@@ -18,14 +19,10 @@ import { formatQuotationStatusLabel } from '../model/quotations.utils';
 export function EditQuotationPage() {
   const { id } = useParams<{ id: string }>();
   const quotationId = Number(id);
+  const { cancel, saved, failed, hasSaved } = useSaveAndReturn(paths.quotations);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<ApiFieldErrors>({});
 
@@ -58,12 +55,10 @@ export function EditQuotationPage() {
     onSuccess: (updated) => {
       setServerError(null);
       setFieldErrors({});
-      setFeedback({ open: true, message: `Quotation ${updated.quotationNumber} updated successfully!`, severity: 'success' });
-      queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all });
-      navigate(`/quotations/${updated.id}`);
+      return saved(`Quotation ${updated.quotationNumber} updated successfully.`, () => queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.all }));
     },
     onError: (error) => {
-      const apiError = toApiError(error);
+      const apiError = failed(error);
       if (apiError.cancelled) return;
       setServerError(apiError.message);
       setFieldErrors(apiError.fieldErrors);
@@ -146,17 +141,17 @@ export function EditQuotationPage() {
       <PageHeader
         title={`Edit Draft Quotation — ${quotation.quotationNumber} Revision #${quotation.revisionNumber}`}
         titleTypographyProps={{ variant: 'h5', fontWeight: 700 }}
-        description="Update customer details, line items or charges. A version snapshot will be saved automatically upon submission."
+        description="Update customer details, line items or charges. Your changes will be saved in the quotation history."
         descriptionTypographyProps={{ variant: 'body2' }}
       />
 
-      <QuotationForm
+      <QuotationForm hasSaved={hasSaved}
         initialValues={initialValues}
         editingQuotation={quotation}
         isSubmitting={updateMutation.isPending}
         serverError={serverError}
         fieldErrors={fieldErrors}
-        onCancel={() => navigate(`/quotations/${quotation.id}`)}
+        onCancel={cancel}
         onSubmit={(values) => {
           if (!updateMutation.isPending) {
             setServerError(null);
@@ -166,13 +161,6 @@ export function EditQuotationPage() {
         }}
       />
 
-      <AppSnackbar
-        open={feedback.open}
-        autoHideDuration={4000}
-        message={feedback.message}
-        severity={feedback.severity}
-        onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
-      />
     </PageContainer>
   );
 }

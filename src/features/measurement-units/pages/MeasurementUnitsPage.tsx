@@ -14,7 +14,7 @@ import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
+import { AppTablePagination, DataTableShell, TableSkeleton, TableSortControls, type TableSorting } from '@shared/ui/tables';
 import {
   deleteMeasurementUnitRequest,
   listMeasurementUnitsRequest,
@@ -34,14 +34,11 @@ import { MeasurementUnitFormDialog } from '../components/MeasurementUnitFormDial
 import { MeasurementUnitTable } from '../components/MeasurementUnitTable';
 import { PERMISSIONS, useHasPermission } from '@features/auth';
 
-const sortOptions = [
-  { value: 'name:asc', label: 'Name A–Z' },
-  { value: 'name:desc', label: 'Name Z–A' },
-  { value: 'symbol:asc', label: 'Symbol A–Z' },
-  { value: 'symbol:desc', label: 'Symbol Z–A' },
-  { value: 'createdAt:desc', label: 'Newest first' },
-  { value: 'createdAt:asc', label: 'Oldest first' },
-  { value: 'updatedAt:desc', label: 'Recently updated' },
+const sortFields = [
+  { key: 'name', label: 'Unit name' },
+  { key: 'symbol', label: 'Symbol' },
+  { key: 'createdAt', label: 'Created date' },
+  { key: 'updatedAt', label: 'Updated date' },
 ] as const;
 
 export function MeasurementUnitsPage() {
@@ -61,15 +58,23 @@ export function MeasurementUnitsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const params = parseUnitListParams(searchParams);
+  const sorting: TableSorting = {
+    sortBy: params.sortBy,
+    sortOrder: params.sortOrder,
+    fields: sortFields,
+    onChange: ({ sortBy, sortOrder }) => updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 }),
+  };
 
   useEffect(() => setSearchInput(searchParams.get('search') ?? ''), [searchParams]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      updateSearchParams(setSearchParams, { search: searchInput.trim() || undefined, page: 1 });
+      const nextSearch = searchInput.trim();
+      if (nextSearch === (searchParams.get('search') ?? '')) return;
+      updateSearchParams(setSearchParams, { search: nextSearch || undefined, page: 1 });
     }, 350);
     return () => window.clearTimeout(timeout);
-  }, [searchInput, setSearchParams]);
+  }, [searchInput, searchParams, setSearchParams]);
 
   const query = useQuery({
     queryKey: measurementUnitsQueryKeys.list(params),
@@ -98,7 +103,6 @@ export function MeasurementUnitsPage() {
     onError: (error) => setPageError(toApiError(error).message),
   });
 
-  const sortValue = `${params.sortBy}:${params.sortOrder}`;
   const isFiltered = Boolean(
     params.search || params.isActive !== undefined || params.allowDecimal !== undefined,
   );
@@ -175,29 +179,11 @@ export function MeasurementUnitsPage() {
           <MenuItem value="true">Allows Decimal</MenuItem>
           <MenuItem value="false">Whole Quantities Only</MenuItem>
         </TextField>
-
-        <TextField
-          select
-          label="Sort"
-          value={sortValue}
-          onChange={(event) => {
-            const [sortBy, sortOrder] = event.target.value.split(':') as [
-              MeasurementUnitListParams['sortBy'],
-              MeasurementUnitListParams['sortOrder'],
-            ];
-            updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
-          }}
-          sx={{ minWidth: { xs: 0, md: 200 }, width: { xs: '100%', md: 'auto' } }}
-        >
-          {sortOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
       </Stack>
 
+      <TableSortControls {...sorting} />
       <DataTableShell
+        wrapInTableContainer={false}
         isLoading={query.isPending}
         isError={query.isError}
         isEmpty={Boolean(query.data && query.data.measurementUnits.length === 0)}
@@ -237,10 +223,12 @@ export function MeasurementUnitsPage() {
         {query.data && query.data.measurementUnits.length > 0 ? (
           <>
           <Typography color="text.secondary">
-            {query.data.pagination.total} measurement unit(s) found
+            {query.data.pagination.total} measurement units found
           </Typography>
 
           <MeasurementUnitTable
+            sorting={sorting}
+            rowNumberStart={((params.page ?? 1) - 1) * (params.limit ?? 20) + 1}
             units={query.data.measurementUnits}
             busyUnitId={busyUnitId}
             canManage={canManage}

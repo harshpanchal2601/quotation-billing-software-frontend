@@ -10,16 +10,18 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { apiClient, toApiError, type ApiSuccessResponse } from '@shared/api/apiClient';
+import { toApiError } from '@shared/api/apiClient';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
 import { AppStatusChip } from '@shared/ui/display';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { DataTableShell, RecordPagination, RecordTable, TableSkeleton, useTableSort } from '@shared/ui/tables';
 import { EffectiveAccessPanel } from './EffectiveAccessPanel';
 import { PlatformAuditPanel } from './PlatformAuditPanel';
 import { subscriptionsApi as api } from './subscriptions.api';
 import type { OverrideInput, SubscriptionInput } from './subscriptions.types';
-import type { PlatformFirm } from './platform.types';
+import { PLATFORM_FIRM_SORT_FIELDS } from './platform.types';
+import { listPlatformFirmsRequest } from './platform.api';
 import { usePlatformOperation } from './usePlatformOperation';
 import { UsageEventsPanel } from './UsageEventsPanel';
 import { AssistantModeControls } from './AssistantModeControls';
@@ -42,26 +44,24 @@ export function PlatformSubscriptionsPage() {
   const validFirm = Number.isSafeInteger(firmId) && firmId > 0;
   const [search, setSearch] = useState('');
   const [firmPage, setFirmPage] = useState(1);
-  const firms = useQuery({ queryKey: ['platform', 'firm-options', search, firmPage], queryFn: async ({ signal }) => {
-    const response = await apiClient.get<ApiSuccessResponse<{ firms: PlatformFirm[]; pagination: { totalPages: number; total: number } }>>('/platform/firms', { params: { search: search || undefined, page: firmPage, limit: 20 }, signal });
-    return response.data.data;
-  } });
+  const sorting = useTableSort(PLATFORM_FIRM_SORT_FIELDS, { onChange: () => setFirmPage(1) });
+  const firmParams = { search: search || undefined, page: firmPage, limit: 20, sortBy: sorting.sortBy, sortOrder: sorting.sortOrder };
+  const firms = useQuery({ queryKey: ['platform', 'firm-options', firmParams], queryFn: ({ signal }) => listPlatformFirmsRequest(firmParams, signal) });
   return (
     <PageContainer>
       <PageHeader title="Subscriptions" description="Select a firm to review access, assign a published plan, manage exceptions and record payments." actions={<AppButton component={Link} to="/platform/plans" variant="outlined">Manage plans</AppButton>} />
       <PlatformSection title="Firm subscriptions" description="Choose Manage subscription to view a firm's current plan and subscription history.">
         <TextField fullWidth label="Find firm" placeholder="Search by firm name or slug" value={search} onChange={(event) => { setSearch(event.target.value); setFirmPage(1); }} />
-        <PlatformTable label="Subscription firms" isLoading={firms.isPending} isError={firms.isError} isEmpty={!firms.data?.firms.length} emptyMessage="No matching firms" errorMessage="Firms could not be loaded." onRetry={() => { void firms.refetch(); }} columns={[{ key: 'firm', label: 'Firm' }, { key: 'email', label: 'Administrator email' }, { key: 'users', label: 'Users / limit' }, { key: 'status', label: 'Firm status' }, { key: 'actions', label: 'Actions', align: 'right' }]} pagination={<PlatformPagination label="Firms" page={firmPage} totalPages={firms.data?.pagination.totalPages ?? 1} onChange={setFirmPage} />}>
-          {firms.data?.firms.map((firm) => (
-            <TableRow key={firm.id} hover selected={firm.id === firmId}>
-              <TableCell><Typography fontWeight={600}>{firm.displayName || firm.name}</Typography><Typography variant="caption" color="text.secondary">{firm.slug} · ID {firm.id}</Typography></TableCell>
-              <TableCell>{firm.administratorEmail ?? '—'}</TableCell>
-              <TableCell>{firm.userCount} / {firm.userLimit}</TableCell>
-              <TableCell><AppStatusChip label={firm.status} variant={firm.status === 'ACTIVE' ? 'success' : 'warning'} /></TableCell>
-              <TableCell align="right"><AppButton size="small" onClick={() => setParams({ firmId: String(firm.id) })}>Manage subscription</AppButton></TableCell>
-            </TableRow>
-          ))}
-        </PlatformTable>
+        <DataTableShell wrapInTableContainer={false} isLoading={firms.isPending} isError={firms.isError} isEmpty={false} loadingContent={<TableSkeleton />} errorContent={<ErrorState message="Firms could not be loaded." onRetry={() => { void firms.refetch(); }} />} emptyContent={null}>
+          <RecordTable label="Subscription firms" rows={firms.data?.firms ?? []} rowKey={(firm) => firm.id} sorting={sorting} rowNumberStart={(firmPage - 1) * 20 + 1} emptyMessage="No firms match this search." columns={[
+            { key: 'firm', sortKey: 'displayName', label: 'Firm', render: (firm) => <><Typography fontWeight={600}>{firm.displayName || firm.name}</Typography><Typography variant="caption" color="text.secondary">{firm.slug} · ID {firm.id}</Typography></> },
+            { key: 'email', label: 'Administrator email', render: (firm) => firm.administratorEmail ?? '—' },
+            { key: 'users', label: 'Users / limit', render: (firm) => `${firm.userCount} / ${firm.userLimit}` },
+            { key: 'status', sortKey: 'status', label: 'Firm status', render: (firm) => <AppStatusChip label={firm.status} variant={firm.status === 'ACTIVE' ? 'success' : 'warning'} /> },
+            { key: 'actions', label: 'Actions', align: 'right', render: (firm) => <AppButton size="small" onClick={() => setParams((current) => { const next = new URLSearchParams(current); next.set('firmId', String(firm.id)); return next; })}>Manage subscription</AppButton> },
+          ]} />
+        </DataTableShell>
+        {!firms.isPending && !firms.isError ? <RecordPagination pagination={firms.data?.pagination} page={firmPage} change={setFirmPage} /> : null}
       </PlatformSection>
       {validFirm ? <FirmSubscriptionEditor key={firmId} firmId={firmId} firmName={firms.data?.firms.find((firm) => firm.id === firmId)?.displayName} /> : <Alert severity="info">Select a firm to manage its subscription. New plans must have a published revision before assignment.</Alert>}
     </PageContainer>
@@ -176,7 +176,7 @@ function FirmSubscriptionEditor({ firmId, firmName }: { firmId: number; firmName
               {operation.isError ? <ErrorState message={toApiError(operation.error).message} /> : null}
             </PlatformSection>
             <PlatformSection title="Subscription history" description="Current and scheduled assignments are recorded separately from previous subscription periods.">
-              <PlatformTable label="Subscription history" isEmpty={details.data.subscriptions.length === 0} emptyMessage="No subscription assignments" columns={[{ key: 'plan', label: 'Plan / revision' }, { key: 'status', label: 'State' }, { key: 'start', label: 'Effective from' }, { key: 'end', label: 'Access ends' }, { key: 'reason', label: 'Reason / actor' }, { key: 'actions', label: 'Actions', align: 'right' }]} pagination={<PlatformPagination label="Subscription history" page={pages.subscriptions} totalPages={details.data.pagination.subscriptions.totalPages} onChange={(page) => setPages({ ...pages, subscriptions: page })} disabled={operation.isPending} />}>
+              <PlatformTable rowNumberStart={(pages.subscriptions - 1) * 20 + 1} label="Subscription history" isEmpty={details.data.subscriptions.length === 0} emptyMessage="No subscription assignments" columns={[{ key: 'plan', label: 'Plan / revision' }, { key: 'status', label: 'State' }, { key: 'start', label: 'Effective from' }, { key: 'end', label: 'Access ends' }, { key: 'reason', label: 'Reason / actor' }, { key: 'actions', label: 'Actions', align: 'right' }]} pagination={<PlatformPagination label="Subscription history" page={pages.subscriptions} totalPages={details.data.pagination.subscriptions.totalPages} onChange={(page) => setPages({ ...pages, subscriptions: page })} disabled={operation.isPending} />}>
                 {details.data.subscriptions.map((subscription) => (
                   <TableRow key={subscription.id} selected={subscription.id === current?.id}>
                     <TableCell><Typography fontWeight={600}>{subscription.planVersion?.plan.name ?? `Plan revision ID ${subscription.planVersionId}`}</Typography><Typography variant="caption">{subscription.planVersion ? `Revision ${subscription.planVersion.revision} · ` : ''}Assignment #{subscription.id}</Typography></TableCell>
@@ -205,7 +205,7 @@ function FirmSubscriptionEditor({ firmId, firmName }: { firmId: number; firmName
               <Stack direction="row"><AppButton variant="contained" disabled={!allowedAction || !choicesReady} onClick={() => operation.mutate(() => api.override(firmId, { target, effect, limit: effect === 'LIMIT' ? limit || null : null, startsAt: startsAt ? new Date(startsAt).toISOString() : new Date().toISOString(), expiresAt: dateValue(expiresAt), reason }))}>Apply audited override</AppButton></Stack>
             </PlatformSection>
             <PlatformSection title="Override history">
-              <PlatformTable label="Firm overrides" isEmpty={details.data.overrides.length === 0} emptyMessage="No firm overrides" columns={[{ key: 'target', label: 'Target' }, { key: 'effect', label: 'Effect / limit' }, { key: 'start', label: 'Starts' }, { key: 'expiry', label: 'Expires' }, { key: 'reason', label: 'Reason / actor' }, { key: 'actions', label: 'Actions', align: 'right' }]} pagination={<PlatformPagination label="Overrides" page={pages.overrides} totalPages={details.data.pagination.overrides.totalPages} onChange={(page) => setPages({ ...pages, overrides: page })} disabled={operation.isPending} />}>
+              <PlatformTable rowNumberStart={(pages.overrides - 1) * 20 + 1} label="Firm overrides" isEmpty={details.data.overrides.length === 0} emptyMessage="No firm overrides" columns={[{ key: 'target', label: 'Target' }, { key: 'effect', label: 'Effect / limit' }, { key: 'start', label: 'Starts' }, { key: 'expiry', label: 'Expires' }, { key: 'reason', label: 'Reason / actor' }, { key: 'actions', label: 'Actions', align: 'right' }]} pagination={<PlatformPagination label="Overrides" page={pages.overrides} totalPages={details.data.pagination.overrides.totalPages} onChange={(page) => setPages({ ...pages, overrides: page })} disabled={operation.isPending} />}>
                 {details.data.overrides.map((override) => (
                   <TableRow key={override.id}>
                     <TableCell><Typography>{override.target}</Typography>{override.revokedAt ? <AppStatusChip label="Revoked" /> : null}</TableCell>
@@ -224,7 +224,7 @@ function FirmSubscriptionEditor({ firmId, firmName }: { firmId: number; firmName
               <Stack direction="row"><AppButton variant="contained" disabled={!allowedAction || !chargeAmount || currency.length !== 3 || !choicesReady} onClick={() => operation.mutate(async () => { await api.charge(firmId, { amount: chargeAmount, currency, idempotencyKey: chargeKey, reason }); setChargeKey(crypto.randomUUID()); setChargeAmount(''); })}>Record charge</AppButton></Stack>
             </PlatformSection>
             <PlatformSection title="Charge history">
-              <PlatformTable label="Platform charges" isEmpty={details.data.charges.length === 0} emptyMessage="No recorded charges" columns={[{ key: 'id', label: 'Charge' }, { key: 'currency', label: 'Currency' }, { key: 'amount', label: 'Amount', align: 'right' }, { key: 'events', label: 'Payment events' }, { key: 'reason', label: 'Reason' }]} pagination={<PlatformPagination label="Charges" page={pages.charges} totalPages={details.data.pagination.charges.totalPages} onChange={(page) => { setPages({ ...pages, charges: page }); setChargeId(''); }} disabled={operation.isPending} />}>
+              <PlatformTable rowNumberStart={(pages.charges - 1) * 20 + 1} label="Platform charges" isEmpty={details.data.charges.length === 0} emptyMessage="No recorded charges" columns={[{ key: 'id', label: 'Charge' }, { key: 'currency', label: 'Currency' }, { key: 'amount', label: 'Amount', align: 'right' }, { key: 'events', label: 'Payment events' }, { key: 'reason', label: 'Reason' }]} pagination={<PlatformPagination label="Charges" page={pages.charges} totalPages={details.data.pagination.charges.totalPages} onChange={(page) => { setPages({ ...pages, charges: page }); setChargeId(''); }} disabled={operation.isPending} />}>
                 {details.data.charges.map((charge) => <TableRow key={charge.id}><TableCell>#{charge.id}</TableCell><TableCell>{charge.currency}</TableCell><TableCell align="right">{charge.amount}</TableCell><TableCell>{charge.payments.length}</TableCell><TableCell sx={{ minWidth: 180, overflowWrap: 'anywhere' }}>{charge.reason}</TableCell></TableRow>)}
               </PlatformTable>
             </PlatformSection>

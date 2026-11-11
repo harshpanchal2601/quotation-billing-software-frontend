@@ -1,11 +1,6 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,7 +8,6 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
-import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { switchSelectedFirm } from '@shared/tenancy/selectedFirm';
 import { AppButton } from '@shared/ui/actions';
@@ -21,7 +15,7 @@ import { AppDialog, ConfirmDialog } from '@shared/ui/dialogs';
 import { AppStatusChip } from '@shared/ui/display';
 import { AppSnackbar } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { DataTableShell, TableSkeleton } from '@shared/ui/tables';
+import { DataTableShell, RecordPagination, RecordTable, TableSkeleton, useTableSort } from '@shared/ui/tables';
 import { paths } from '@shared/routing/paths';
 import {
   createPlatformFirmRequest,
@@ -31,7 +25,7 @@ import {
   updatePlatformFirmRequest,
   resetPlatformFirmAdministratorPasswordRequest,
 } from './platform.api';
-import type { CreateFirmInput, PlatformFirm } from './platform.types';
+import { PLATFORM_FIRM_SORT_FIELDS, type CreateFirmInput, type PlatformFirm } from './platform.types';
 
 const emptyForm: CreateFirmInput = {
   name: '', slug: '', legalName: '', displayName: '', addressLine1: '', addressLine2: '',
@@ -52,7 +46,11 @@ export function PlatformFirmsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<ApiFieldErrors>({});
-  const query = useQuery({ queryKey: platformFirmQueryKey, queryFn: listPlatformFirmsRequest });
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const sorting = useTableSort(PLATFORM_FIRM_SORT_FIELDS, { onChange: () => setPage(1) });
+  const params = { page, limit: 20, search: search || undefined, sortBy: sorting.sortBy, sortOrder: sorting.sortOrder };
+  const query = useQuery({ queryKey: [...platformFirmQueryKey, params], queryFn: ({ signal }) => listPlatformFirmsRequest(params, signal) });
 
   const createMutation = useMutation({
     mutationFn: createPlatformFirmRequest,
@@ -189,39 +187,31 @@ export function PlatformFirmsPage() {
         description="Register client firms, issue their administrator account, and enter a firm workspace."
         actions={<AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={openCreateForm}>Register Firm</AppButton>}
       />
+      <TextField label="Find firm" placeholder="Search by firm name or slug" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} fullWidth />
       <DataTableShell
+        wrapInTableContainer={false}
         isLoading={query.isPending}
         isError={query.isError}
-        isEmpty={query.data?.firms.length === 0}
+        isEmpty={false}
         loadingContent={<TableSkeleton />}
-        errorContent={<ErrorState message={toApiError(query.error).message} />}
-        emptyContent={<EmptyState title="No firms registered" description="Register the first client firm to create its workspace and administrator." />}
+        errorContent={<ErrorState message={toApiError(query.error).message} onRetry={() => { void query.refetch(); }} />}
+        emptyContent={null}
       >
-        {query.data?.firms.length ? (
-          <Table aria-label="Firms" sx={{ minWidth: 860 }}>
-            <TableHead><TableRow><TableCell>Firm</TableCell><TableCell>Administrator email</TableCell><TableCell>Users</TableCell><TableCell>Status</TableCell><TableCell align="right">Actions</TableCell></TableRow></TableHead>
-            <TableBody>
-              {query.data.firms.map((firm) => (
-                <TableRow key={firm.id} hover>
-                  <TableCell><Typography fontWeight={700}>{firm.displayName}</Typography><Typography variant="caption" color="text.secondary">{firm.slug}</Typography></TableCell>
-                  <TableCell>{firm.administratorEmail ?? '—'}</TableCell>
-                  <TableCell>{firm.userCount} / {firm.userLimit}</TableCell>
-                  <TableCell><AppStatusChip label={firm.status} variant={firm.status === 'ACTIVE' ? 'success' : 'warning'} /></TableCell>
-                  <TableCell align="right">
-                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+        <RecordTable rows={query.data?.firms ?? []} label="Firms" rowKey={(firm) => firm.id} sorting={sorting} rowNumberStart={(page - 1) * 20 + 1} emptyMessage={search ? 'No firms match this search.' : 'Register the first client firm to create its workspace and administrator.'} columns={[
+          { key: 'firm', sortKey: 'displayName', label: 'Firm', render: (firm) => <><Typography fontWeight={700}>{firm.displayName}</Typography><Typography variant="caption" color="text.secondary">{firm.slug}</Typography></> },
+          { key: 'email', label: 'Administrator email', render: (firm) => firm.administratorEmail ?? '—' },
+          { key: 'users', label: 'Users', render: (firm) => `${firm.userCount} / ${firm.userLimit}` },
+          { key: 'status', sortKey: 'status', label: 'Status', render: (firm) => <AppStatusChip label={firm.status} variant={firm.status === 'ACTIVE' ? 'success' : 'warning'} /> },
+          { key: 'actions', label: 'Actions', align: 'right', render: (firm) => <Stack direction="row" useFlexGap spacing={1} flexWrap="wrap" justifyContent="flex-end">
                       <AppButton size="small" startIcon={<BusinessOutlinedIcon />} disabled={firm.status !== 'ACTIVE'} onClick={() => selectFirm(firm)}>Open</AppButton>
                       <AppButton size="small" onClick={() => openEdit(firm)}>Edit</AppButton>
                       <AppButton size="small" onClick={() => navigate(`${paths.platformSubscriptions}?firmId=${firm.id}`)}>Subscription</AppButton>
                       <AppButton size="small" onClick={() => openReset(firm)}>Reset Admin</AppButton>
                       <AppButton size="small" color={firm.status === 'ACTIVE' ? 'warning' : 'success'} onClick={() => { setError(null); setFieldErrors({}); setStatusTarget(firm); }}>{firm.status === 'ACTIVE' ? 'Suspend' : 'Activate'}</AppButton>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : null}
+                    </Stack> },
+        ]} />
       </DataTableShell>
+      {!query.isPending && !query.isError ? <RecordPagination pagination={query.data?.pagination} page={page} change={setPage} /> : null}
 
       <AppDialog
         open={formOpen}
@@ -260,7 +250,7 @@ export function PlatformFirmsPage() {
           </Stack>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
             <TextField required fullWidth label="Administrator username" value={form.adminUsername} onChange={(e) => updateField('adminUsername', e.target.value)} {...fieldFeedback('adminUsername', 'Letters, numbers and spaces are allowed')} />
-            <TextField required fullWidth type="password" label="Temporary password" value={form.temporaryPassword} onChange={(e) => updateField('temporaryPassword', e.target.value)} {...fieldFeedback('temporaryPassword', '10+ characters with upper/lowercase, number and symbol')} />
+            <TextField required fullWidth autoComplete="new-password" type="password" label="Temporary password" value={form.temporaryPassword} onChange={(e) => updateField('temporaryPassword', e.target.value)} {...fieldFeedback('temporaryPassword', '10+ characters with upper/lowercase, number and symbol')} />
           </Stack>
         </Stack>
       </AppDialog>
@@ -283,7 +273,7 @@ export function PlatformFirmsPage() {
           : 'Firm users will be able to sign in again.'}
       </ConfirmDialog>
       <AppDialog open={resetTarget !== null} title="Reset firm administrator password" onClose={closeReset} fullWidth maxWidth="xs" preventClose={resetMutation.isPending} actions={<><AppButton onClick={closeReset} disabled={resetMutation.isPending}>Cancel</AppButton><AppButton variant="contained" disabled={temporaryPassword.length < 10} isLoading={resetMutation.isPending} onClick={() => resetMutation.mutate()}>Reset Password</AppButton></>}>
-        <Stack spacing={2} pt={1}><Typography color="text.secondary">The administrator for {resetTarget?.displayName} will be signed out and required to change this password.</Typography><TextField autoFocus required type="password" label="Temporary password" value={temporaryPassword} onChange={(event) => { clearFieldError('temporaryPassword'); setTemporaryPassword(event.target.value); }} {...fieldFeedback('temporaryPassword')} /></Stack>
+        <Stack spacing={2} pt={1}><Typography color="text.secondary">The administrator for {resetTarget?.displayName} will be signed out and required to change this password.</Typography><TextField autoFocus required autoComplete="new-password" type="password" label="Temporary password" value={temporaryPassword} onChange={(event) => { clearFieldError('temporaryPassword'); setTemporaryPassword(event.target.value); }} {...fieldFeedback('temporaryPassword')} /></Stack>
       </AppDialog>
       <AppSnackbar open={message !== null} message={message ?? ''} onClose={() => setMessage(null)} />
       <AppSnackbar open={error !== null} message={error ?? ''} severity="error" onClose={() => setError(null)} />

@@ -76,7 +76,7 @@ export const AppDialog = forwardRef<HTMLDivElement, AppDialogProps>(function App
       </DialogTitle>
 
       {children || description ? (
-        <DialogContent {...contentProps} dividers={contentDividers}>
+        <DialogContent {...contentProps} dividers={contentDividers} sx={[{ pt: 2, '.MuiDialogTitle-root + &': { pt: 2 } }, ...(Array.isArray(contentProps?.sx) ? contentProps.sx : [contentProps?.sx])]}>
           {description ? (
             <DialogContentText id={descriptionId} component="div">
               {description}

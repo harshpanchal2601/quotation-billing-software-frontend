@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 import type { ReactElement } from 'react';
@@ -53,15 +53,15 @@ vi.mock('./api/bank-details.api', async () => ({
 const objectUrl = 'blob:test-preview';
 
 beforeEach(() => {
-  vi.stubGlobal('URL', {
-    ...URL,
-    createObjectURL: vi.fn(() => objectUrl),
-    revokeObjectURL: vi.fn(),
+  vi.stubGlobal('URL', class extends URL {
+    static createObjectURL = vi.fn(() => objectUrl);
+    static revokeObjectURL = vi.fn();
   });
 });
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('settings validation and utilities', () => {
@@ -114,15 +114,51 @@ describe('BusinessSettingsPage', () => {
     renderSettings(<BusinessSettingsPage />);
 
     expect(screen.getByText('Business Settings')).toBeInTheDocument();
-    expect(await screen.findByDisplayValue('BUMINEX PHARMTECH SOLUTIONS PRIVATE LIMITED')).toBeInTheDocument();
+    expect(await screen.findByText('BUMINEX PHARMTECH SOLUTIONS PRIVATE LIMITED')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save changes/i })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Edit business profile' }));
+    expect(screen.getByDisplayValue('BUMINEX PHARMTECH SOLUTIONS PRIVATE LIMITED')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
 
-    await userEvent.clear(screen.getByLabelText(/display name/i));
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Changed Name');
-    expect(screen.getByText(/unsaved changes/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Changed Name' } });
+    expect(await screen.findByText(/unsaved changes/i)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /reset changes/i }));
-    expect(screen.getByDisplayValue('Buminex Pharmtech Solutions Pvt. Ltd.')).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(screen.getByDisplayValue('Changed Name')).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByText('Buminex Pharmtech Solutions Pvt. Ltd.')).toBeInTheDocument();
+  });
+
+  it('preserves the open profile editor after a cached background refresh fails', async () => {
+    businessApi.getBusinessProfileRequest.mockResolvedValue(businessProfile());
+    const { queryClient } = renderSettings(<BusinessSettingsPage />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit business profile' }));
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Keep my unsaved name' } });
+    businessApi.getBusinessProfileRequest.mockRejectedValueOnce(new Error('offline'));
+    await act(async () => { await queryClient.invalidateQueries({ queryKey: ['settings', 'business-profile'] }); });
+    expect(screen.getByRole('dialog', { name: 'Edit business profile' })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Keep my unsaved name')).toBeInTheDocument();
+    expect(businessApi.updateBusinessProfileRequest).not.toHaveBeenCalled();
+  });
+
+  it('keeps a failed profile edit and closes to the saved summary on retry', async () => {
+    const profile = businessProfile();
+    businessApi.getBusinessProfileRequest.mockResolvedValue(profile);
+    businessApi.updateBusinessProfileRequest.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ ...profile, displayName: 'Reviewed Name' });
+    renderSettings(<BusinessSettingsPage />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit business profile' }));
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Reviewed Name' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeVisible();
+    expect(screen.getByDisplayValue('Reviewed Name')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByText('Reviewed Name')).toBeVisible();
+    expect(screen.getByText('Business profile saved.')).toBeVisible();
   });
 
   it('updates profile and refreshes branding assets', async () => {
@@ -186,19 +222,22 @@ describe('QuotationSettingsPage', () => {
     quotationApi.updateQuotationSettingsRequest.mockImplementation(async (values) => ({ ...quotationSettings(), ...values }));
     renderSettings(<QuotationSettingsPage />);
 
-    expect(await screen.findByDisplayValue('BUMINEX')).toBeInTheDocument();
+    expect(await screen.findByText('BUMINEX')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Edit quotation settings' }));
+    expect(screen.getByDisplayValue('BUMINEX')).toBeInTheDocument();
     expect(screen.getByText('Financial year')).toBeInTheDocument();
-    expect(screen.getByText('CGST + SGST')).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog')).getByText('CGST + SGST')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled();
 
-    await userEvent.clear(screen.getByLabelText(/default remarks/i));
-    await userEvent.type(screen.getByLabelText(/default remarks/i), 'Line one\nLine two');
+    fireEvent.change(screen.getByLabelText(/default remarks/i), { target: { value: 'Line one\nLine two' } });
     await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
     await waitFor(() => expect(quotationApi.updateQuotationSettingsRequest).toHaveBeenCalled());
     expect(quotationApi.updateQuotationSettingsRequest.mock.calls[0][0]).toEqual(expect.objectContaining({
       defaultGstRate: '18.00',
       defaultRemarks: 'Line one\nLine two',
     }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByText('Quotation settings saved.')).toBeInTheDocument();
   });
 });
 
@@ -232,6 +271,20 @@ describe('BankDetailsPage', () => {
     }));
     expect(await screen.findByText('Bank account added.')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('dialog', { name: /add bank account/i })).not.toBeInTheDocument());
+  });
+
+  it('protects unsaved bank details and retains them when editing continues', async () => {
+    bankApi.listBankDetailsRequest.mockResolvedValue([]);
+    renderSettings(<BankDetailsPage />);
+    await userEvent.click(await screen.findByRole('button', { name: /add bank account/i }));
+    fireEvent.change(screen.getByLabelText(/bank name/i), { target: { value: 'QA unsaved bank' } });
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(screen.getByDisplayValue('QA unsaved bank')).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(bankApi.createBankDetailRequest).not.toHaveBeenCalled();
   });
 
   it('keeps the bank dialog open and maps API field errors', async () => {
@@ -274,17 +327,22 @@ describe('BankDetailsPage', () => {
 
     expect(await screen.findByText('••••••7890')).toBeInTheDocument();
     expect(screen.queryByTitle('1234567890')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /set hdfc bank as default/i })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Actions for HDFC Bank' }));
+    expect(screen.getByRole('menuitem', { name: 'Set as default' })).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.keyboard('{Escape}');
 
-    await userEvent.click(screen.getByRole('button', { name: /edit icici bank/i }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Actions for ICICI Bank' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Edit account' }));
     expect(await screen.findByDisplayValue('9876543210')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /cancel/i }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole('button', { name: /set icici bank as default/i }));
+    await userEvent.click(screen.getByRole('button', { name: 'Actions for ICICI Bank' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Set as default' }));
     await waitFor(() => expect(bankApi.setDefaultBankDetailRequest.mock.calls[0][0]).toBe(2));
 
-    await userEvent.click(screen.getByRole('button', { name: /delete icici bank/i }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Actions for ICICI Bank' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Delete account' }));
     expect(screen.getByText(/this will remove icici bank account/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /delete account/i }));
     await waitFor(() => expect(bankApi.deleteBankDetailRequest.mock.calls[0][0]).toBe(2));
@@ -293,7 +351,7 @@ describe('BankDetailsPage', () => {
 
 function renderSettings(ui: ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  return renderWithProviders(ui, { queryClient, route: '/settings/business' });
+  return { ...renderWithProviders(ui, { queryClient, route: '/settings/business' }), queryClient };
 }
 
 function businessProfileFormValues() {

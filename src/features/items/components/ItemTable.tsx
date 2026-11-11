@@ -1,20 +1,11 @@
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
 
 import { SafeImage } from '@shared/components/common/SafeImage';
 import { AppStatusChip } from '@shared/ui/display';
-import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
+import { RecordTable, RowActionsMenu, type TableSorting } from '@shared/ui/tables';
 import type { ItemListItem } from '../model/items.types';
 import {
   formatCurrencyRate,
@@ -25,7 +16,9 @@ import {
 } from '../model/items.utils';
 
 type ItemTableProps = {
+  rowNumberStart?: number;
   items: ItemListItem[];
+  sorting?: TableSorting;
   busyItemId?: number | null;
   onView: (item: ItemListItem) => void;
   onEdit: (item: ItemListItem) => void;
@@ -35,7 +28,9 @@ type ItemTableProps = {
 };
 
 export function ItemTable({
+  rowNumberStart = 1,
   items,
+  sorting,
   busyItemId = null,
   onView,
   onEdit,
@@ -43,205 +38,28 @@ export function ItemTable({
   onDelete,
   canManage = false,
 }: ItemTableProps) {
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-
-  if (!isDesktop) {
-    return (
-      <Stack spacing={2}>
-        {items.map((item) => {
-          const imageUrl = resolveAssetUrl(item.imageUrl);
-          return (
-            <Card key={item.id} variant="outlined">
-              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-                <Stack spacing={2}>
-                  <Stack direction="row" spacing={2} alignItems="flex-start">
-                    <Box
-                      sx={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: 1.5,
-                        bgcolor: 'action.hover',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        overflow: 'hidden',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <SafeImage src={imageUrl} alt={item.name} fallbackLabel="No image" />
-                    </Box>
-
-                    <Box minWidth={0} flex={1}>
-                      <Typography fontWeight={700} variant="h6" noWrap>
-                        {item.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Code: <strong>{item.itemCode}</strong>
-                      </Typography>
-                    </Box>
-
-                    <AppStatusChip
-                      label={item.isActive ? 'Active' : 'Inactive'}
-                      variant={item.isActive ? 'success' : 'neutral'}
-                      size="small"
-                    />
-                  </Stack>
-
-                  <Stack direction="row" justifyContent="space-between" flexWrap="wrap" gap={1}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Category
-                      </Typography>
-                      <Typography variant="body2">{item.category?.name ?? 'Uncategorised'}</Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Unit
-                      </Typography>
-                      <Typography variant="body2">
-                        {item.measurementUnit.symbol} ({item.measurementUnit.name})
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Rate & GST
-                      </Typography>
-                      <Typography variant="body2" fontWeight={600}>
-                        {formatCurrencyRate(item.defaultRate)} ({formatGstRateLabel(item.gstRate)})
-                      </Typography>
-                    </Box>
-                  </Stack>
-
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" pt={1}>
-                    <Typography variant="body2" color="text.secondary">
-                      Quotations: <strong>{item.quotationUsageCount}</strong>
-                    </Typography>
-                    {renderActionMenu(item)}
-                  </Stack>
-                </Stack>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </Stack>
-    );
-  }
-
   return (
-    <>
-      <DataTableShell
-        isLoading={false}
-        isError={false}
-        isEmpty={false}
-        loadingContent={null}
-        errorContent={null}
-        emptyContent={null}
-        tableContainerProps={{ component: Card, variant: 'outlined' }}
-      >
-        <Table aria-label="Item table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Item</TableCell>
-              <TableCell>Item Code</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Unit</TableCell>
-              <TableCell align="right">Default Rate</TableCell>
-              <TableCell align="right">GST</TableCell>
-              <TableCell>Source</TableCell>
-              <TableCell align="right">Quotations</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Updated</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {items.map((item) => {
-              const imageUrl = resolveAssetUrl(item.imageUrl);
-              return (
-                <TableRow key={item.id} hover>
-                  <TableCell sx={{ minWidth: 220 }}>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 1,
-                          bgcolor: 'action.hover',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          overflow: 'hidden',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <SafeImage src={imageUrl} alt={item.name} fallbackLabel="No image" />
-                      </Box>
-
-                      <Box minWidth={0}>
-                        <Typography fontWeight={600} noWrap>
-                          {item.name}
-                        </Typography>
-                        {item.shortDescription ? (
-                          <Typography variant="caption" color="text.secondary" noWrap display="block">
-                            {item.shortDescription}
-                          </Typography>
-                        ) : null}
-                      </Box>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
-                      {item.itemCode}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{item.category?.name ?? 'Uncategorised'}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      <strong style={{ fontFamily: 'monospace' }}>{item.measurementUnit.symbol}</strong> ({item.measurementUnit.name})
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography fontWeight={600}>{formatCurrencyRate(item.defaultRate)}</Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography variant="body2">{formatGstRateLabel(item.gstRate)}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={formatItemSourceTypeLabel(item.sourceType)}
-                      size="small"
-                      variant="outlined"
-                      sx={{ fontSize: 11, height: 22 }}
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography fontWeight={600}>{item.quotationUsageCount}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <AppStatusChip
-                      label={item.isActive ? 'Active' : 'Inactive'}
-                      variant={item.isActive ? 'success' : 'neutral'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      {formatReadableDate(item.updatedAt)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    {renderActionMenu(item)}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </DataTableShell>
-    </>
+    <RecordTable
+      rows={items}
+      rowKey={(item) => item.id}
+      label="Items"
+      rowNumberStart={rowNumberStart}
+      sorting={sorting}
+      showSortControls={false}
+      columns={[
+        { key: 'name', label: 'Item', sortKey: 'name', minWidth: 280, render: (item) => <Stack direction="row" spacing={1.5} alignItems="center"><Box sx={{ width: 40, height: 40, borderRadius: 1, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}><SafeImage src={resolveAssetUrl(item.imageUrl)} alt={item.name} fallbackLabel="No image" compact /></Box><Box minWidth={0}><Typography variant="body2" fontWeight={700}>{item.name}</Typography>{item.shortDescription ? <Typography variant="caption" color="text.secondary" display="block">{item.shortDescription}</Typography> : null}</Box></Stack> },
+        { key: 'itemCode', label: 'Item code', sortKey: 'itemCode', render: (item) => <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>{item.itemCode}</Typography> },
+        { key: 'category', label: 'Category', minWidth: 160, render: (item) => item.category?.name ?? 'Uncategorised' },
+        { key: 'unit', label: 'Unit', minWidth: 160, render: (item) => <Typography variant="body2"><strong style={{ fontFamily: 'monospace' }}>{item.measurementUnit.symbol}</strong> ({item.measurementUnit.name})</Typography> },
+        { key: 'defaultRate', label: 'Default rate', sortKey: 'defaultRate', align: 'right', render: (item) => formatCurrencyRate(item.defaultRate) },
+        { key: 'gstRate', label: 'GST', sortKey: 'gstRate', align: 'right', render: (item) => formatGstRateLabel(item.gstRate) },
+        { key: 'source', label: 'Source', render: (item) => <Chip label={formatItemSourceTypeLabel(item.sourceType)} size="small" variant="outlined" /> },
+        { key: 'quotationUsageCount', label: 'Quotations', align: 'right', render: (item) => item.quotationUsageCount },
+        { key: 'status', label: 'Status', render: (item) => <AppStatusChip label={item.isActive ? 'Active' : 'Inactive'} variant={item.isActive ? 'success' : 'neutral'} size="small" /> },
+        { key: 'updatedAt', label: 'Updated', sortKey: 'updatedAt', noWrap: true, render: (item) => formatReadableDate(item.updatedAt) },
+        { key: 'actions', label: 'Actions', align: 'right', render: renderActionMenu },
+      ]}
+    />
   );
 
   function renderActionMenu(item: ItemListItem) {

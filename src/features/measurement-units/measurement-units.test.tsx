@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -62,14 +62,27 @@ describe('measurement unit frontend', () => {
     );
   });
 
+  it('keeps dirty input when discard is declined and closes only after explicit discard', async () => {
+    renderPage(<MeasurementUnitsPage />, '/measurement-units');
+    await userEvent.click(screen.getByRole('button', { name: /add measurement unit/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /unit name/i }), { target: { value: 'QA unsaved record' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(screen.getByDisplayValue('QA unsaved record')).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(unitsApi.createMeasurementUnitRequest).not.toHaveBeenCalled();
+  });
+
   it('creates measurement unit with symbol submitted as string', async () => {
     unitsApi.createMeasurementUnitRequest.mockResolvedValue(unitListItem());
 
     renderPage(<MeasurementUnitsPage />, '/measurement-units');
 
     await userEvent.click(screen.getByRole('button', { name: /add measurement unit/i }));
-    await userEvent.type(screen.getByLabelText(/unit name/i), 'Kilogram');
-    await userEvent.type(screen.getByLabelText(/symbol/i), 'kg');
+    await userEvent.type(screen.getByRole('textbox', { name: /unit name/i }), 'Kilogram');
+    await userEvent.type(screen.getByRole('textbox', { name: /symbol/i }), 'kg');
     await userEvent.click(screen.getByRole('button', { name: /create measurement unit/i }));
 
     await waitFor(() => expect(unitsApi.createMeasurementUnitRequest).toHaveBeenCalled());
@@ -94,8 +107,8 @@ describe('measurement unit frontend', () => {
     renderPage(<MeasurementUnitsPage />, '/measurement-units');
 
     await userEvent.click(screen.getByRole('button', { name: /add measurement unit/i }));
-    await userEvent.type(screen.getByLabelText(/unit name/i), 'Kilogram');
-    await userEvent.type(screen.getByLabelText(/symbol/i), 'kg');
+    await userEvent.type(screen.getByRole('textbox', { name: /unit name/i }), 'Kilogram');
+    await userEvent.type(screen.getByRole('textbox', { name: /symbol/i }), 'kg');
     await userEvent.click(screen.getByRole('button', { name: /create measurement unit/i }));
 
     expect(await screen.findByText('Measurement unit name or symbol already exists')).toBeInTheDocument();

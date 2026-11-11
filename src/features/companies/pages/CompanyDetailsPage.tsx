@@ -3,14 +3,11 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
-import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type MouseEvent } from 'react';
 import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -18,7 +15,7 @@ import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParam
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
-import { PageContainer } from '@shared/ui/layout';
+import { DetailHeader, PageContainer, WorkspaceTabs } from '@shared/ui/layout';
 import { paths } from '@shared/routing/paths';
 import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -155,39 +152,20 @@ export function CompanyDetailsPage() {
 
   return (
     <PageContainer>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} useFlexGap flexWrap="wrap" justifyContent="space-between">
-        <Box sx={{ minWidth: 0, flex: { sm: '1 1 240px' }, overflowWrap: 'anywhere' }}>
-          <Stack direction="row" spacing={1} useFlexGap alignItems="center" flexWrap="wrap">
-            <Typography component="h1" variant="h1">{company.name}</Typography>
-            <CompanyStatusChip isActive={company.isActive} />
-            {company.isSupplier ? <Typography>Supplier</Typography> : null}
-          </Stack>
-          <Typography color="text.secondary">{company.companyCode}</Typography>
-        </Box>
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
-          <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
-            Back to Companies
-          </AppButton>
-          {canManage ? (
-            <>
-              <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
-              <AppIconButton label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></AppIconButton>
-              <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
-                <MenuItem onClick={() => { setMenuAnchor(null); setStatusOpen(true); }}><PowerSettingsNewOutlinedIcon fontSize="small" sx={{ mr: 1 }} />{company.isActive ? 'Deactivate' : 'Activate'}</MenuItem>
-                <MenuItem onClick={() => { setMenuAnchor(null); setDeleteOpen(true); }} sx={{ color: 'error.main' }}><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Delete</MenuItem>
-              </Menu>
-            </>
-          ) : null}
-        </Stack>
-      </Stack>
+      <DetailHeader title={company.name} description={company.companyCode}
+        status={<><CompanyStatusChip isActive={company.isActive} />{company.isSupplier ? <Chip size="small" label="Supplier" variant="outlined" /> : null}</>}
+        backAction={<AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>Back to Companies</AppButton>}
+        actionLabel="Company actions" actions={canManage ? <>
+          <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit Company</AppButton>
+          <AppIconButton label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></AppIconButton>
+        </> : undefined} />
+      <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
+        <MenuItem onClick={() => { setMenuAnchor(null); setStatusOpen(true); }}><PowerSettingsNewOutlinedIcon fontSize="small" sx={{ mr: 1 }} />{company.isActive ? 'Deactivate' : 'Activate'}</MenuItem>
+        <MenuItem onClick={() => { setMenuAnchor(null); setDeleteOpen(true); }} sx={{ color: 'error.main' }}><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Delete</MenuItem>
+      </Menu>
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
-      <Tabs value={selectedTab} onChange={(_event, value: CompanyTab) => setSearchParams((current) => { const next = new URLSearchParams(current); next.set('tab', value); return next; })} variant="scrollable" allowScrollButtonsMobile>
-        <Tab label="Overview" value="overview" />
-        <Tab label="Contacts" value="contacts" />
-        <Tab label="Addresses" value="addresses" />
-        <Tab label="Quotations" value="quotations" />
-      </Tabs>
-      {selectedTab === 'overview' ? <><CompanyOverview company={company} /><TenantFieldsPanel key={company.id} entity="COMPANY" entityId={company.id} editable={canManage} />{company.isSupplier ? <SupplierPurchasingPanel key={company.id} supplierId={company.id} /> : null}<ReceivablesPanel companyId={company.id} /><CustomerTimeline key={company.id} companyId={company.id} /></> : null}
+      <WorkspaceTabs value={selectedTab} label="Company information" items={[{ value: 'overview', label: 'Overview' }, { value: 'contacts', label: 'Contacts' }, { value: 'addresses', label: 'Addresses' }, { value: 'quotations', label: 'Quotations' }]} onChange={(value: CompanyTab) => setSearchParams((current) => { const next = new URLSearchParams(current); next.set('tab', value); return next; })} />
+      {selectedTab === 'overview' ? <><CompanyOverview company={company} /><TenantFieldsPanel key={`fields:${company.id}`} entity="COMPANY" entityId={company.id} editable={canManage} />{company.isSupplier ? <SupplierPurchasingPanel key={`purchasing:${company.id}`} supplierId={company.id} /> : null}<ReceivablesPanel companyId={company.id} /><CustomerTimeline key={`timeline:${company.id}`} companyId={company.id} /></> : null}
       {selectedTab === 'contacts' ? (
         <ContactsSection
           contacts={company.contacts}

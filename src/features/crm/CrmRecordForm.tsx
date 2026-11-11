@@ -1,6 +1,7 @@
 import { Alert, MenuItem, Stack, TextField } from '@mui/material';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { CommandForm } from '@shared/forms/CommandForm';
 import { AppButton } from '@shared/ui/actions';
 import { toApiError } from '@shared/api/apiClient';
 import { useFirmId } from '@shared/tenancy/useFirmId';
@@ -9,9 +10,8 @@ import { crmKeys, crmOptions, saveCrm, type CrmKind, type CrmRecord } from './cr
 export function CrmRecordForm({ kind, record, onSaved }: { kind: CrmKind; record: CrmRecord | null; onSaved: () => void }) {
   const firmId = useFirmId(); const cache = useQueryClient(); const [companySearch, setCompanySearch] = useState('');
   const options = useQuery({ queryKey: [...crmKeys.firm(firmId), 'options', companySearch], queryFn: ({ signal }) => crmOptions(companySearch, signal) });
-  const mutation = useMutation({ mutationFn: (input: Record<string, unknown>) => saveCrm(kind, input, record?.id), onSuccess: async () => { await cache.invalidateQueries({ queryKey: crmKeys.firm(firmId) }); onSaved(); } });
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); const data = new FormData(event.currentTarget); const value = (key: string) => String(data.get(key) ?? '').trim();
+  function submit(data: FormData) {
+    const value = (key: string) => String(data.get(key) ?? '').trim();
     const payload: Record<string, unknown> = kind === 'leads'
       ? { name: value('name'), email: value('email') || null, phone: value('phone') || null, source: value('source') || null, ownerId: Number(value('ownerId')), ...(record ? { status: value('status') } : {}) }
       : kind === 'opportunities'
@@ -19,12 +19,14 @@ export function CrmRecordForm({ kind, record, onSaved }: { kind: CrmKind; record
         : { title: value('title'), notes: value('notes') || null, assignedToId: Number(value('assignedToId')), dueAt: new Date(value('dueAt')).toISOString(), reminderAt: value('reminderAt') ? new Date(value('reminderAt')).toISOString() : null, ...(record ? { status: value('status') } : {}) };
     if (record) payload.expectedVersion = record.version;
     else if (kind !== 'leads') { payload.companyId = Number(value('companyId')) || null; payload.leadId = Number(value('leadId')) || null; if (kind === 'tasks') payload.opportunityId = Number(value('opportunityId')) || null; else payload.quotationId = Number(value('quotationId')) || null; }
-    mutation.mutate(payload);
+    return saveCrm(kind, payload, record?.id);
   }
   const localTime = (value?: string | null) => value ? new Date(new Date(value).getTime() - new Date(value).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
-  return <Stack component="form" onSubmit={submit} spacing={2} sx={{ pt: 1 }}>
+  const label = kind === 'leads' ? 'lead' : kind === 'opportunities' ? 'opportunity' : 'follow-up';
+  return <CommandForm dialog initialOpen hideTrigger title={`${record ? 'Edit' : 'Create'} ${label}`} label={`Save ${label}`} isSubmitDisabled={!options.data} onClosed={onSaved} saved={() => cache.invalidateQueries({ queryKey: crmKeys.firm(firmId) })} successMessage={`${kind === 'leads' ? 'Lead' : kind === 'opportunities' ? 'Opportunity' : 'Follow-up'} saved.`} submit={submit}>
     {options.isError ? <Alert severity="error">{toApiError(options.error).message}</Alert> : null}
-    {mutation.isError ? <Alert severity="error">{toApiError(mutation.error).message}</Alert> : null}
+    {options.isPending ? <Stack role="status">Loading reference options…</Stack> : null}
+    {options.isError ? <AppButton onClick={() => void options.refetch()}>Retry CRM options</AppButton> : null}
     <TextField name={kind === 'leads' ? 'name' : 'title'} label={kind === 'leads' ? 'Prospect name' : 'Title'} defaultValue={record?.name ?? record?.title ?? ''} required inputProps={{ maxLength: 191 }} />
     <TextField select name={kind === 'tasks' ? 'assignedToId' : 'ownerId'} label={kind === 'tasks' ? 'Assigned to' : 'Owner'} defaultValue={record?.ownerId ?? record?.assignedToId ?? ''} required>{options.data?.owners.map((owner) => <MenuItem key={owner.id} value={owner.id}>{owner.name}</MenuItem>)}</TextField>
     {kind === 'leads' ? <><TextField name="email" type="email" label="Email" defaultValue={record?.email ?? ''} /><TextField name="phone" label="Phone" defaultValue={record?.phone ?? ''} /></> : null}
@@ -44,6 +46,5 @@ export function CrmRecordForm({ kind, record, onSaved }: { kind: CrmKind; record
     </> : null}
     {kind === 'tasks' ? <><TextField name="notes" label="Follow-up notes" multiline defaultValue={record?.notes ?? ''} /><TextField name="dueAt" label="Due at" type="datetime-local" required defaultValue={localTime(record?.dueAt)} InputLabelProps={{ shrink: true }} /><TextField name="reminderAt" label="Reminder at" type="datetime-local" defaultValue={localTime(record?.reminderAt)} InputLabelProps={{ shrink: true }} /></> : null}
     {record && kind !== 'opportunities' ? <TextField select name="status" label="Status" defaultValue={record.status}>{(kind === 'leads' ? ['NEW', 'QUALIFIED', 'CLOSED'] : ['OPEN', 'DONE', 'CANCELLED']).map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}</TextField> : null}
-    <AppButton type="submit" variant="contained" disabled={mutation.isPending || !options.data}>Save {kind === 'leads' ? 'lead' : kind === 'opportunities' ? 'opportunity' : 'follow-up'}</AppButton>
-  </Stack>;
+  </CommandForm>;
 }

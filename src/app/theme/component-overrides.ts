@@ -65,7 +65,17 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
       sizeLarge: { minHeight: 48 },
     },
   },
-  MuiTextField: { defaultProps: { size: 'small', variant: 'outlined' } },
+  MuiTextField: {
+    defaultProps: { size: 'small', variant: 'outlined' },
+    styleOverrides: {
+      root: ({ ownerState }) => ownerState.type === 'color' && ownerState.label ? {
+        minWidth: 180,
+        width: 180,
+        flexShrink: 0,
+        '& input[type="color"]': { width: '100%', height: 40, padding: 8, boxSizing: 'border-box' },
+      } : {},
+    },
+  },
   MuiInputLabel: {
     styleOverrides: {
       root: {
@@ -136,13 +146,13 @@ export const componentOverrides: Components<Omit<Theme, 'components'>> = {
     styleOverrides: {
       paper: {
         borderRadius: radii.large,
-        maxWidth: 'calc(100% - 16px)',
         maxHeight: 'calc(100% - 16px)',
-        margin: 8,
+        '@media (max-width: 599.95px)': { maxWidth: 'calc(100% - 16px)', margin: 8 },
       },
       paperFullWidth: {
         '@media (max-width: 599.95px)': { width: 'calc(100% - 16px)' },
       },
+      paperFullScreen: { margin: 0, maxWidth: '100%', maxHeight: '100%', borderRadius: 0, '@media (max-width: 599.95px)': { margin: 0, maxWidth: '100%' } },
     },
   },
   MuiDialogActions: {

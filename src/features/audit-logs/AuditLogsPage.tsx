@@ -1,63 +1,71 @@
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { useAuth } from '@features/auth';
 import { toApiError } from '@shared/api/apiClient';
-import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
+import { useFirmId } from '@shared/tenancy/useFirmId';
 import { AppButton } from '@shared/ui/actions';
-import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
-import { listAuditLogsRequest } from './audit-logs.api';
+import { AppDialog } from '@shared/ui/dialogs';
+import { formatRecordField, formatRecordStatus, formatRecordValue } from '@shared/ui/display';
+import { DetailFields, DetailSection, PageContainer, PageHeader } from '@shared/ui/layout';
+import { AppTablePagination, DataTableShell, RecordTable, TableSkeleton, useTableSort } from '@shared/ui/tables';
+import { listAuditLogsRequest, type AuditLog } from './audit-logs.api';
+
+const actionLabels: Record<string, string> = { CREATE: 'Created', UPDATE: 'Updated', DELETE: 'Deleted', LOGIN: 'Signed in', LOGOUT: 'Signed out' };
+const timestamp = (value: string) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+const changeFields = (value: unknown) => value !== null && typeof value === 'object' && !Array.isArray(value)
+  ? Object.entries(value).map(([key, entry]) => ({ label: formatRecordField(key), value: formatRecordValue(entry, key) }))
+  : [{ label: 'Recorded value', value: formatRecordValue(value) }];
 
 export function AuditLogsPage() {
+  const firmId = useFirmId(); const { user } = useAuth();
+  return <AuditLogsWorkspace key={`${firmId}:${user?.id}`} />;
+}
+
+function AuditLogsWorkspace() {
+  const firmId = useFirmId(); const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+  const [selected, setSelected] = useState<AuditLog | null>(null);
+  const sorting = useTableSort([{ key: 'createdAt', label: 'Recorded date' }, { key: 'action', label: 'Action' }, { key: 'entityType', label: 'Record type' }, { key: 'entityId', label: 'Record identifier' }], { onChange: () => setPage(1) });
   const query = useQuery({
-    queryKey: ['audit-logs', page, limit],
-    queryFn: () => listAuditLogsRequest(page, limit),
+    queryKey: ['audit-logs', firmId, user?.id, page, limit, sorting.sortBy, sorting.sortOrder],
+    queryFn: ({ signal }) => listAuditLogsRequest(page, limit, { sortBy: sorting.sortBy, sortOrder: sorting.sortOrder }, signal),
+    enabled: firmId != null,
     placeholderData: keepPreviousData,
   });
 
-  return (
-    <PageContainer>
-      <PageHeader title="Audit Logs" description="Review firm-scoped administrative and business activity." />
-      <DataTableShell
-        isLoading={query.isPending}
-        isError={query.isError}
-        isEmpty={query.data?.auditLogs.length === 0}
-        loadingContent={<TableSkeleton />}
-        errorContent={<Stack spacing={1}><ErrorState message={toApiError(query.error).message} /><AppButton sx={{ alignSelf: 'flex-start' }} onClick={() => void query.refetch()}>Retry</AppButton></Stack>}
-        emptyContent={<EmptyState title="No audit activity" description="Audited changes for this firm will appear here." />}
-        pagination={query.data && query.data.auditLogs.length > 0 ? <AppTablePagination count={query.data.pagination.total} page={page} rowsPerPage={limit} onPageChange={setPage} onRowsPerPageChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }} /> : null}
-      >
-        {query.data?.auditLogs.length ? (
-          <Table aria-label="Audit logs" sx={{ minWidth: 960 }}>
-            <TableHead><TableRow><TableCell>Date</TableCell><TableCell>User</TableCell><TableCell>Action</TableCell><TableCell>Record</TableCell><TableCell>Changes</TableCell></TableRow></TableHead>
-            <TableBody>{query.data.auditLogs.map((entry) => (
-              <TableRow key={entry.id} hover>
-                <TableCell>{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(entry.createdAt))}</TableCell>
-                <TableCell><Typography fontWeight={600}>{entry.user?.name ?? 'System or unavailable actor'}</Typography><Typography variant="caption" color="text.secondary">{entry.user?.email ?? entry.ipAddress ?? '—'}</Typography></TableCell>
-                <TableCell>{entry.action.replace(/_/g, ' ')}</TableCell>
-                <TableCell>{entry.entityType} #{entry.entityId}</TableCell>
-                <TableCell><Typography variant="caption" component="pre" sx={{ whiteSpace: 'pre-wrap', m: 0, maxWidth: 360 }}>{formatChanges(entry.oldValues, entry.newValues)}</Typography></TableCell>
-              </TableRow>
-            ))}</TableBody>
-          </Table>
-        ) : null}
-      </DataTableShell>
-    </PageContainer>
-  );
-}
-
-function formatChanges(oldValues: unknown, newValues: unknown) {
-  if (newValues !== null && newValues !== undefined) return JSON.stringify(newValues, null, 2);
-  if (oldValues !== null && oldValues !== undefined) return JSON.stringify(oldValues, null, 2);
-  return '—';
+  return <PageContainer>
+    <PageHeader title="Audit Logs" description="Review who changed a firm record, when it changed and the values recorded at that time." />
+    <DataTableShell wrapInTableContainer={false} isLoading={query.isPending || query.isPlaceholderData} isError={query.isError} isEmpty={false} loadingContent={<TableSkeleton />} errorContent={<ErrorState message={toApiError(query.error).message} onRetry={() => void query.refetch()} />} emptyContent={null} pagination={query.data ? <AppTablePagination count={query.data.pagination.total} page={page} rowsPerPage={limit} onPageChange={setPage} onRowsPerPageChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }} /> : null}>
+      <RecordTable rows={query.data?.auditLogs ?? []} sorting={sorting} rowNumberStart={(page - 1) * limit + 1} label="Audit logs" rowKey={(entry) => entry.id} emptyMessage="No audit activity has been recorded for this firm." columns={[
+        { key: 'date', sortKey: 'createdAt', label: 'Date', render: (entry) => timestamp(entry.createdAt) },
+        { key: 'user', label: 'User', render: (entry) => <Stack><Typography fontWeight={600}>{entry.user?.name ?? 'System or unavailable user'}</Typography><Typography variant="caption" color="text.secondary">{entry.user?.email ?? '—'}</Typography></Stack> },
+        { key: 'action', sortKey: 'action', label: 'Action', render: (entry) => actionLabels[entry.action] ?? formatRecordStatus(entry.action) },
+        { key: 'record', sortKey: 'entityType', label: 'Record', render: (entry) => <Stack><Typography>{formatRecordField(entry.entityType)}</Typography><Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere', maxWidth: 240 }}>#{entry.entityId}</Typography></Stack> },
+        { key: 'changes', label: 'Changes', render: (entry) => <AppButton size="small" onClick={() => setSelected(entry)}>View changes</AppButton> },
+      ]} />
+    </DataTableShell>
+    <AppDialog open={selected !== null} title={selected ? `Activity #${selected.id}` : 'Activity details'} onClose={() => setSelected(null)} fullWidth maxWidth="md" actions={<AppButton onClick={() => setSelected(null)}>Close</AppButton>}>
+      {selected ? <Stack spacing={3}>
+        <DetailSection title="Activity details"><DetailFields fields={[
+          { label: 'Action', value: actionLabels[selected.action] ?? formatRecordStatus(selected.action) },
+          { label: 'Recorded', value: timestamp(selected.createdAt) },
+          { label: 'Record type', value: formatRecordField(selected.entityType) },
+          { label: 'Record identifier', value: selected.entityId },
+          { label: 'User', value: selected.user?.name ?? 'System or unavailable user' },
+          { label: 'User email', value: selected.user?.email ?? '—' },
+          { label: 'Network address', value: selected.ipAddress ?? 'Not recorded' },
+        ]} /></DetailSection>
+        {selected.oldValues != null ? <DetailSection title="Before the change"><DetailFields fields={changeFields(selected.oldValues)} /></DetailSection> : null}
+        {selected.newValues != null ? <DetailSection title="After the change"><DetailFields fields={changeFields(selected.newValues)} /></DetailSection> : null}
+        {selected.oldValues == null && selected.newValues == null ? <Typography>No field values were recorded for this activity.</Typography> : null}
+        <Box component="details"><Box component="summary" sx={{ cursor: 'pointer', color: 'text.secondary' }}>Original audit data</Box><Box component="pre" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: '0.75rem' }}>{JSON.stringify({ oldValues: selected.oldValues, newValues: selected.newValues }, null, 2)}</Box></Box>
+      </Stack> : null}
+    </AppDialog>
+  </PageContainer>;
 }

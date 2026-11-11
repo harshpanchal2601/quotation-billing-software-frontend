@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
@@ -196,7 +196,7 @@ describe('item management frontend', () => {
     expect(await screen.findByText('Reactor Tank 500L')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /^delete$/i }));
 
-    expect(screen.getByText(/referenced in 3 quotation line item/i)).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog', { name: 'Delete Item' })).getByRole('alert')).toHaveTextContent(/referenced in 3 quotation line item/i);
 
     const deleteConfirmBtn = screen.getByRole('button', { name: /delete item/i });
     await userEvent.click(deleteConfirmBtn);

@@ -1,5 +1,12 @@
 export type FirmStatus = 'ACTIVE' | 'SUSPENDED';
 
+export const PLATFORM_FIRM_SORT_FIELDS = [
+  { key: 'createdAt', label: 'Created date' },
+  { key: 'displayName', label: 'Firm name' },
+  { key: 'slug', label: 'Slug' },
+  { key: 'status', label: 'Status' },
+] as const;
+
 export type PlatformFirm = {
   id: number;
   name: string;

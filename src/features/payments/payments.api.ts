@@ -3,7 +3,7 @@ import type { Allocation, InvoiceSettlement, Pagination, Payment, PaymentSummary
 
 export async function listPayments(params: Record<string, string | number>, signal?: AbortSignal) { return (await apiClient.get<ApiSuccessResponse<{ payments: PaymentSummary[]; pagination: Pagination }>>('/payments', { params, signal })).data.data; }
 export async function getPayment(id: number, signal?: AbortSignal) { return (await apiClient.get<ApiSuccessResponse<{ payment: Payment }>>(`/payments/${id}`, { signal })).data.data.payment; }
-export async function getPaymentCustomers(search: string, signal?: AbortSignal) { return (await apiClient.get<ApiSuccessResponse<{ customers: Array<{ id: number; name: string }> }>>('/payments/options/customers', { params: { search }, signal })).data.data.customers; }
+export async function getPaymentCustomers(search: string, signal?: AbortSignal, id?: number) { return (await apiClient.get<ApiSuccessResponse<{ customers: Array<{ id: number; name: string }> }>>('/payments/options/customers', { params: { search, id }, signal })).data.data.customers; }
 export async function recordPayment(input: ReceiptInput) { return (await apiClient.post<ApiSuccessResponse<{ payment: Payment }>>('/payments', input)).data.data.payment; }
 export async function allocatePayment(id: number, idempotencyKey: string, allocations: Allocation[]) { return (await apiClient.post<ApiSuccessResponse<{ payment: Payment }>>(`/payments/${id}/allocate`, { idempotencyKey, allocations })).data.data.payment; }
 export async function reversePayment(id: number, idempotencyKey: string, reason: string) { return (await apiClient.post<ApiSuccessResponse<{ payment: Payment }>>(`/payments/${id}/reverse`, { idempotencyKey, reason })).data.data.payment; }

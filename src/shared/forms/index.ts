@@ -1,4 +1,5 @@
 export { FormActions } from './FormActions';
+export { FormExitGuard } from './FormExitGuard';
 export type { FormActionsProps } from './FormActions';
 export { FormSection } from './FormSection';
 export type { FormSectionProps } from './FormSection';

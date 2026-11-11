@@ -1,3 +1,4 @@
+import { NotificationProvider } from '@shared/ui/feedback';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -21,7 +22,7 @@ const report = (value = '9007199254740993.123', firmId = 1): ReportOverview => (
     { key: 'stock', status: 'UNAVAILABLE' },
   ],
 });
-function tree(client: QueryClient) { return <QueryClientProvider client={client}><ReportsPage /></QueryClientProvider>; }
+function tree(client: QueryClient) { return <QueryClientProvider client={client}><NotificationProvider><ReportsPage /></NotificationProvider></QueryClientProvider>; }
 function client() { return new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } }); }
 beforeEach(() => {
   vi.resetAllMocks(); access.firmId = 1; access.actorId = 10; access.permissions = new Set(['reports.view']);
@@ -61,7 +62,7 @@ describe('Wave 10 business report workspace', () => {
     vi.mocked(api.saveReportView).mockResolvedValue({ ...savedView, version: 4 });
     render(tree(client())); await screen.findByText('9007199254740993.123');
     await userEvent.click(screen.getByRole('combobox', { name: 'Saved report view' })); await userEvent.click(await screen.findByRole('option', { name: 'Sales' }));
-    fireEvent.change(screen.getByLabelText('From date'), { target: { value: '2026-10-01' } });
+    fireEvent.change(screen.getByLabelText(/From date/), { target: { value: '2026-10-01' } });
     await userEvent.click(screen.getByRole('button', { name: 'Update view' }));
     await waitFor(() => expect(api.saveReportView).toHaveBeenCalledWith('Sales', filters, expect.objectContaining({ id: savedView.id, version: 3 })));
     expect(api.saveReportView).not.toHaveBeenCalledWith('Sales', expect.objectContaining({ dateFrom: '2026-10-01' }), expect.anything());
@@ -78,7 +79,7 @@ describe('Wave 10 business report workspace', () => {
       fireEvent.change(screen.getByLabelText('Currency (optional)'), { target: { value: 'USD' } });
       await userEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
       await waitFor(() => expect(api.downloadReport).toHaveBeenCalledWith(applied, expect.any(AbortSignal), 'csv'));
-      expect(create).toHaveBeenCalledTimes(1); expect(revoke).toHaveBeenCalledWith('blob:report');
+      expect(create).toHaveBeenCalledTimes(1); await waitFor(() => expect(revoke).toHaveBeenCalledWith('blob:report'));
     } finally { vi.unstubAllGlobals(); }
   });
 });

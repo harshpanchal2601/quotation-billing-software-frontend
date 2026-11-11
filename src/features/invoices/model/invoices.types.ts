@@ -3,6 +3,7 @@ export type BillingKind = 'INVOICE' | 'PROFORMA' | 'CREDIT_NOTE' | 'DEBIT_NOTE';
 export type CustomField = { key: string; label: string; type: 'TEXT' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'SELECT'; required: boolean; showOnPdf: boolean; width: 'FULL' | 'HALF'; options: string[] };
 export type CustomValues = Record<string, string | boolean | null>;
 export type BillingSettings = { schemaVersion: 1; registration: 'UNCONFIGURED' | 'REGULAR' | 'COMPOSITION' | 'UNREGISTERED'; sellerStateCode: string | null; einvoiceRequired: boolean | null; prefixes: Record<BillingKind, string>; template: 'STANDARD' | 'COMPACT'; primaryColour: string; paymentInstructions: string; termsAndConditions: string; customFields: CustomField[] };
+export type SettingsWriteResponse = { version: number; config: BillingSettings };
 export type SettingsResponse = { version: number; config: BillingSettings; states: Record<string, string>; fieldsManagedByAutomation?: boolean };
 export type Supply = { isExempt: boolean; placeOfSupplyStateCode: string; placeOfSupplyBasis: 'GOODS_MOVEMENT' | 'BILL_TO_SHIP_TO' | 'SERVICES_GENERAL' | 'MANUALLY_CONFIRMED'; explanation: string };
 export type InvoiceLine = { itemId?: number | null; itemName?: string; description?: string | null; hsnCode?: string | null; supplyType: 'GOODS' | 'SERVICE'; measurementUnit: string; quantity: string; unitRate: string; discountType: 'NONE' | 'PERCENTAGE' | 'FIXED'; discountValue: string; taxRate: string; sourceLineNumber?: number };
@@ -15,7 +16,7 @@ export type InvoiceDocument = {
   buyerSnapshot: { name: string; legalName: string | null; gstin: string | null; billingAddress: Address; shippingAddress: Address | null };
   sellerSnapshot: Record<string, string | null> | null; bankSnapshot: Record<string, string | null> | null;
   financialPolicySnapshot: { taxMode: 'NONE' | 'CGST_SGST' | 'IGST'; localTaxLabel: string; registration: string; sellerStateCode: string };
-  supplySnapshot: Supply; customFieldSchema: CustomField[]; customFieldValues: CustomValues; presentationSnapshot: BillingSettings;
+  supplySnapshot: Supply; placeOfSupplyStateName?: string | null; customFieldSchema: CustomField[]; customFieldValues: CustomValues; presentationSnapshot: BillingSettings;
   sourceSnapshot: { quotationNumber?: string; orderNumber?: string; revisionNumber?: number; invoiceNumber?: string; invoiceDate?: string; proformaNumber?: string; extraCharges?: string } | null;
   sourceQuotationId: number | null; sourceProformaId: number | null; sourceInvoiceId: number | null; sourceSalesOrderId?: number | null; adjustmentReason: string | null;
   subtotal: string; discountAmount: string; taxableAmount: string; taxAmount: string; roundOffAmount: string; grandTotal: string;

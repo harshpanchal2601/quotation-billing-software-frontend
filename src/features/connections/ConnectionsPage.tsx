@@ -3,64 +3,101 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { PERMISSIONS, useAuth, useHasPermission } from '@features/auth';
 import { toApiError } from '@shared/api/apiClient';
+import { CommandForm } from '@shared/forms/CommandForm';
 import { useFirmId } from '@shared/tenancy/useFirmId';
 import { AppButton } from '@shared/ui/actions';
-import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { connectionKeys, createEndpoint, issueKey, listDeliveries, listEndpoints, listKeys, listProviderStatus, revokeKey, rotateEndpoint, toggleEndpoint, type ApiKey, type KeyInput } from './connections.api';
+import { ConfirmDialog } from '@shared/ui/dialogs';
+import { useNotification } from '@shared/ui/feedback';
+import { formatRecordStatus } from '@shared/ui/display';
+import { PageContainer, PageHeader, WorkspaceTabs } from '@shared/ui/layout';
+import { RecordPagination, RecordTable, useTableSort } from '@shared/ui/tables';
+import { connectionKeys, createEndpoint, issueKey, listDeliveries, listEndpoints, listKeys, listProviderStatus, revokeKey, rotateEndpoint, toggleEndpoint, type ApiKey, type Endpoint } from './connections.api';
 
 export function ConnectionsPage() {
   const firmId = useFirmId(); const { user } = useAuth();
-  const canKeys = useHasPermission(PERMISSIONS.API_KEYS_MANAGE); const canHooks = useHasPermission(PERMISSIONS.WEBHOOKS_MANAGE);
-  const canProviders = useHasPermission(PERMISSIONS.FIRM_PROFILE_MANAGE);
-  return <PageContainer key={`${firmId}:${user?.id}`}><PageHeader title="API and webhooks" description="Your credentials and delivery configuration for the selected firm" />{canProviders ? <ProvidersPanel /> : null}{canKeys ? <KeysPanel /> : null}{canHooks ? <WebhooksPanel /> : null}</PageContainer>;
+  return <ConnectionsWorkspace key={`${firmId}:${user?.id}`} />;
 }
-
+function ConnectionsWorkspace() {
+  const canKeys = useHasPermission(PERMISSIONS.API_KEYS_MANAGE); const canHooks = useHasPermission(PERMISSIONS.WEBHOOKS_MANAGE); const canProviders = useHasPermission(PERMISSIONS.FIRM_PROFILE_MANAGE);
+  const tabs = [...(canKeys ? [{ value: 'keys', label: 'API keys' }] : []), ...(canHooks ? [{ value: 'webhooks', label: 'Webhooks' }] : []), ...(canProviders ? [{ value: 'providers', label: 'Provider readiness' }] : [])];
+  const [tab, setTab] = useState(tabs[0]?.value ?? 'providers');
+  const selected = tabs.some((item) => item.value === tab) ? tab : tabs[0]?.value;
+  return <PageContainer><PageHeader title="API and webhooks" description="Review service availability and manage approved connections to other software." />
+    <WorkspaceTabs value={selected ?? ''} label="Integration settings" items={tabs} onChange={setTab} />
+    {selected === 'keys' ? <KeysPanel /> : selected === 'webhooks' ? <WebhooksPanel /> : selected === 'providers' ? <ProvidersPanel /> : null}
+  </PageContainer>;
+}
+const providerNames = new Map([['SMTP', 'Email server (SMTP)'], ['RAZORPAY', 'Razorpay'], ['INDIA_IRP', 'India e-invoice service']]);
 function ProvidersPanel() {
   const firmId = useFirmId(); const { user } = useAuth();
-  const status = useQuery({ queryKey: [...connectionKeys(firmId, user?.id), 'providers'], queryFn: ({ signal }) => listProviderStatus(signal), enabled: firmId != null, retry: false });
-  return <Stack spacing={2}><Typography component="h2" variant="h2">Provider readiness</Typography>{status.error ? <Alert severity="error">{toApiError(status.error).message}</Alert> : null}{status.data?.providers.map((provider) => <Alert key={provider.provider} severity={provider.enabled ? 'info' : 'warning'}><strong>{provider.provider} · {provider.capability} · {provider.state}</strong><Typography>{provider.reason}</Typography></Alert>)}</Stack>;
-}
-
-function KeysPanel() {
-  const firmId = useFirmId(); const { user } = useAuth(); const cache = useQueryClient(); const scope = connectionKeys(firmId, user?.id);
-  const [page, setPage] = useState(1); const [name, setName] = useState(''); const [days, setDays] = useState(30); const [exporting, setExporting] = useState(false); const [secret, setSecret] = useState('');
-  const keys = useQuery({ queryKey: [...scope, 'keys', page], queryFn: ({ signal }) => listKeys(page, signal), enabled: firmId != null, retry: false });
-  const issue = useMutation({ mutationFn: async (existing?: ApiKey) => {
-    const result = await issueKey(existing ? { name: existing.name, lifetimeDays: days, scopes: existing.scopes as KeyInput['scopes'] } : { name, lifetimeDays: days, scopes: exporting ? ['reports.read', 'reports.export'] : ['reports.read'] }, existing?.id);
-    setSecret(result.token); return result.key;
-  }, onSuccess: () => cache.invalidateQueries({ queryKey: [...scope, 'keys'] }) });
-  const revoke = useMutation({ mutationFn: revokeKey, onSuccess: () => cache.invalidateQueries({ queryKey: [...scope, 'keys'] }) });
-  const busy = issue.isPending || revoke.isPending;
-  return <Stack spacing={2}>
-    <Typography component="h2" variant="h2">Read-only API credentials</Typography>
-    <Typography>API base: /api/v1/external/v1. Send Authorization: Bearer followed by your token. The key fixes the firm; tenant headers cannot change it. Current issuer permissions, plan access, expiration and revocation are checked on every request.</Typography>
-    <Stack component="form" spacing={2} onSubmit={(event) => { event.preventDefault(); issue.mutate(undefined); }}><TextField label="API key name" value={name} onChange={(event) => setName(event.target.value)} inputProps={{ maxLength: 100 }} required disabled={busy} /><TextField label="Key lifetime in days" type="number" value={days} onChange={(event) => setDays(Number(event.target.value))} inputProps={{ min: 1, max: 365 }} required disabled={busy} /><FormControlLabel label="Allow report exports" control={<Checkbox checked={exporting} onChange={(_, checked) => setExporting(checked)} disabled={busy} />} /><AppButton type="submit" disabled={busy || !name.trim() || days < 1 || days > 365 || !Number.isInteger(days)}>Create API key</AppButton></Stack>
-    {secret ? <><Alert severity="info">Store the new token securely now. Rotation revokes the previous token immediately.</Alert><TextField label="New API token shown once" value={secret} InputProps={{ readOnly: true }} /><AppButton onClick={() => { setSecret(''); issue.reset(); }}>Dismiss token</AppButton></> : null}
-    {[keys.error, issue.error, revoke.error].filter(Boolean).map((error, index) => <Alert severity="error" key={index}>{toApiError(error).message}</Alert>)}
-    {keys.data?.keys.map((key) => <Stack key={key.id} spacing={1}><Typography>{key.name} · {key.scopes.join(', ')} · Expires {key.expiresAt} · {key.revokedAt ? 'Revoked' : 'Active until expiry'}</Typography>{!key.revokedAt ? <Stack direction="row" spacing={1}><AppButton variant="outlined" disabled={busy || days < 1 || days > 365 || !Number.isInteger(days)} onClick={() => issue.mutate(key)}>Rotate {key.name}</AppButton><AppButton variant="outlined" color="error" disabled={busy} onClick={() => revoke.mutate(key.id)}>Revoke {key.name}</AppButton></Stack> : null}</Stack>)}
-    {keys.data && keys.data.pagination.totalPages > 1 ? <Stack direction="row" spacing={1}><AppButton disabled={busy || page === 1} onClick={() => setPage(page - 1)}>Previous keys</AppButton><AppButton disabled={busy || page >= keys.data.pagination.totalPages} onClick={() => setPage(page + 1)}>Next keys</AppButton></Stack> : null}
+  const query = useQuery({ queryKey: [...connectionKeys(firmId, user?.id), 'providers'], queryFn: ({ signal }) => listProviderStatus(signal), enabled: firmId != null, retry: false });
+  return <Stack spacing={2}><Typography component="h2" variant="h2">Provider readiness</Typography>
+    {query.isPending ? <Typography role="status">Loading providers…</Typography> : null}
+    {query.isError ? <Alert severity="error" action={<AppButton onClick={() => void query.refetch()}>Retry providers</AppButton>}>{toApiError(query.error).message}</Alert> : null}
+    {query.data ? <RecordTable rows={query.data.providers} label="Provider readiness" rowKey={(row) => `${row.provider}:${row.capability}`} columns={[
+      { key: 'provider', label: 'Provider', sortValue: (row) => providerNames.get(row.provider) ?? row.provider, render: (row) => providerNames.get(row.provider) ?? row.provider }, { key: 'capability', label: 'Capability', sortValue: (row) => row.capability, render: (row) => row.capability },
+      { key: 'state', label: 'Status', sortValue: (row) => formatRecordStatus(row.state), render: (row) => formatRecordStatus(row.state) }, { key: 'enabled', label: 'Enabled', sortValue: (row) => row.enabled, render: (row) => row.enabled ? 'Yes' : 'No' }, { key: 'reason', label: 'Readiness details', render: (row) => row.reason },
+    ]} /> : null}
   </Stack>;
 }
-
+function KeysPanel() {
+  const firmId = useFirmId(); const { user } = useAuth(); const cache = useQueryClient(); const notify = useNotification(); const scope = connectionKeys(firmId, user?.id);
+  const [page, setPage] = useState(1); const [secret, setSecret] = useState(''); const [revoking, setRevoking] = useState<ApiKey | null>(null);
+  const sorting = useTableSort([{ key: 'createdAt', label: 'Created date' }, { key: 'name', label: 'Key name' }, { key: 'expiresAt', label: 'Expiry date' }], { onChange: () => setPage(1) });
+  const keys = useQuery({ queryKey: [...scope, 'keys', page, sorting.sortBy, sorting.sortOrder], queryFn: ({ signal }) => listKeys(page, signal, { sortBy: sorting.sortBy, sortOrder: sorting.sortOrder }), enabled: firmId != null, retry: false });
+  const refresh = () => cache.invalidateQueries({ queryKey: [...scope, 'keys'] });
+  const revoke = useMutation({ mutationFn: revokeKey, onSuccess: async () => { setRevoking(null); notify('API key revoked.'); try { await refresh(); } catch { notify('The key was revoked, but records could not refresh.', 'warning'); } }, onError: (error) => notify(toApiError(error).message, 'error') });
+  const issue = async (data: FormData, existing?: ApiKey) => { const result = await issueKey({ name: existing?.name ?? String(data.get('name')).trim(), lifetimeDays: Number(data.get('days')), scopes: existing ? existing.scopes as Array<'reports.read' | 'reports.export'> : data.get('exports') === 'on' ? ['reports.read', 'reports.export'] : ['reports.read'] }, existing?.id); setSecret(result.token); };
+  const lifetime = <TextField name="days" label="Key lifetime in days" type="number" defaultValue={30} inputProps={{ min: 1, max: 365, step: 1 }} required />;
+  return <Stack spacing={2}>
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between"><Typography component="h2" variant="h2">Read-only API credentials</Typography>
+      <CommandForm dialog title="Create API key" label="Create API key" successMessage="API key created. Store the token shown below." saved={refresh} submit={(data) => issue(data)}><TextField name="name" label="API key name" inputProps={{ maxLength: 100 }} required />{lifetime}<FormControlLabel label="Allow report exports" control={<Checkbox name="exports" />} /></CommandForm>
+    </Stack>
+    <Typography>Use the external reporting API with your bearer token. Each key belongs to this firm and its issuer. Permissions, plan access, expiration and revocation are checked on every request.</Typography>
+    {secret ? <><Alert severity="info">Store the new token securely now. Rotation revokes the previous token immediately.</Alert><TextField label="New API token shown once" value={secret} InputProps={{ readOnly: true }} autoComplete="off" /><AppButton onClick={() => setSecret('')}>Dismiss token</AppButton></> : null}
+    {keys.isPending ? <Typography role="status">Loading API keys…</Typography> : null}
+    {keys.isError ? <Alert severity="error" action={<AppButton onClick={() => void keys.refetch()}>Retry API keys</AppButton>}>{toApiError(keys.error).message}</Alert> : null}
+    {keys.data ? <><RecordTable rows={keys.data.keys} sorting={sorting} rowNumberStart={(page - 1) * 20 + 1} label="API credentials" rowKey={(row) => row.id} emptyMessage="No API keys yet. Create a key for an approved reporting client." columns={[
+      { key: 'name', sortKey: 'name', label: 'Key name', render: (row) => row.name }, { key: 'scopes', label: 'Scopes', render: (row) => row.scopes.join(', ') },
+      { key: 'expiresAt', sortKey: 'expiresAt', label: 'Expires', render: (row) => new Date(row.expiresAt).toLocaleString() }, { key: 'status', label: 'Status', render: (row) => row.revokedAt ? 'Revoked' : new Date(row.expiresAt).getTime() <= Date.now() ? 'Expired' : 'Active' },
+      { key: 'actions', label: 'Actions', render: (row) => !row.revokedAt ? <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}><CommandForm dialog title={`Rotate ${row.name}`} label="Rotate key" confirmation={{ title: `Rotate ${row.name}?`, description: 'The old token stops working immediately. Update the approved client with the new token.', color: 'warning' }} successMessage="API key rotated. Store the new token." saved={refresh} submit={(data) => issue(data, row)}>{lifetime}</CommandForm><AppButton color="error" disabled={revoke.isPending} onClick={() => setRevoking(row)}>Revoke {row.name}</AppButton></Stack> : '—' },
+    ]} /><RecordPagination pagination={keys.data.pagination} page={page} change={setPage} /></> : null}
+    <ConfirmDialog open={revoking !== null} title={`Revoke ${revoking?.name ?? 'API key'}?`} confirmLabel="Revoke key" confirmColor="error" isConfirming={revoke.isPending} onClose={() => setRevoking(null)} onConfirm={() => { if (revoking) revoke.mutate(revoking.id); }}>This token will stop working immediately. Requests from clients using it will be rejected.</ConfirmDialog>
+  </Stack>;
+}
 function WebhooksPanel() {
-  const firmId = useFirmId(); const { user } = useAuth(); const cache = useQueryClient(); const scope = connectionKeys(firmId, user?.id);
-  const [name, setName] = useState(''); const [url, setUrl] = useState(''); const [secret, setSecret] = useState(''); const [selected, setSelected] = useState<string>(); const [page, setPage] = useState(1);
+  const firmId = useFirmId(); const { user } = useAuth(); const cache = useQueryClient(); const notify = useNotification(); const scope = connectionKeys(firmId, user?.id);
+  const [secret, setSecret] = useState(''); const [selected, setSelected] = useState<string>(); const [page, setPage] = useState(1); const [toggling, setToggling] = useState<Endpoint | null>(null);
+  const sorting = useTableSort([{ key: 'createdAt', label: 'Delivery date' }, { key: 'secretVersion', label: 'Signing version' }], { onChange: () => setPage(1) });
   const endpoints = useQuery({ queryKey: [...scope, 'webhooks'], queryFn: ({ signal }) => listEndpoints(signal), enabled: firmId != null, retry: false });
-  const deliveries = useQuery({ queryKey: [...scope, 'deliveries', selected, page], queryFn: ({ signal }) => listDeliveries(selected!, page, signal), enabled: firmId != null && Boolean(selected), retry: false });
+  const deliveries = useQuery({ queryKey: [...scope, 'deliveries', selected, page, sorting.sortBy, sorting.sortOrder], queryFn: ({ signal }) => listDeliveries(selected!, page, signal, { sortBy: sorting.sortBy, sortOrder: sorting.sortOrder }), enabled: firmId != null && Boolean(selected), retry: false });
   const refresh = () => cache.invalidateQueries({ queryKey: [...scope, 'webhooks'] });
-  const create = useMutation({ mutationFn: async () => { const result = await createEndpoint(name, url); setSecret(result.secret); return result.endpoint; }, onSuccess: refresh });
-  const toggle = useMutation({ mutationFn: toggleEndpoint, onSuccess: refresh });
-  const rotate = useMutation({ mutationFn: async (id: string) => { const result = await rotateEndpoint(id); setSecret(result.secret); return result.endpoint; }, onSuccess: refresh });
-  const busy = create.isPending || toggle.isPending || rotate.isPending;
+  const toggle = useMutation({ mutationFn: toggleEndpoint, onSuccess: async () => { setToggling(null); notify('Webhook endpoint updated.'); try { await refresh(); } catch { notify('The endpoint was updated, but records could not refresh.', 'warning'); } }, onError: (error) => notify(toApiError(error).message, 'error') });
   const configured = endpoints.data?.configuration; const ready = configured?.encryptionConfigured && configured.destinationsConfigured && configured.workerEnabled;
   return <Stack spacing={2}>
-    <Typography component="h2" variant="h2">Signed report export webhooks</Typography>
-    <Typography>At-least-once delivery, five automatic attempts. Verify the signature and timestamp before parsing, then durably deduplicate the delivery ID. Exports send metadata only. Secret rotation preserves the signing version of pending deliveries.</Typography>
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between"><Typography component="h2" variant="h2">Signed report export webhooks</Typography>
+      <CommandForm dialog title="Create webhook endpoint" label="Create disabled endpoint" isSubmitDisabled={!configured?.encryptionConfigured || !configured.destinationsConfigured} successMessage="Disabled endpoint created. Store the signing secret." saved={refresh} submit={async (data) => { const result = await createEndpoint(String(data.get('name')).trim(), String(data.get('url')).trim()); setSecret(result.secret); }}>
+        {!configured ? <Alert severity="info">Webhook configuration could not be checked. Close this form and load the endpoint settings before creating an endpoint.</Alert> : !configured.encryptionConfigured || !configured.destinationsConfigured ? <Alert severity="warning">Webhook setup is unavailable. Ask your server administrator to configure {(!configured.encryptionConfigured && !configured.destinationsConfigured) ? 'secret encryption and the approved destination list' : !configured.encryptionConfigured ? 'secret encryption' : 'the approved destination list'}, then reload these settings.</Alert> : null}
+        <TextField name="name" label="Webhook name" required inputProps={{ maxLength: 100 }} /><TextField name="url" label="Webhook HTTPS URL" type="url" required inputProps={{ maxLength: 1000 }} helperText="An operator must approve the exact destination hostname. New endpoints start disabled." />
+      </CommandForm>
+    </Stack>
+    <Typography>Export events contain metadata. Deliveries may repeat: receivers must verify signatures and timestamps, then deduplicate delivery IDs. Failed deliveries receive up to five automatic attempts.</Typography>
     {configured ? <Alert severity={ready ? 'info' : 'warning'}>Encryption {configured.encryptionConfigured ? 'configured' : 'missing'} · Destination allowlist {configured.destinationsConfigured ? 'configured' : 'missing'} · Worker {configured.workerEnabled ? 'enabled' : 'disabled'}</Alert> : null}
-    <Stack component="form" spacing={2} onSubmit={(event) => { event.preventDefault(); create.mutate(); }}><TextField label="Webhook name" value={name} onChange={(event) => setName(event.target.value)} required disabled={busy} inputProps={{ maxLength: 100 }} /><TextField label="Webhook HTTPS URL" type="url" value={url} onChange={(event) => setUrl(event.target.value)} required disabled={busy} inputProps={{ maxLength: 1000 }} helperText="An operator must approve the exact destination hostname. New endpoints start disabled." /><AppButton type="submit" disabled={busy || !name.trim() || !url || !configured?.encryptionConfigured || !configured.destinationsConfigured}>Create disabled endpoint</AppButton></Stack>
-    {secret ? <><TextField label="Webhook signing secret shown once" value={secret} InputProps={{ readOnly: true }} /><AppButton onClick={() => { setSecret(''); create.reset(); rotate.reset(); }}>Dismiss signing secret</AppButton></> : null}
-    {[endpoints.error, deliveries.error, create.error, toggle.error, rotate.error].filter(Boolean).map((error, index) => <Alert severity="error" key={index}>{toApiError(error).message}</Alert>)}
-    {endpoints.data?.endpoints.map((endpoint) => <Stack key={endpoint.id} spacing={1}><Typography>{endpoint.name} · {endpoint.url} · {endpoint.enabled ? 'Enabled' : 'Disabled'} · Signing version {endpoint.secretVersion}</Typography><Stack direction="row" useFlexGap flexWrap="wrap" gap={1}><AppButton disabled={busy || (!endpoint.enabled && !ready)} onClick={() => toggle.mutate(endpoint)}>{endpoint.enabled ? 'Disable' : 'Enable'} {endpoint.name}</AppButton><AppButton disabled={busy} variant="outlined" onClick={() => rotate.mutate(endpoint.id)}>Rotate signing secret</AppButton><AppButton variant="outlined" onClick={() => { setSelected(endpoint.id); setPage(1); }}>View deliveries for {endpoint.name}</AppButton></Stack></Stack>)}
-    {selected ? <Stack spacing={1}><Typography component="h3" variant="h3">Delivery history</Typography><AppButton disabled={deliveries.isFetching} onClick={() => void deliveries.refetch()}>Refresh deliveries</AppButton>{deliveries.data?.deliveries.length === 0 ? <Typography>No deliveries recorded.</Typography> : null}{deliveries.data?.deliveries.map((delivery) => <Stack key={delivery.id}><Typography>{delivery.id} · {delivery.event.status} · Attempts {delivery.event.attempts}/{delivery.event.maxAttempts} · Signing version {delivery.secretVersion}</Typography>{delivery.event.jobAttempts.map((attempt) => <Typography key={attempt.attempt} variant="caption">Attempt {attempt.attempt}: {attempt.outcome ?? 'Processing'} {attempt.errorCode ?? ''}</Typography>)}</Stack>)}{deliveries.data && deliveries.data.pagination.totalPages > 1 ? <Stack direction="row" spacing={1}><AppButton disabled={page === 1} onClick={() => setPage(page - 1)}>Previous deliveries</AppButton><AppButton disabled={page >= deliveries.data.pagination.totalPages} onClick={() => setPage(page + 1)}>Next deliveries</AppButton></Stack> : null}</Stack> : null}
+    {secret ? <><TextField label="Webhook signing secret shown once" value={secret} InputProps={{ readOnly: true }} autoComplete="off" /><AppButton onClick={() => setSecret('')}>Dismiss signing secret</AppButton></> : null}
+    {endpoints.isPending ? <Typography role="status">Loading webhook endpoints…</Typography> : null}
+    {endpoints.isError ? <Alert severity="error" action={<AppButton onClick={() => void endpoints.refetch()}>Retry endpoints</AppButton>}>{toApiError(endpoints.error).message}</Alert> : null}
+    {endpoints.data ? <RecordTable rows={endpoints.data.endpoints} label="Webhook endpoints" rowKey={(row) => row.id} emptyMessage="No webhook endpoints configured." columns={[
+      { key: 'name', label: 'Name', sortValue: (row) => row.name, render: (row) => row.name }, { key: 'url', label: 'Destination', sortValue: (row) => row.url, render: (row) => row.url },
+      { key: 'enabled', label: 'Status', sortValue: (row) => row.enabled, render: (row) => row.enabled ? 'Enabled' : 'Disabled' }, { key: 'version', label: 'Signing version', align: 'right', sortValue: (row) => row.secretVersion, render: (row) => row.secretVersion },
+      { key: 'actions', label: 'Actions', render: (row) => <Stack spacing={1}><AppButton disabled={toggle.isPending || (!row.enabled && !ready)} onClick={() => setToggling(row)}>{row.enabled ? 'Disable' : 'Enable'} {row.name}</AppButton><CommandForm dialog title={`Rotate signing secret for ${row.name}`} label="Rotate signing secret" confirmation={{ title: `Rotate ${row.name} signing secret?`, description: 'New deliveries use the new version. Pending deliveries retain their signing version. Update the receiver before accepting the new version.', color: 'warning' }} saved={refresh} successMessage="Signing secret rotated." submit={async () => { const result = await rotateEndpoint(row.id); setSecret(result.secret); }}><Typography>The new secret is shown once after rotation.</Typography></CommandForm><AppButton onClick={() => { setSelected(row.id); setPage(1); }}>View deliveries for {row.name}</AppButton></Stack> },
+    ]} /> : null}
+    {selected ? <Stack spacing={2}><Typography component="h3" variant="h3">Delivery history</Typography><AppButton disabled={deliveries.isFetching} onClick={() => void deliveries.refetch()}>Refresh deliveries</AppButton>
+      {deliveries.isError ? <Alert severity="error">{toApiError(deliveries.error).message}</Alert> : null}{deliveries.isPending ? <Typography role="status">Loading deliveries…</Typography> : null}
+      {deliveries.data ? <><RecordTable rows={deliveries.data.deliveries} sorting={sorting} rowNumberStart={(page - 1) * 20 + 1} label="Webhook deliveries" rowKey={(row) => row.id} emptyMessage="No deliveries recorded." columns={[
+        { key: 'id', label: 'Delivery', render: (row) => row.id }, { key: 'status', label: 'Status', render: (row) => formatRecordStatus(row.event.status) }, { key: 'attempts', label: 'Attempts', align: 'right', render: (row) => `${row.event.attempts}/${row.event.maxAttempts}` },
+        { key: 'version', sortKey: 'secretVersion', label: 'Signing version', align: 'right', render: (row) => row.secretVersion }, { key: 'outcomes', label: 'Attempt outcomes', render: (row) => row.event.jobAttempts.map((attempt) => `Attempt ${attempt.attempt}: ${attempt.outcome ? formatRecordStatus(attempt.outcome) : 'Processing'} ${attempt.errorCode ?? ''}`).join('; ') || 'No attempts yet' },
+      ]} /><RecordPagination pagination={deliveries.data.pagination} page={page} change={setPage} /></> : null}
+    </Stack> : null}
+    <ConfirmDialog open={toggling !== null} title={`${toggling?.enabled ? 'Disable' : 'Enable'} ${toggling?.name ?? 'endpoint'}?`} confirmLabel={toggling?.enabled ? 'Disable endpoint' : 'Enable endpoint'} isConfirming={toggle.isPending} onClose={() => setToggling(null)} onConfirm={() => { if (toggling) toggle.mutate(toggling); }}>{toggling?.enabled ? 'Future events will no longer be queued to this endpoint. Existing delivery history is retained.' : 'Future report export events will be sent to this approved destination using signed requests.'}</ConfirmDialog>
   </Stack>;
 }

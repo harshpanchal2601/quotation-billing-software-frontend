@@ -1,6 +1,7 @@
 import { apiClient, type ApiSuccessResponse } from '@shared/api/apiClient';
 import type {
   GeneratedDocumentHistoryResponse,
+  QuotationHistoryParams,
   QuotationCommunicationHistoryResponse,
   SendQuotationEmailInput,
   SendQuotationEmailResponse,
@@ -8,11 +9,11 @@ import type {
 
 export async function getGeneratedDocumentHistoryRequest(
   quotationId: number,
-  page = 1,
+  params: number | QuotationHistoryParams = 1,
 ): Promise<GeneratedDocumentHistoryResponse> {
   const response = await apiClient.get<ApiSuccessResponse<GeneratedDocumentHistoryResponse>>(
     `/quotations/${quotationId}/documents`,
-    { params: { page, limit: 20 } },
+    { params: typeof params === 'number' ? { page: params, limit: 20 } : { limit: 20, ...params } },
   );
   return response.data.data;
 }
@@ -30,11 +31,11 @@ export async function sendQuotationEmailRequest(
 
 export async function getQuotationCommunicationHistoryRequest(
   quotationId: number,
-  page = 1,
+  params: number | QuotationHistoryParams = 1,
 ): Promise<QuotationCommunicationHistoryResponse> {
   const response = await apiClient.get<ApiSuccessResponse<QuotationCommunicationHistoryResponse>>(
     `/quotations/${quotationId}/communications`,
-    { params: { page, limit: 20 } },
+    { params: typeof params === 'number' ? { page: params, limit: 20 } : { limit: 20, ...params } },
   );
   return response.data.data;
 }

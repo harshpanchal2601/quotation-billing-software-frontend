@@ -1,85 +1,142 @@
-import Alert from '@mui/material/Alert';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import MenuItem from '@mui/material/MenuItem';
-import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Alert, Chip, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toApiError } from '@shared/api/apiClient';
+import { EmptyState } from '@shared/components/common/EmptyState';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { CommandForm } from '@shared/forms/CommandForm';
 import { useFirmId } from '@shared/tenancy/useFirmId';
 import { AppButton } from '@shared/ui/actions';
-import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { AppDialog, ConfirmDialog } from '@shared/ui/dialogs';
+import { formatBusinessAction, formatRecordStatus } from '@shared/ui/display';
+import { useNotification } from '@shared/ui/feedback';
+import { DetailFields, DetailSection, PageContainer, PageHeader } from '@shared/ui/layout';
+import { DataTableShell, RecordTable, TableSkeleton, TableSortControls, useTableSort } from '@shared/ui/tables';
 import { controlRun, listDefinitions, listRecipients, listRuns, listVersions, previewDefinition, publishDefinition, rollbackDefinition } from '../api/automation.api';
 import { DefinitionEditor } from '../components/DefinitionEditor';
-import { definitionKey, initialDefinition, triggerEntities, type Definition, type DefinitionKind, type PublishedDefinition, type Workflow } from '../model/automation.types';
+import { definitionKey, initialDefinition, triggerEntities, type Definition, type DefinitionKind, type PublishedDefinition, type Run, type Workflow } from '../model/automation.types';
 
 const categories: Array<[DefinitionKind, string]> = [['WORKFLOW', 'Workflows'], ['APPROVAL', 'Approval policies'], ['NOTIFICATION', 'Notification rules'], ['TEMPLATE', 'Document templates'], ['CUSTOM_FIELDS', 'Custom fields']];
+const runSortFields = [{ key: 'createdAt', label: 'Created' }, { key: 'status', label: 'Status' }, { key: 'expiresAt', label: 'Expires' }, { key: 'actorId', label: 'Requester number' }];
+const versionSortFields = [{ key: 'version', label: 'Version' }, { key: 'publishedAt', label: 'Published' }, { key: 'publishedById', label: 'Published by' }];
+
 export function AutomationPage() {
   const firmId = useFirmId();
   return <AutomationWorkspace key={firmId} />;
 }
 function AutomationWorkspace() {
-  const firmId = useFirmId(); const cache = useQueryClient();
-  const [kind, setKind] = useState<DefinitionKind>('WORKFLOW');
+  const firmId = useFirmId(); const cache = useQueryClient(); const notify = useNotification();
+  const [workspaceParams, setWorkspaceParams] = useSearchParams();
+  const requestedKind = workspaceParams.get('category');
+  const kind = categories.some(([value]) => value === requestedKind) ? requestedKind as DefinitionKind : 'WORKFLOW';
   const [definition, setDefinition] = useState<Definition>(() => initialDefinition('WORKFLOW'));
   const [workflowKey, setWorkflowKey] = useState('new-workflow');
-  const [editingBase, setEditingBase] = useState<{ kind: DefinitionKind; key: string; version: number } | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingBase, setEditingBase] = useState<PublishedDefinition | null>(null);
   const [history, setHistory] = useState<PublishedDefinition | null>(null);
-  const [historyPage, setHistoryPage] = useState(1);
-  const [runPage, setRunPage] = useState(1);
-  const [notice, setNotice] = useState('');
+  const [historyPage, setHistoryPage] = useState(1); const [runPage, setRunPage] = useState(1);
+  const [selectedRun, setSelectedRun] = useState<Run | null>(null);
+  const [republishVersion, setRepublishVersion] = useState<number | null>(null);
+  const [runCommand, setRunCommand] = useState<{ id: string; command: 'RETRY' | 'CANCEL' } | null>(null);
   const [example, setExample] = useState({ status: 'ISSUED', currency: 'INR', total: '100.00', discountPercent: '10' });
+  const runSorting = useTableSort(runSortFields, { defaultSortBy: 'createdAt', paramPrefix: 'runs', onChange: () => setRunPage(1) });
+  const versionSorting = useTableSort(versionSortFields, { defaultSortBy: 'version', paramPrefix: 'versions', onChange: () => setHistoryPage(1) });
+  const runSort = { sortBy: runSorting.sortBy, sortOrder: runSorting.sortOrder };
+  const versionSort = { sortBy: versionSorting.sortBy, sortOrder: versionSorting.sortOrder };
   const key = definitionKey(definition, workflowKey);
   const heads = useQuery({ queryKey: ['automation', firmId, kind], queryFn: () => listDefinitions(kind) });
-  const recipients = useQuery({ queryKey: ['automation-recipients', firmId], queryFn: listRecipients });
-  const runs = useQuery({ queryKey: ['automation-runs', firmId, runPage], queryFn: () => listRuns(runPage), refetchInterval: 15000 });
-  const versions = useQuery({ queryKey: ['automation-history', firmId, history?.kind, history?.key, historyPage], queryFn: () => listVersions(history!.kind, history!.key, historyPage), enabled: history !== null });
+  const recipients = useQuery({ queryKey: ['automation-recipients', firmId], queryFn: listRecipients, enabled: editorOpen && (kind === 'WORKFLOW' || kind === 'NOTIFICATION') });
+  const runs = useQuery({ queryKey: ['automation-runs', firmId, runPage, runSort], queryFn: () => listRuns(runPage, runSort), refetchInterval: 15000 });
+  const versions = useQuery({ queryKey: ['automation-history', firmId, history?.kind, history?.key, historyPage, versionSort], queryFn: () => listVersions(history!.kind, history!.key, historyPage, versionSort), enabled: history !== null });
   const current = heads.data?.find((row) => row.key === key);
   const expectedVersion = editingBase?.kind === kind && editingBase.key === key ? editingBase.version : 0;
-  async function refresh() { await cache.invalidateQueries({ queryKey: ['automation', firmId] }); await cache.invalidateQueries({ queryKey: ['automation-history', firmId] }); }
-  const publish = useMutation({ mutationFn: () => publishDefinition(kind, key, expectedVersion, definition), onSuccess: async (saved) => { setEditingBase({ kind: saved.definition.kind, key: saved.definition.key, version: saved.definition.version }); setDefinition(structuredClone(saved.definition.definition)); setNotice('New version published. Existing runs and documents retain their snapshots.'); await refresh(); } });
-  const rollback = useMutation({ mutationFn: (version: number) => rollbackDefinition(history!.kind, history!.key, history!.version, version), onSuccess: async () => { setNotice('Historical settings republished as a new version.'); setHistory(null); await refresh(); } });
+  const refresh = () => Promise.all([
+    cache.invalidateQueries({ queryKey: ['automation', firmId] }, { throwOnError: true }),
+    cache.invalidateQueries({ queryKey: ['automation-history', firmId] }, { throwOnError: true }),
+  ]);
+  const rollback = useMutation({
+    mutationFn: (version: number) => rollbackDefinition(history!.kind, history!.key, history!.version, version),
+    onSuccess: async () => { setRepublishVersion(null); setHistory(null); notify('Historical settings saved as a new version.'); try { await refresh(); } catch { notify('Settings saved, but the list could not refresh. Refresh the page.', 'warning'); } },
+    onError: (error) => notify(toApiError(error).message, 'error'),
+  });
   const preview = useMutation({ mutationFn: () => {
     const workflow = definition as Workflow;
     const event = kind === 'WORKFLOW' || kind === 'NOTIFICATION' ? { trigger: workflow.trigger, entity: triggerEntities[workflow.trigger], entityId: 1, businessName: 'Example business', documentNumber: 'PREVIEW-001', ...example } : undefined;
     return previewDefinition(kind, key, definition, event);
   } });
-  const control = useMutation({ mutationFn: ({ id, command }: { id: string; command: 'RETRY' | 'CANCEL' }) => controlRun(id, command), onSuccess: () => cache.invalidateQueries({ queryKey: ['automation-runs', firmId] }) });
-  function edit(row: PublishedDefinition) { setDefinition(structuredClone(row.definition)); setWorkflowKey(row.key); setEditingBase({ kind: row.kind, key: row.key, version: row.version }); preview.reset(); setNotice(''); }
-  const busy = publish.isPending || rollback.isPending;
-  return <PageContainer><PageHeader title="Automation settings" description="Configure tenant behavior within your subscription and team permissions." />
-    <Alert severity="info">Workflows send in-app notifications only. Financial actions remain explicit domain commands with approval checks. Published settings are immutable.</Alert>
-    {notice ? <Alert severity="success">{notice}</Alert> : null}
-    {[heads.error, recipients.error, publish.error, rollback.error, control.error].filter(Boolean).map((error, index) => <Alert severity="error" key={index}>{toApiError(error).message}<AppButton onClick={() => { void heads.refetch(); void recipients.refetch(); }}>Reload</AppButton></Alert>)}
-    <TextField select label="Configuration category" value={kind} disabled={busy} onChange={(event) => { const next = event.target.value as DefinitionKind; setKind(next); setDefinition(initialDefinition(next)); setWorkflowKey('new-workflow'); setEditingBase(null); setHistory(null); publish.reset(); preview.reset(); setNotice(''); }}>{categories.map(([value, title]) => <MenuItem key={value} value={value}>{title}</MenuItem>)}</TextField>
-    <Stack spacing={1}>{heads.data?.map((row) => <Paper variant="outlined" sx={{ p: 2 }} key={row.id}><Stack direction="row" spacing={2} alignItems="center"><Typography sx={{ flex: 1 }}>{row.key} · Version {row.version} · {row.definition.enabled ? 'Enabled' : 'Disabled'}</Typography><AppButton disabled={busy} onClick={() => edit(row)}>Edit</AppButton><AppButton disabled={busy} onClick={() => { setHistory(row); setHistoryPage(1); }}>History</AppButton></Stack></Paper>)}</Stack>
-    <Paper variant="outlined" sx={{ p: 2 }}><Stack component="form" spacing={2} onSubmit={(event) => { event.preventDefault(); publish.mutate(); }}>
-      <Typography variant="h6">{current ? `Publish changes to ${key}` : 'Create configuration'}</Typography>
-      {kind === 'WORKFLOW' || kind === 'NOTIFICATION' ? <TextField label="Permanent rule key" disabled={busy} value={workflowKey} onChange={(event) => setWorkflowKey(event.target.value)} helperText="Letters, numbers, underscores and hyphens; start with a letter." /> : null}
-      {current && expectedVersion === 0 ? <Alert severity="info">This configuration already exists. Load its settings before editing.<AppButton onClick={() => edit(current)}>Load existing configuration</AppButton></Alert> : null}
-      <fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}><DefinitionEditor key={kind} kind={kind} value={definition} onChange={(value) => { setDefinition(value); preview.reset(); }} recipients={recipients.data ?? []} /></fieldset>
-      {kind === 'WORKFLOW' || kind === 'NOTIFICATION' ? <Stack spacing={1}><Typography variant="subtitle1">Example event for preview</Typography>{Object.entries(example).map(([field, value]) => <TextField key={field} label={`Example ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`} value={value} onChange={(event) => { setExample({ ...example, [field]: event.target.value }); preview.reset(); }} />)}</Stack> : null}
+  const control = useMutation({ mutationFn: (command: { id: string; command: 'RETRY' | 'CANCEL' }) => controlRun(command.id, command.command), onSuccess: async () => {
+    setRunCommand(null); setSelectedRun(null); notify('Workflow run updated.');
+    try { await cache.invalidateQueries({ queryKey: ['automation-runs', firmId] }, { throwOnError: true }); } catch { notify('The run was updated, but its history could not refresh.', 'warning'); }
+  }, onError: (error) => notify(toApiError(error).message, 'error') });
+  function edit(row?: PublishedDefinition) {
+    setDefinition(row ? structuredClone(row.definition) : initialDefinition(kind)); setWorkflowKey(row?.key ?? 'new-workflow'); setEditingBase(row ?? null); preview.reset(); setEditorOpen(true);
+  }
+  return <PageContainer>
+    <PageHeader title="Automation settings" description="Manage business rules, document templates and additional fields." actions={<AppButton variant="contained" onClick={() => edit()}>Create configuration</AppButton>} />
+    <Alert severity="info">Workflows send notifications within this application. Financial actions still require an explicit request and any necessary approval. Saved versions and existing document snapshots are preserved.</Alert>
+    <TextField select label="Configuration category" value={kind} onChange={(event) => { setWorkspaceParams((currentParams) => { const next = new URLSearchParams(currentParams); next.set('category', event.target.value); return next; }, { replace: true }); setHistory(null); }}>{categories.map(([value, title]) => <MenuItem key={value} value={value}>{title}</MenuItem>)}</TextField>
+    <DataTableShell wrapInTableContainer={false} isLoading={heads.isPending} isError={heads.isError} isEmpty={!heads.data?.length} loadingContent={<TableSkeleton rowCount={3} />} errorContent={<ErrorState message={toApiError(heads.error).message} onRetry={() => void heads.refetch()} />} emptyContent={<EmptyState title="No configurations" description="Create a configuration to manage rules or document settings for your firm." />}>
+      <RecordTable rows={heads.data ?? []} rowKey={(row) => row.id} label="Published configurations" columns={[
+        { key: 'key', label: 'Configuration', minWidth: 240, sortValue: (row) => row.key, render: (row) => 'name' in row.definition ? row.definition.name : formatBusinessAction(row.key) },
+        { key: 'version', label: 'Version', sortValue: (row) => row.version, render: (row) => row.version },
+        { key: 'enabled', label: 'Status', sortValue: (row) => row.definition.enabled, render: (row) => <Chip size="small" color={row.definition.enabled ? 'success' : 'default'} variant="outlined" label={row.definition.enabled ? 'Enabled' : 'Disabled'} /> },
+        { key: 'published', label: 'Published', sortValue: (row) => row.publishedAt, render: (row) => new Date(row.publishedAt).toLocaleString() },
+        { key: 'actions', label: 'Actions', minWidth: 220, render: (row) => <Stack direction="row" spacing={1}><AppButton size="small" variant="outlined" onClick={() => edit(row)}>Edit</AppButton><AppButton size="small" onClick={() => { setHistory(row); setHistoryPage(1); }}>History</AppButton></Stack> },
+      ]} />
+    </DataTableShell>
+    {editorOpen ? <CommandForm dialog initialOpen hideTrigger title={editingBase ? `Edit ${key}` : 'Create configuration'} label={`Save version ${expectedVersion + 1}`} onClosed={() => setEditorOpen(false)} successMessage="Configuration version saved. Existing records retain their previous settings."
+      isSubmitDisabled={heads.isPending || heads.isError || preview.isPending || Boolean(current && expectedVersion === 0)} submit={() => publishDefinition(kind, key, expectedVersion, definition)} saved={refresh}>
+      <input type="hidden" name="configuration" value={JSON.stringify({ kind, key, expectedVersion, definition })} />
+      {kind === 'WORKFLOW' || kind === 'NOTIFICATION' ? <TextField label="Permanent rule key" value={workflowKey} onChange={(event) => { setWorkflowKey(event.target.value); preview.reset(); }} helperText="Letters, numbers, underscores and hyphens; start with a letter." /> : null}
+      {current && expectedVersion === 0 ? <Alert severity="info">This configuration already exists. Load its settings before editing.<AppButton onClick={() => { setDefinition(structuredClone(current.definition)); setWorkflowKey(current.key); setEditingBase(current); preview.reset(); }}>Load existing configuration</AppButton></Alert> : null}
+      {recipients.isError ? <ErrorState message={toApiError(recipients.error).message} onRetry={() => void recipients.refetch()} /> : null}
+      <DefinitionEditor key={kind} kind={kind} value={definition} onChange={(value) => { setDefinition(value); preview.reset(); }} recipients={recipients.data ?? []} />
+      {kind === 'WORKFLOW' || kind === 'NOTIFICATION' ? <DetailSection title="Example event for preview">{Object.entries(example).map(([field, value]) => <TextField key={field} label={`Example ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`} value={value} onChange={(event) => { setExample({ ...example, [field]: event.target.value }); preview.reset(); }} />)}</DetailSection> : null}
       {preview.isError ? <Alert severity="error">{toApiError(preview.error).message}</Alert> : null}
       {preview.isSuccess ? <PreviewResult value={preview.data} /> : null}
-      <Stack direction="row" spacing={1}><AppButton disabled={busy || preview.isPending || heads.isPending} onClick={() => preview.mutate()}>Validate and preview</AppButton><AppButton type="submit" disabled={busy || heads.isPending || heads.isError || Boolean(current && expectedVersion === 0)}>Publish version {expectedVersion + 1}</AppButton><AppButton disabled={busy} onClick={() => { setDefinition(initialDefinition(kind)); setWorkflowKey('new-workflow'); setEditingBase(null); preview.reset(); }}>New configuration</AppButton></Stack>
-    </Stack></Paper>
-    <Typography variant="h6">Workflow runs</Typography>
-    {runs.isPending ? <Typography role="status">Loading workflow runs…</Typography> : null}
-    {runs.isError ? <Alert severity="error">{toApiError(runs.error).message}<AppButton onClick={() => void runs.refetch()}>Retry</AppButton></Alert> : null}
-    {runs.data?.length === 0 ? <Typography>No workflow runs yet.</Typography> : null}
-    {runs.data?.map((run) => <Paper variant="outlined" sx={{ p: 2 }} key={run.id}><Stack spacing={1}>
-      <Typography>{run.definition.key} · Version {run.definition.version} · {run.status}</Typography><Typography variant="body2">Actor {run.actorId} · {run.reason ?? 'Awaiting worker'} · Source {run.sourceEventId} · Expires {new Date(run.expiresAt).toLocaleString()}</Typography>
-      {run.actions.map((action) => <Typography variant="body2" key={action.id}>{action.step}: {action.outcome}</Typography>)}
-      {run.logs?.map((entry) => <Typography variant="body2" key={entry.id}>{new Date(entry.createdAt).toLocaleString()} · User {entry.userId} · {entry.newValues?.reason ?? entry.newValues?.status ?? 'Run updated'}{entry.newValues?.recipientId ? ` · Recipient ${entry.newValues.recipientId}` : ''}</Typography>)}
-      {run.jobs.map((job) => <Stack spacing={0.5} key={job.id}><Typography variant="body2">{job.kind}: {job.status} · {job.attempts} attempts · Available {new Date(job.availableAt).toLocaleString()}</Typography>{job.jobAttempts.map((attempt) => <Typography variant="caption" key={attempt.id}>Attempt {attempt.attempt}: {attempt.outcome ?? 'Running'} {attempt.errorCode ?? ''}</Typography>)}</Stack>)}
-      <Stack direction="row" spacing={1}><AppButton disabled={control.isPending || run.status === 'CANCELLED'} onClick={() => control.mutate({ id: run.id, command: 'CANCEL' })}>Cancel remaining actions</AppButton><AppButton disabled={control.isPending || !run.jobs.some((job) => job.status === 'DEAD') || run.status === 'CANCELLED'} onClick={() => control.mutate({ id: run.id, command: 'RETRY' })}>Retry failed actions</AppButton></Stack>
-    </Stack></Paper>)}
-    <Stack direction="row" spacing={1}><AppButton disabled={runPage === 1} onClick={() => setRunPage((page) => page - 1)}>Previous runs</AppButton><AppButton disabled={(runs.data?.length ?? 0) < 50} onClick={() => setRunPage((page) => page + 1)}>More runs</AppButton></Stack>
-    <Dialog open={history !== null} onClose={() => setHistory(null)} fullWidth><DialogTitle>Published version history</DialogTitle><DialogContent><Stack spacing={2}>{versions.isPending ? <Typography>Loading history…</Typography> : null}{versions.isError ? <Alert severity="error">{toApiError(versions.error).message}</Alert> : null}{versions.data?.map((version) => <Stack spacing={1} key={version.id}><Typography>Version {version.version} · Published by {version.publishedById} · {new Date(version.publishedAt).toLocaleString()}</Typography><AppButton disabled={rollback.isPending} onClick={() => rollback.mutate(version.version)}>Republish version {version.version}</AppButton></Stack>)}<Stack direction="row"><AppButton disabled={historyPage === 1} onClick={() => setHistoryPage((page) => page - 1)}>Previous</AppButton><AppButton disabled={(versions.data?.length ?? 0) < 50} onClick={() => setHistoryPage((page) => page + 1)}>More</AppButton><AppButton onClick={() => setHistory(null)}>Close</AppButton></Stack></Stack></DialogContent></Dialog>
+      <AppButton variant="outlined" disabled={heads.isPending || heads.isError} isLoading={preview.isPending} onClick={() => preview.mutate()}>Validate and preview</AppButton>
+    </CommandForm> : null}
+    <DetailSection title="Workflow runs" description="Review the activity and outcomes of your business rules.">
+      <Stack spacing={2}><TableSortControls {...runSorting} />
+        <DataTableShell wrapInTableContainer={false} isLoading={runs.isPending} isError={runs.isError} isEmpty={!runs.data?.length} loadingContent={<TableSkeleton rowCount={3} />} errorContent={<ErrorState message={toApiError(runs.error).message} onRetry={() => void runs.refetch()} />} emptyContent={<EmptyState title="No workflow runs" description="No workflow runs yet." />}>
+          <RecordTable rows={runs.data ?? []} rowKey={(run) => run.id} label="Workflow runs" rowNumberStart={(runPage - 1) * 50 + 1} sorting={runSorting} showSortControls={false} columns={[
+            { key: 'rule', label: 'Rule', minWidth: 220, render: (run) => `${run.definition.key} · Version ${run.definition.version}` },
+            { key: 'status', label: 'Status', sortKey: 'status', render: (run) => formatRecordStatus(run.status) },
+            { key: 'reason', label: 'Outcome', minWidth: 220, render: (run) => run.reason ? formatRecordStatus(run.reason) : 'Awaiting processing' },
+            { key: 'created', label: 'Created', sortKey: 'createdAt', render: (run) => new Date(run.createdAt).toLocaleString() },
+            { key: 'expires', label: 'Expires', sortKey: 'expiresAt', render: (run) => new Date(run.expiresAt).toLocaleString() },
+            { key: 'actions', label: 'Actions', render: (run) => <AppButton size="small" variant="outlined" onClick={() => setSelectedRun(run)}>View run</AppButton> },
+          ]} />
+        </DataTableShell>
+        <Stack direction="row" justifyContent="flex-end" spacing={1}><AppButton disabled={runPage === 1 || runs.isFetching} onClick={() => setRunPage((page) => page - 1)}>Previous runs</AppButton><AppButton disabled={runs.isFetching || runs.isError || (runs.data?.length ?? 0) < 50} onClick={() => setRunPage((page) => page + 1)}>More runs</AppButton></Stack>
+      </Stack>
+    </DetailSection>
+    <AppDialog open={history !== null} title="Published version history" fullWidth maxWidth="md" showCloseButton onClose={() => setHistory(null)} actions={<AppButton onClick={() => setHistory(null)}>Close</AppButton>}>
+      <Stack spacing={2}><TableSortControls {...versionSorting} />
+        <DataTableShell wrapInTableContainer={false} isLoading={versions.isPending} isError={versions.isError} isEmpty={!versions.data?.length} loadingContent={<TableSkeleton rowCount={3} />} errorContent={<ErrorState message={toApiError(versions.error).message} onRetry={() => void versions.refetch()} />} emptyContent={<EmptyState title="No version history" description="Saved versions will appear here." />}>
+          <RecordTable rows={versions.data ?? []} rowKey={(row) => row.id} label="Configuration versions" rowNumberStart={(historyPage - 1) * 50 + 1} sorting={versionSorting} showSortControls={false} columns={[
+            { key: 'version', label: 'Version', sortKey: 'version', render: (row) => row.version },
+            { key: 'published', label: 'Published', sortKey: 'publishedAt', render: (row) => new Date(row.publishedAt).toLocaleString() },
+            { key: 'publisher', label: 'Published by', sortKey: 'publishedById', render: (row) => `User #${row.publishedById}` },
+            { key: 'status', label: 'Status', render: (row) => row.definition.enabled ? 'Enabled' : 'Disabled' },
+            { key: 'actions', label: 'Actions', minWidth: 220, render: (row) => <AppButton size="small" variant="outlined" disabled={rollback.isPending} onClick={() => { rollback.reset(); setRepublishVersion(row.version); }}>Republish version {row.version}</AppButton> },
+          ]} />
+        </DataTableShell>
+        <Stack direction="row" justifyContent="flex-end"><AppButton disabled={historyPage === 1 || versions.isFetching} onClick={() => setHistoryPage((page) => page - 1)}>Previous versions</AppButton><AppButton disabled={versions.isFetching || versions.isError || (versions.data?.length ?? 0) < 50} onClick={() => setHistoryPage((page) => page + 1)}>More versions</AppButton></Stack>
+      </Stack>
+    </AppDialog>
+    <ConfirmDialog open={republishVersion !== null} title="Use this historical configuration?" confirmLabel="Save as new version" isConfirming={rollback.isPending} onClose={() => { if (!rollback.isPending) setRepublishVersion(null); }} onConfirm={() => { if (republishVersion !== null) rollback.mutate(republishVersion); }}>Version {republishVersion} will become the settings for new activity. Existing records and saved versions will remain available.{rollback.isError ? <Alert severity="error">{toApiError(rollback.error).message}</Alert> : null}</ConfirmDialog>
+    <AppDialog open={selectedRun !== null} title="Workflow run details" fullWidth maxWidth="md" showCloseButton onClose={() => setSelectedRun(null)} actions={<AppButton onClick={() => setSelectedRun(null)}>Close</AppButton>}>
+      {selectedRun ? <Stack spacing={2}>
+        <DetailSection title="Run summary"><DetailFields fields={[{ label: 'Rule', value: selectedRun.definition.key }, { label: 'Version', value: selectedRun.definition.version }, { label: 'Status', value: formatRecordStatus(selectedRun.status) }, { label: 'Requested by', value: `User #${selectedRun.actorId}` }, { label: 'Outcome', value: selectedRun.reason ? formatRecordStatus(selectedRun.reason) : 'Awaiting processing' }, { label: 'Source event', value: selectedRun.sourceEventId }, { label: 'Expires', value: new Date(selectedRun.expiresAt).toLocaleString() }]} /></DetailSection>
+        <DetailSection title="Actions"><RecordTable rows={selectedRun.actions} rowKey={(row) => row.id} label="Run actions" columns={[{ key: 'step', label: 'Step', sortValue: (row) => row.step, render: (row) => row.step }, { key: 'outcome', label: 'Outcome', sortValue: (row) => row.outcome, render: (row) => formatRecordStatus(row.outcome) }]} /></DetailSection>
+        <DetailSection title="Activity history"><RecordTable rows={selectedRun.logs ?? []} rowKey={(row) => row.id} label="Run activity" columns={[{ key: 'created', label: 'Date', sortValue: (row) => row.createdAt, render: (row) => new Date(row.createdAt).toLocaleString() }, { key: 'user', label: 'User', sortValue: (row) => row.userId, render: (row) => row.userId ? `User #${row.userId}` : 'System' }, { key: 'outcome', label: 'Outcome', render: (row) => `${formatRecordStatus(row.newValues?.reason ?? row.newValues?.status ?? 'RUN_UPDATED')}${row.newValues?.recipientId ? ` · Recipient #${row.newValues.recipientId}` : ''}` }]} /></DetailSection>
+        {selectedRun.jobs.map((job) => <DetailSection key={job.id} title="Background processing"><DetailFields fields={[{ label: 'Task', value: formatRecordStatus(job.kind) }, { label: 'Status', value: formatRecordStatus(job.status) }, { label: 'Attempts', value: job.attempts }, { label: 'Available from', value: new Date(job.availableAt).toLocaleString() }]} /><RecordTable rows={job.jobAttempts} rowKey={(row) => row.id} label="Processing attempts" columns={[{ key: 'attempt', label: 'Attempt', sortValue: (row) => row.attempt, render: (row) => row.attempt }, { key: 'outcome', label: 'Outcome', render: (row) => formatRecordStatus(row.outcome ?? 'RUNNING') }, { key: 'error', label: 'Error reference', render: (row) => row.errorCode ?? 'None' }]} /></DetailSection>)}
+        <Stack direction="row" spacing={1}><AppButton color="error" variant="outlined" disabled={control.isPending || selectedRun.status === 'CANCELLED'} onClick={() => { control.reset(); setRunCommand({ id: selectedRun.id, command: 'CANCEL' }); }}>Cancel remaining actions</AppButton><AppButton disabled={control.isPending || !selectedRun.jobs.some((job) => job.status === 'DEAD') || selectedRun.status === 'CANCELLED'} onClick={() => { control.reset(); setRunCommand({ id: selectedRun.id, command: 'RETRY' }); }}>Retry failed actions</AppButton></Stack>
+      </Stack> : null}
+    </AppDialog>
+    <ConfirmDialog open={runCommand !== null} title={runCommand?.command === 'CANCEL' ? 'Cancel remaining workflow actions?' : 'Retry failed workflow actions?'} confirmLabel={runCommand?.command === 'CANCEL' ? 'Cancel remaining actions' : 'Retry failed actions'} confirmColor={runCommand?.command === 'CANCEL' ? 'error' : 'primary'} isConfirming={control.isPending} onClose={() => { if (!control.isPending) setRunCommand(null); }} onConfirm={() => { if (runCommand) control.mutate(runCommand); }}>Completed actions remain in the activity history.{control.isError ? <Alert severity="error">{toApiError(control.error).message}</Alert> : null}</ConfirmDialog>
   </PageContainer>;
 }
 function PreviewResult({ value }: { value: unknown }) {

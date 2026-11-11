@@ -1,5 +1,7 @@
+import { AuthProvider } from '@features/auth';
+import { NotificationProvider } from '@shared/ui/feedback';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -44,9 +46,9 @@ function renderWithProviders(
 ) {
   const queryClient = createTestQueryClient();
   return render(
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}><AuthProvider><NotificationProvider>
       <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
-    </QueryClientProvider>,
+    </NotificationProvider></AuthProvider></QueryClientProvider>,
   );
 }
 
@@ -216,8 +218,8 @@ describe('quotation frontend management', () => {
     expect(await screen.findByText('/quotations?search=BUMINEX&status=DRAFT&page=3&limit=10&sortBy=quotationDate&sortOrder=asc')).toBeInTheDocument();
   });
 
-  it('renders quotation list records as compact cards through tablet widths', async () => {
-    mockViewport(700);
+  it('renders quotation list records using shared mobile fields', async () => {
+    mockViewport(360);
     vi.mocked(quotationsApi.listQuotationsRequest).mockResolvedValueOnce({
       quotations: [mockQuotationListItem],
       pagination: { page: 1, limit: 20, total: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
@@ -226,7 +228,9 @@ describe('quotation frontend management', () => {
     renderWithProviders(<QuotationsPage />);
 
     expect(await screen.findByText('BUMINEX/2026-27/000001')).toBeInTheDocument();
-    expect(screen.getByText(/2 items/i)).toBeInTheDocument();
+    const rows = within(screen.getByRole('region', { name: 'Quotations' }));
+    expect(rows.getByText('Items')).toBeInTheDocument();
+    expect(rows.getAllByText('2').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /actions for BUMINEX\/2026-27\/000001/i })).toBeInTheDocument();
   });
 
@@ -265,8 +269,8 @@ describe('quotation frontend management', () => {
     expect(screen.getByRole('button', { name: /back to quotations/i })).toBeInTheDocument();
   });
 
-  it('renders quotation detail line items as compact cards on mobile and tablet widths', async () => {
-    mockViewport(700);
+  it('renders quotation detail lines using shared mobile fields', async () => {
+    mockViewport(360);
     vi.mocked(quotationsApi.getQuotationRequest).mockResolvedValueOnce(mockQuotationDetail);
 
     renderWithProviders(
@@ -276,10 +280,10 @@ describe('quotation frontend management', () => {
       { initialEntries: ['/quotations/1'] },
     );
 
-    expect(await screen.findByLabelText('Quotation line item cards')).toBeInTheDocument();
-    expect(screen.getByText('Line #1')).toBeInTheDocument();
-    expect(screen.getByText('Quantity')).toBeInTheDocument();
-    expect(screen.getByText('2.000 PCS')).toBeInTheDocument();
+    const lines = within(await screen.findByRole('region', { name: 'Quotation line items' }));
+    expect(lines.getByText('No.')).toBeInTheDocument();
+    expect(lines.getByText('Quantity')).toBeInTheDocument();
+    expect(lines.getByText('2.000 PCS')).toBeInTheDocument();
   });
 
   it('ignores unsafe external return state on quotation detail back navigation', async () => {

@@ -1,20 +1,14 @@
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
+import { formatExactDecimal } from '@shared/localization/presentation';
+import { paths } from '@shared/routing/paths';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
-import { DataTableShell } from '@shared/ui/tables';
-import { QuotationStatusChip, formatCurrency } from '@features/quotations';
+import { DetailSection } from '@shared/ui/layout';
+import { RecordTable } from '@shared/ui/tables';
+import { QuotationStatusChip } from '@features/quotations';
 import type { RecentQuotationDto } from '../model/dashboard.types';
 
 type RecentQuotationsSectionProps = {
@@ -23,110 +17,18 @@ type RecentQuotationsSectionProps = {
 };
 
 export function RecentQuotationsSection({ recentQuotations, currency = 'INR' }: RecentQuotationsSectionProps) {
-  if (!recentQuotations || recentQuotations.length === 0) {
-    return (
-      <Card>
-        <CardContent sx={{ p: 2.5 }}>
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
-            Recent Quotations
-          </Typography>
-          <EmptyState
-            title="No Recent Quotations"
-            description="There are no quotations created in the selected period."
-          />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" fontWeight={700}>
-            Recent Quotations
-          </Typography>
-          <AppButton component={RouterLink} to="/quotations" size="small" color="primary">
-            View All
-          </AppButton>
-        </Box>
-
-        {/* Desktop Table View */}
-        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-          <DataTableShell
-            isLoading={false}
-            isError={false}
-            isEmpty={false}
-            loadingContent={null}
-            errorContent={null}
-            emptyContent={null}
-          >
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Quotation No.</TableCell>
-                  <TableCell>Customer</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Grand Total</TableCell>
-                  <TableCell align="center">Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {recentQuotations.map((q) => (
-                  <TableRow key={q.id} hover>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={700} component={RouterLink} to={`/quotations/${q.id}`} sx={{ color: 'primary.main', textDecoration: 'none' }}>
-                        {q.quotationNumber}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{q.companySnapshotName}</TableCell>
-                    <TableCell>{new Date(q.quotationDate).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <QuotationStatusChip status={q.status} size="small" />
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>
-                      {formatCurrency(q.grandTotal, q.currency || currency)}
-                    </TableCell>
-                    <TableCell align="center">
-                      <AppIconButton component={RouterLink} to={`/quotations/${q.id}`} size="small" color="primary" label={`View ${q.quotationNumber}`}>
-                        <VisibilityOutlinedIcon fontSize="small" />
-                      </AppIconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </DataTableShell>
-        </Box>
-
-        {/* Mobile Stacked Card View */}
-        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-          <Stack spacing={1.5}>
-            {recentQuotations.map((q) => (
-              <Box key={q.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'grey.200', borderRadius: 1.5 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="body2" fontWeight={700} component={RouterLink} to={`/quotations/${q.id}`} sx={{ color: 'primary.main', textDecoration: 'none' }}>
-                    {q.quotationNumber}
-                  </Typography>
-                  <QuotationStatusChip status={q.status} size="small" />
-                </Box>
-                <Typography variant="body2" fontWeight={500} color="text.primary">
-                  {q.companySnapshotName}
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(q.quotationDate).toLocaleDateString()}
-                  </Typography>
-                  <Typography variant="body2" fontWeight={700} color="primary.main">
-                    {formatCurrency(q.grandTotal, q.currency || currency)}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        </Box>
-      </CardContent>
-    </Card>
-  );
+  return <DetailSection
+    title="Recent quotations"
+    description="Up to 8 newest quotations created in the selected period. Sorting changes only the recent quotations shown here; amounts retain their original currency."
+    actions={<AppButton component={RouterLink} to={paths.quotations} size="small" color="primary">View all quotations</AppButton>}
+  >
+    {recentQuotations.length === 0 ? <EmptyState title="No recent quotations" description="There are no quotations created in the selected period." /> : <RecordTable rows={recentQuotations} label="Recent quotations in the selected period" rowKey={(quotation) => quotation.id} columns={[
+      { key: 'number', label: 'Quotation number', minWidth: 240, sortValue: (quotation) => quotation.quotationNumber, render: (quotation) => <Typography variant="body2" fontWeight={700} component={RouterLink} to={`${paths.quotations}/${quotation.id}`} sx={{ color: 'primary.main', textDecoration: 'none', overflowWrap: 'anywhere' }}>{quotation.quotationNumber}</Typography> },
+      { key: 'customer', label: 'Customer', sortValue: (quotation) => quotation.companySnapshotName, render: (quotation) => quotation.companySnapshotName },
+      { key: 'date', label: 'Quotation date', sortValue: (quotation) => quotation.quotationDate, render: (quotation) => new Date(quotation.quotationDate).toLocaleDateString() },
+      { key: 'status', label: 'Status', sortValue: (quotation) => quotation.status, render: (quotation) => <QuotationStatusChip status={quotation.status} size="small" /> },
+      { key: 'total', label: 'Grand total', minWidth: 180, align: 'right', sortValue: (quotation) => quotation.grandTotal, render: (quotation) => <Typography variant="body2" fontWeight={700}>{quotation.currency || currency} {formatExactDecimal(quotation.grandTotal, 'en-IN')}</Typography> },
+      { key: 'actions', label: 'Actions', align: 'center', render: (quotation) => <AppIconButton component={RouterLink} to={`${paths.quotations}/${quotation.id}`} size="small" color="primary" label={`View ${quotation.quotationNumber}`}><VisibilityOutlinedIcon fontSize="small" /></AppIconButton> },
+    ]} />}
+  </DetailSection>;
 }

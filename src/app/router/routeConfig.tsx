@@ -21,14 +21,17 @@ import { permitsEntitledPermission, type EffectiveAccess } from '@shared/tenancy
 export { paths };
 export type { AppRoutePath };
 
+export const navigationSections = ['Platform', 'Main', 'Quotation Management', 'Billing', 'Master Management', 'Configuration', 'System'] as const;
+
 export type NavigationItem = {
   title: string;
   path: AppRoutePath;
   icon: SvgIconComponent;
-  section: 'Platform' | 'Main' | 'Quotation Management' | 'Billing' | 'Master Management' | 'Configuration' | 'System';
+  section: (typeof navigationSections)[number];
   permissions?: Permission[];
   accountTypes?: AccountType[];
   tenantScoped?: boolean;
+  fallback?: { path: AppRoutePath; permissions: Permission[] };
 };
 
 export const navigationItems: NavigationItem[] = [
@@ -43,8 +46,7 @@ export const navigationItems: NavigationItem[] = [
   { title: 'Manufacturing', path: paths.manufacturing, icon: Inventory2OutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.MANUFACTURING_VIEW] },
   { title: 'Business Assistant', path: paths.assistant, icon: AssessmentOutlinedIcon, section: 'Main', permissions: [PERMISSIONS.ASSISTANT_LOCAL, PERMISSIONS.ASSISTANT_LLM], accountTypes: ['FIRM_ADMIN', 'FIRM_USER'] },
   { title: 'Assistant Settings', path: paths.assistantSettings, icon: TuneOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.ASSISTANT_SETTINGS_MANAGE], accountTypes: ['FIRM_ADMIN'] },
-  { title: 'Quotations', path: paths.quotations, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_VIEW] },
-  { title: 'Create Quotation', path: paths.newQuotation, icon: NoteAddOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_CREATE] },
+  { title: 'Quotations', path: paths.quotations, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_VIEW], fallback: { path: paths.newQuotation, permissions: [PERMISSIONS.QUOTATIONS_CREATE] } },
   { title: 'Invoices', path: paths.invoices, icon: DescriptionOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.INVOICES_VIEW] },
   { title: 'CRM & Follow-ups', path: paths.crm, icon: GroupOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.CRM_VIEW] },
   { title: 'Inventory', path: paths.inventory, icon: Inventory2OutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.INVENTORY_VIEW] },
@@ -79,7 +81,27 @@ export function canAccessNavigationItem(
 ) {
   if (item.accountTypes !== undefined && !item.accountTypes.includes(user.accountType)) return false;
   if (item.tenantScoped !== false && user.accountType === 'SUPER_ADMIN' && !hasSelectedFirm) return false;
-  return item.permissions === undefined || permitsEntitledPermission(access, item.permissions.filter((permission) => user.permissions.includes(permission)));
+  return item.permissions === undefined || permitsEntitledPermission(access, item.permissions.filter((permission) => user.permissions.includes(permission))) || (item.fallback !== undefined && permitsEntitledPermission(access, item.fallback.permissions.filter((permission) => user.permissions.includes(permission))));
+}
+
+export function getNavigationDestination(item: NavigationItem, user: { permissions: Permission[] }, access?: EffectiveAccess) {
+  if (item.fallback && item.permissions && !permitsEntitledPermission(access, item.permissions.filter((permission) => user.permissions.includes(permission)))) return item.fallback.path;
+  return item.path;
+}
+
+export type RouteBreadcrumb = { title: string; path?: string };
+
+export function getRouteBreadcrumbs(pathname: string): RouteBreadcrumb[] {
+  const workspace = navigationItems.filter((item) => pathname === item.path || pathname.startsWith(`${item.path}/`)).sort((left, right) => right.path.length - left.path.length)[0];
+  const crumbs: RouteBreadcrumb[] = [];
+  if (workspace?.section && workspace.section !== 'Main') crumbs.push({ title: workspace.section });
+  if (workspace && pathname !== workspace.path) {
+    crumbs.push({ title: workspace.title, path: workspace.path });
+    const detail = pathname.match(/^(.*\/\d+)\/(?:edit|fields)$/)?.[1];
+    if (detail) crumbs.push({ title: getRouteTitle(detail), path: detail });
+  }
+  if (pathname !== paths.dashboard) crumbs.push({ title: getRouteTitle(pathname) });
+  return crumbs;
 }
 
 export function getRouteTitle(pathname: string) {

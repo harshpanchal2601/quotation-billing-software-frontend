@@ -4,7 +4,7 @@ export { LoginPage } from './pages/LoginPage';
 export { useAuth } from './hooks/useAuth';
 export { useHasPermission } from './hooks/useHasPermission';
 export type { AuthUser } from './model/auth.types';
-export { PERMISSIONS } from './model/permissions';
+export { PERMISSIONS, PERMISSION_LABELS } from './model/permissions';
 export type { Permission } from './model/permissions';
 export type { AccountType } from './model/auth.types';
 export { getDefaultAuthenticatedPath } from './model/auth-routing';

@@ -1,24 +1,14 @@
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
 
-import { DataTableShell, RowActionsMenu } from '@shared/ui/tables';
+import { RecordTable, RowActionsMenu, type TableSorting } from '@shared/ui/tables';
 import { AppStatusChip } from '@shared/ui/display';
 import type { MeasurementUnitListItem } from '../model/measurement-units.types';
 import { formatQuantityTypeLabel } from '../model/measurement-units.utils';
 
 type MeasurementUnitTableProps = {
+  rowNumberStart?: number;
   units: MeasurementUnitListItem[];
+  sorting?: TableSorting;
   busyUnitId?: number | null;
   onView: (unit: MeasurementUnitListItem) => void;
   onEdit: (unit: MeasurementUnitListItem) => void;
@@ -28,7 +18,9 @@ type MeasurementUnitTableProps = {
 };
 
 export function MeasurementUnitTable({
+  rowNumberStart = 1,
   units,
+  sorting,
   busyUnitId = null,
   onView,
   onEdit,
@@ -36,9 +28,6 @@ export function MeasurementUnitTable({
   onDelete,
   canManage = false,
 }: MeasurementUnitTableProps) {
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-
   function formatDate(isoString: string) {
     return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(isoString));
   }
@@ -67,110 +56,23 @@ export function MeasurementUnitTable({
     );
   }
 
-  if (!isDesktop) {
-    return (
-      <Stack spacing={2}>
-        {units.map((unit) => (
-          <Card key={unit.id} variant="outlined">
-            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-              <Stack spacing={1.5}>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                  <Box minWidth={0}>
-                    <Typography fontWeight={700} variant="h6" noWrap>
-                      {unit.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Symbol: <strong>{unit.symbol}</strong>
-                    </Typography>
-                  </Box>
-                  <AppStatusChip
-                    label={unit.isActive ? 'Active' : 'Inactive'}
-                    variant={unit.isActive ? 'success' : 'neutral'}
-                    size="small"
-                  />
-                </Stack>
-
-                <Typography variant="body2" color="text.secondary">
-                  {formatQuantityTypeLabel(unit.allowDecimal)}
-                </Typography>
-
-                <Stack direction="row" justifyContent="space-between" alignItems="center" pt={1}>
-                  <Typography variant="body2" color="text.secondary">
-                    Linked Items: <strong>{unit.linkedItemCount}</strong>
-                  </Typography>
-                  {renderRowActions(unit)}
-                </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-        ))}
-      </Stack>
-    );
-  }
-
   return (
-    <DataTableShell
-      isLoading={false}
-      isError={false}
-      isEmpty={false}
-      loadingContent={null}
-      errorContent={null}
-      emptyContent={null}
-      tableContainerProps={{ component: Card, variant: 'outlined' }}
-    >
-        <Table aria-label="Measurement unit table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Unit Name</TableCell>
-              <TableCell>Symbol</TableCell>
-              <TableCell>Quantity Type</TableCell>
-              <TableCell align="right">Linked Items</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Updated</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {units.map((unit) => (
-              <TableRow key={unit.id} hover>
-                <TableCell>
-                  <Typography fontWeight={600}>{unit.name}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={unit.symbol}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontWeight: 600, fontFamily: 'monospace' }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" color="text.secondary">
-                    {formatQuantityTypeLabel(unit.allowDecimal)}
-                  </Typography>
-                </TableCell>
-                <TableCell align="right">
-                  <Typography fontWeight={600}>{unit.linkedItemCount}</Typography>
-                </TableCell>
-                <TableCell>
-                  <AppStatusChip
-                    label={unit.isActive ? 'Active' : 'Inactive'}
-                    variant={unit.isActive ? 'success' : 'neutral'}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" color="text.secondary">
-                    {formatDate(unit.updatedAt)}
-                  </Typography>
-                </TableCell>
-                <TableCell align="right">
-                  {renderRowActions(unit)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-    </DataTableShell>
+    <RecordTable
+      rows={units}
+      rowKey={(unit) => unit.id}
+      label="Measurement units"
+      rowNumberStart={rowNumberStart}
+      sorting={sorting}
+      showSortControls={false}
+      columns={[
+        { key: 'name', label: 'Unit name', sortKey: 'name', render: (unit) => unit.name },
+        { key: 'symbol', label: 'Symbol', sortKey: 'symbol', render: (unit) => <Chip label={unit.symbol} size="small" variant="outlined" sx={{ fontWeight: 600, fontFamily: 'monospace' }} /> },
+        { key: 'quantityType', label: 'Quantity type', render: (unit) => formatQuantityTypeLabel(unit.allowDecimal) },
+        { key: 'linkedItemCount', label: 'Linked items', align: 'right', render: (unit) => unit.linkedItemCount },
+        { key: 'status', label: 'Status', render: (unit) => <AppStatusChip label={unit.isActive ? 'Active' : 'Inactive'} variant={unit.isActive ? 'success' : 'neutral'} size="small" /> },
+        { key: 'updatedAt', label: 'Updated', sortKey: 'updatedAt', noWrap: true, render: (unit) => formatDate(unit.updatedAt) },
+        { key: 'actions', label: 'Actions', align: 'right', render: renderRowActions },
+      ]}
+    />
   );
 }

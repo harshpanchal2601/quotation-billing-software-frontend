@@ -41,7 +41,7 @@ function view() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  state.get.mockResolvedValue({ data: { data: { firms, pagination: { total: 2, totalPages: 1 } } } });
+  state.get.mockResolvedValue({ data: { data: { firms, pagination: { page: 1, limit: 20, total: 2, totalPages: 1 } } } });
   state.api.firm.mockImplementation(async (firmId: number) => details(firmId));
   state.api.plans.mockResolvedValue({ plans: [], total: 0 });
   state.api.assign.mockResolvedValue({});
@@ -54,6 +54,15 @@ beforeEach(() => {
 });
 
 describe('platform subscription management', () => {
+  it('delegates both firm-name sort directions to the server and retains the selected firm', async () => {
+    view();
+    fireEvent.click(within(await screen.findByRole('table', { name: 'Subscription firms' })).getByRole('button', { name: 'Firm' }));
+    await waitFor(() => expect(state.get).toHaveBeenLastCalledWith('/platform/firms', expect.objectContaining({ params: expect.objectContaining({ page: 1, sortBy: 'displayName', sortOrder: 'asc' }) })));
+    fireEvent.click(within(await screen.findByRole('table', { name: 'Subscription firms' })).getByRole('button', { name: 'Firm' }));
+    await waitFor(() => expect(state.get).toHaveBeenLastCalledWith('/platform/firms', expect.objectContaining({ params: expect.objectContaining({ page: 1, sortBy: 'displayName', sortOrder: 'desc' }) })));
+    expect(within(await screen.findByRole('table', { name: 'Subscription firms' })).getByRole('columnheader', { name: 'No.' })).toBeInTheDocument();
+    expect(state.api.firm.mock.calls.every(([firmId]) => firmId === 7)).toBe(true);
+  });
   it('loads current settings for review and preserves revision, lifecycle and dates in an explicit assignment', async () => {
     view();
     fireEvent.click(await screen.findByRole('tab', { name: 'Plan assignment' }));

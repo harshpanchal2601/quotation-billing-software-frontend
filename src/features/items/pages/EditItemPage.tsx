@@ -2,11 +2,12 @@ import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton } from '@shared/ui/actions';
-import { AppSnackbar } from '@shared/ui/feedback';
+import { useSaveAndReturn } from '@shared/routing/returnNavigation';
+import { useNotification } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { paths } from '@shared/routing/paths';
 import { toApiError } from '@shared/api/apiClient';
@@ -19,11 +20,11 @@ import type { ItemFormValues } from '../model/items.schema';
 export function EditItemPage() {
   const { id } = useParams<{ id: string }>();
   const itemId = Number(id);
-  const navigate = useNavigate();
+  const { cancel, saved, failed, hasSaved } = useSaveAndReturn(paths.items);
+  const notify = useNotification();
   const queryClient = useQueryClient();
 
   const [serverError, setServerError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: itemsQueryKeys.detail(itemId),
@@ -47,23 +48,16 @@ export function EditItemPage() {
         isActive: values.isActive,
       }),
     onSuccess: async (updated) => {
-      await queryClient.invalidateQueries({ queryKey: itemsQueryKeys.all });
       queryClient.setQueryData(itemsQueryKeys.detail(itemId), updated);
-      setSuccessMessage('Item updated successfully.');
-      navigate(`${paths.items}/${itemId}`);
+      await saved('Item updated successfully.', () => queryClient.invalidateQueries({ queryKey: itemsQueryKeys.all }));
     },
-    onError: (error) => {
-      setServerError(toApiError(error).message);
-    },
+    onError: (error) => { const failure = failed(error); if (!failure.cancelled) setServerError(failure.message); },
   });
 
   async function handleSubmit(values: ItemFormValues) {
     setServerError(null);
-    try {
-      await mutation.mutateAsync(values);
-    } catch {
-      // Server error handled by mutation onError
-    }
+    if (mutation.isPending) return;
+    try { await mutation.mutateAsync(values); } catch { /* The mutation reports the failure and retains the form. */ }
   }
 
   if (query.isPending) {
@@ -96,17 +90,15 @@ export function EditItemPage() {
         description={`Update item details, pricing, specifications or product image. Code: ${item.itemCode}`}
       />
 
-      <ItemImageSection item={item} onSuccess={(msg) => setSuccessMessage(msg)} />
+      <ItemImageSection item={item} onSuccess={notify} />
 
-      <ItemForm
+      <ItemForm hasSaved={hasSaved}
         initialValues={item}
         isSubmitting={mutation.isPending}
         onSubmit={handleSubmit}
-        onCancel={() => navigate(`${paths.items}/${itemId}`)}
+        onCancel={cancel}
         serverError={serverError}
       />
-
-      <AppSnackbar open={successMessage !== null} autoHideDuration={4000} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </PageContainer>
   );
 }
