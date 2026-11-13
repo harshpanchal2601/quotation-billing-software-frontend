@@ -34,7 +34,7 @@ function accessReason(reason: string, features: EffectiveAccess['features']) {
   if (reason.startsWith('DEPENDENCY:')) {
     const parts = reason.split(':');
     const dependency = features.find((feature) => feature.key === parts[1])?.description ?? 'another feature';
-    return `Requires ${dependency}. ${accessReasons[parts.at(-1) ?? ''] ?? 'Ask your administrator to review access.'}`;
+    return `Requires ${dependency}. ${accessReasons[parts[parts.length - 1] ?? ''] ?? 'Ask your administrator to review access.'}`;
   }
   return accessReasons[reason] ?? 'Ask your administrator to review access.';
 }
