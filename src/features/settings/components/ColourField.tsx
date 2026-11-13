@@ -54,13 +54,21 @@ export function ColourField<TValues extends FieldValues, TSubmitValues extends F
               }}
             />
             <TextField
-              label={`${label} picker`}
               type="color"
               value={pickerValue}
               disabled={disabled}
               onChange={(event) => field.onChange(event.target.value.toUpperCase())}
-              inputProps={{ 'aria-label': `${label} colour picker` }}
-              sx={{ width: 88, '& input': { p: 1, height: 38 } }}
+              inputProps={{ 'aria-label': `${label} picker`, title: `${label} picker` }}
+              sx={{
+                width: 48,
+                flex: '0 0 48px',
+                '& input': {
+                  p: 0.75,
+                  height: 40,
+                  boxSizing: 'border-box',
+                  '@media (max-width: 599.95px), (pointer: coarse)': { height: 44 },
+                },
+              }}
             />
           </Stack>
         );

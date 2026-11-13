@@ -3,13 +3,13 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { toApiError } from '@shared/api/apiClient';
-import { applyApiFieldErrors, FormActions } from '@shared/forms';
+import { applyApiFieldErrors, FormActions, FormExitGuard } from '@shared/forms';
 import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
-import { ServerErrorAlert } from '@shared/ui/feedback';
+import { ServerErrorAlert, useNotification } from '@shared/ui/feedback';
 import { FormDialogShell } from '@shared/ui/dialogs';
 import { createCategoryRequest, updateCategoryRequest } from '../api/categories.api';
 import { categoriesQueryKeys } from '../model/categories.query-keys';
@@ -26,6 +26,8 @@ type CategoryFormDialogProps = {
 
 export function CategoryFormDialog({ open, category, onClose, onSuccess }: CategoryFormDialogProps) {
   const queryClient = useQueryClient();
+  const saveLock = useRef(false);
+  const notify = useNotification();
   const [serverError, setServerError] = useState<string | null>(null);
   const isEditing = Boolean(category);
   const isProtected = category ? isProtectedCategory(category.slug) : false;
@@ -79,10 +81,12 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: categoriesQueryKeys.all });
       onSuccess(isEditing ? 'Category updated successfully.' : 'Category created successfully.');
       onClose();
+      try { await queryClient.invalidateQueries({ queryKey: categoriesQueryKeys.all }, { throwOnError: true }); }
+      catch { notify('The record was saved, but the list could not refresh. Refresh the records before submitting again.', 'warning'); }
     },
+    onSettled: () => { saveLock.current = false; },
     onError: (error) => {
       const apiError = toApiError(error);
       applyApiFieldErrors(form, apiError.fieldErrors);
@@ -91,6 +95,8 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
   });
 
   async function onSubmit(values: CategoryFormValues) {
+    if (saveLock.current) return;
+    saveLock.current = true;
     setServerError(null);
     form.clearErrors();
     try {
@@ -101,17 +107,18 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
   }
 
   return (
-    <FormDialogShell
-      open={open}
+    open ? <FormExitGuard dirty={form.formState.isDirty} isSubmitting={mutation.isPending} onCancel={onClose}>{(requestClose) => <FormDialogShell
+      open
       title={isEditing ? 'Edit Category' : 'Add Category'}
-      onClose={onClose}
+      onClose={() => { if (!saveLock.current) requestClose(); }}
       onSubmit={(event) => void handleSubmit(onSubmit)(event)}
       isSubmitting={mutation.isPending}
       actions={(formId) => (
         <FormActions
           submitLabel={isEditing ? 'Save Changes' : 'Create Category'}
           isSubmitting={mutation.isPending}
-          onCancel={onClose}
+          isSubmitDisabled={isEditing && !form.formState.isDirty}
+          onCancel={() => { if (!saveLock.current) requestClose(); }}
           submitButtonProps={{ form: formId }}
         />
       )}
@@ -128,15 +135,15 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
 
         {isEditing && category ? (
           <TextField
-            label="Slug"
+            label="Category code"
             value={category.slug}
             fullWidth
             disabled
-            helperText="Slug is generated on creation and is read-only."
+            helperText="The category code is generated when the category is created and cannot be edited."
           />
         ) : (
           <Typography variant="caption" color="text.secondary">
-            Note: Slug will be generated automatically from the category name.
+            A category code will be generated automatically from the name.
           </Typography>
         )}
 
@@ -161,6 +168,6 @@ export function CategoryFormDialog({ open, category, onClose, onSuccess }: Categ
           }
         />
       </Stack>
-    </FormDialogShell>
+    </FormDialogShell>}</FormExitGuard> : null
   );
 }

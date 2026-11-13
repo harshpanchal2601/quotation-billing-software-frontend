@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +18,10 @@ const categoriesApi = vi.hoisted(() => ({
 }));
 
 vi.mock('./api/categories.api', () => categoriesApi);
+vi.mock('@features/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@features/auth')>()),
+  useHasPermission: () => true,
+}));
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -43,6 +47,19 @@ describe('category frontend', () => {
     );
   });
 
+  it('keeps dirty input when discard is declined and closes only after explicit discard', async () => {
+    renderPage(<CategoriesPage />, '/categories');
+    await userEvent.click(screen.getByRole('button', { name: /add category/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /category name/i }), { target: { value: 'QA unsaved record' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(screen.getByDisplayValue('QA unsaved record')).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(categoriesApi.createCategoryRequest).not.toHaveBeenCalled();
+  });
+
   it('creates category without submitting a slug field', async () => {
     categoriesApi.createCategoryRequest.mockResolvedValue(categoryListItem());
 
@@ -50,7 +67,7 @@ describe('category frontend', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /add category/i }));
     await userEvent.type(screen.getByLabelText(/category name/i), 'Vessels & Reactors');
-    await userEvent.type(screen.getByLabelText(/description/i), 'Vessel category description');
+    await userEvent.type(screen.getByRole('textbox', { name: /description/i }), 'Vessel category description');
     await userEvent.click(screen.getByRole('button', { name: /create category/i }));
 
     await waitFor(() => expect(categoriesApi.createCategoryRequest).toHaveBeenCalled());

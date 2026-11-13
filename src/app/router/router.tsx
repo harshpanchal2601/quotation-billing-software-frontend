@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { App } from '../App';
-import { ChangePasswordPage } from '@features/auth';
+import { ChangePasswordPage, PERMISSIONS } from '@features/auth';
 import { LoginPage } from '@features/auth';
 import { DashboardPage } from '@features/dashboard';
 import { FullPageLoader } from '@shared/components/common/FullPageLoader';
@@ -10,13 +10,22 @@ import { FullPageLoader } from '@shared/components/common/FullPageLoader';
 import { AppLayout } from '../layout/AppLayout';
 import { ProtectedRoute } from './guards/ProtectedRoute';
 import { PublicOnlyRoute } from './guards/PublicOnlyRoute';
-import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
+import { AccessRoute } from './guards/AccessRoute';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { navigationItems, paths } from './routeConfig';
+import { AccessDeniedPage } from './pages/AccessDeniedPage';
+import { paths } from './routeConfig';
 
 const BusinessSettingsPage = lazy(() =>
   import('@features/settings').then((module) => ({ default: module.BusinessSettingsPage })),
 );
+const AutomationPage = lazy(() => import('@features/automation').then((module) => ({ default: module.AutomationPage })));
+const ReportsPage = lazy(() => import('@features/reports').then((module) => ({ default: module.ReportsPage })));
+const ImportsPage = lazy(() => import('@features/imports').then((module) => ({ default: module.ImportsPage })));
+const ConnectionsPage = lazy(() => import('@features/connections').then((module) => ({ default: module.ConnectionsPage })));
+const ManufacturingPage = lazy(() => import('@features/manufacturing').then((module) => ({ default: module.ManufacturingPage })));
+const ApprovalsPage = lazy(() => import('@features/automation').then((module) => ({ default: module.ApprovalsPage })));
+const AssistantPage = lazy(() => import('@features/assistant').then((module) => ({ default: module.AssistantPage })));
+const AssistantSettingsPage = lazy(() => import('@features/assistant').then((module) => ({ default: module.AssistantSettingsPage })));
 const QuotationSettingsPage = lazy(() =>
   import('@features/settings').then((module) => ({ default: module.QuotationSettingsPage })),
 );
@@ -65,10 +74,42 @@ const QuotationDetailsPage = lazy(() =>
 const EditQuotationPage = lazy(() =>
   import('@features/quotations').then((module) => ({ default: module.EditQuotationPage })),
 );
+const PlatformFirmsPage = lazy(() =>
+  import('@features/platform').then((module) => ({ default: module.PlatformFirmsPage })),
+);
+const PlatformPlansPage = lazy(() => import('@features/platform').then((module) => ({ default: module.PlatformPlansPage })));
+const PlatformSubscriptionsPage = lazy(() => import('@features/platform').then((module) => ({ default: module.PlatformSubscriptionsPage })));
+const FirmEntitlementsPage = lazy(() => import('@features/platform').then((module) => ({ default: module.FirmEntitlementsPage })));
+const UsersPage = lazy(() =>
+  import('@features/administration').then((module) => ({ default: module.UsersPage })),
+);
+const RolesPage = lazy(() =>
+  import('@features/administration').then((module) => ({ default: module.RolesPage })),
+);
+const AuditLogsPage = lazy(() =>
+  import('@features/audit-logs').then((module) => ({ default: module.AuditLogsPage })),
+);
+const InvoicesPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoicesPage })));
+const InvoiceEditorPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoiceEditorPage })));
+const InvoiceDetailsPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoiceDetailsPage })));
+const InvoiceFieldsReviewPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.InvoiceFieldsReviewPage })));
+const BillingSettingsPage = lazy(() => import('@features/invoices').then((module) => ({ default: module.BillingSettingsPage })));
+const PaymentsPage = lazy(() => import('@features/payments').then((module) => ({ default: module.PaymentsPage })));
+const PaymentDetailsPage = lazy(() => import('@features/payments').then((module) => ({ default: module.PaymentDetailsPage })));
+const ReceivablesPage = lazy(() => import('@features/payments').then((module) => ({ default: module.ReceivablesPage })));
+const BillingSchedulesPage = lazy(() => import('@features/billing-schedules').then((module) => ({ default: module.BillingSchedulesPage })));
 
 function lazyPage(element: React.ReactNode) {
   return <Suspense fallback={<FullPageLoader />}>{element}</Suspense>;
 }
+
+const InventoryPage = lazy(() => import('@features/inventory').then((module) => ({ default: module.InventoryPage })));
+const PurchasingPage = lazy(() => import('@features/purchasing').then((module) => ({ default: module.PurchasingPage })));
+const CrmPage = lazy(() => import('@features/crm').then((module) => ({ default: module.CrmPage })));
+const SalesOrdersPage = lazy(() => import('@features/sales-orders').then((module) => ({ default: module.SalesOrdersPage })));
+const SalesOrderDetailsPage = lazy(() => import('@features/sales-orders').then((module) => ({ default: module.SalesOrderDetailsPage })));
+const PortalAccessPage = lazy(() => import('@features/customer-portal').then((module) => ({ default: module.PortalAccessPage })));
+const CustomerPortalPage = lazy(() => import('@features/customer-portal').then((module) => ({ default: module.CustomerPortalPage })));
 
 export const router = createBrowserRouter([
   {
@@ -76,6 +117,7 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <Navigate to={paths.dashboard} replace /> },
+      { path: paths.customerPortal, element: lazyPage(<CustomerPortalPage />) },
       {
         element: <PublicOnlyRoute />,
         children: [{ path: paths.login, element: <LoginPage /> }],
@@ -86,28 +128,65 @@ export const router = createBrowserRouter([
           {
             element: <AppLayout />,
             children: [
-              { path: paths.dashboard, element: <DashboardPage /> },
+              { path: paths.platformFirms, element: <AccessRoute accountTypes={['SUPER_ADMIN']} tenantScoped={false}>{lazyPage(<PlatformFirmsPage />)}</AccessRoute> },
+              { path: paths.platformPlans, element: <AccessRoute accountTypes={['SUPER_ADMIN']} tenantScoped={false}>{lazyPage(<PlatformPlansPage />)}</AccessRoute> },
+              { path: paths.platformSubscriptions, element: <AccessRoute accountTypes={['SUPER_ADMIN']} tenantScoped={false}>{lazyPage(<PlatformSubscriptionsPage />)}</AccessRoute> },
+              { path: paths.firmEntitlements, element: <AccessRoute>{lazyPage(<FirmEntitlementsPage />)}</AccessRoute> },
+              { path: paths.dashboard, element: <AccessRoute permissions={[PERMISSIONS.DASHBOARD_VIEW]}><DashboardPage /></AccessRoute> },
+              { path: paths.imports, element: <AccessRoute permissions={[PERMISSIONS.IMPORTS_MANAGE]}>{lazyPage(<ImportsPage />)}</AccessRoute> },
+              { path: paths.connections, element: <AccessRoute permissions={[PERMISSIONS.API_KEYS_MANAGE, PERMISSIONS.WEBHOOKS_MANAGE, PERMISSIONS.FIRM_PROFILE_MANAGE]}>{lazyPage(<ConnectionsPage />)}</AccessRoute> },
               { path: paths.changePassword, element: <ChangePasswordPage /> },
-              { path: paths.businessSettings, element: lazyPage(<BusinessSettingsPage />) },
-              { path: paths.quotationSettings, element: lazyPage(<QuotationSettingsPage />) },
-              { path: paths.bankDetails, element: lazyPage(<BankDetailsPage />) },
-              { path: paths.companies, element: lazyPage(<CompaniesPage />) },
-              { path: paths.newCompany, element: lazyPage(<CreateCompanyPage />) },
-              { path: `${paths.companies}/:id`, element: lazyPage(<CompanyDetailsPage />) },
-              { path: `${paths.companies}/:id/edit`, element: lazyPage(<EditCompanyPage />) },
-              { path: paths.items, element: lazyPage(<ItemsPage />) },
-              { path: `${paths.items}/new`, element: lazyPage(<CreateItemPage />) },
-              { path: `${paths.items}/:id`, element: lazyPage(<ItemDetailsPage />) },
-              { path: `${paths.items}/:id/edit`, element: lazyPage(<EditItemPage />) },
-              { path: paths.categories, element: lazyPage(<CategoriesPage />) },
-              { path: paths.measurementUnits, element: lazyPage(<MeasurementUnitsPage />) },
-              { path: paths.quotations, element: lazyPage(<QuotationsPage />) },
-              { path: paths.newQuotation, element: lazyPage(<CreateQuotationPage />) },
-              { path: `${paths.quotations}/:id`, element: lazyPage(<QuotationDetailsPage />) },
-              { path: `${paths.quotations}/:id/edit`, element: lazyPage(<EditQuotationPage />) },
-              ...navigationItems
-                .filter((item) => item.placeholder)
-                .map((item) => ({ path: item.path, element: <ModulePlaceholderPage /> })),
+              { path: paths.accessDenied, element: <AccessDeniedPage /> },
+              { path: paths.businessSettings, element: <AccessRoute permissions={[PERMISSIONS.FIRM_PROFILE_MANAGE]}>{lazyPage(<BusinessSettingsPage />)}</AccessRoute> },
+              { path: paths.automation, element: <AccessRoute accountTypes={['FIRM_ADMIN']} permissions={[PERMISSIONS.AUTOMATION_MANAGE]}>{lazyPage(<AutomationPage />)}</AccessRoute> },
+              { path: paths.approvals, element: <AccessRoute accountTypes={['FIRM_ADMIN', 'FIRM_USER']} permissions={[PERMISSIONS.AUTOMATION_VIEW]}>{lazyPage(<ApprovalsPage />)}</AccessRoute> },
+              { path: paths.assistant, element: <AccessRoute accountTypes={['FIRM_ADMIN', 'FIRM_USER']} permissions={[PERMISSIONS.ASSISTANT_LOCAL, PERMISSIONS.ASSISTANT_LLM]}>{lazyPage(<AssistantPage />)}</AccessRoute> },
+              { path: paths.assistantSettings, element: <AccessRoute accountTypes={['FIRM_ADMIN']} permissions={[PERMISSIONS.ASSISTANT_SETTINGS_MANAGE]}>{lazyPage(<AssistantSettingsPage />)}</AccessRoute> },
+              { path: paths.quotationSettings, element: <AccessRoute permissions={[PERMISSIONS.QUOTATION_SETTINGS_MANAGE]}>{lazyPage(<QuotationSettingsPage />)}</AccessRoute> },
+              { path: paths.bankDetails, element: <AccessRoute permissions={[PERMISSIONS.BANK_DETAILS_MANAGE]}>{lazyPage(<BankDetailsPage />)}</AccessRoute> },
+              { path: paths.companies, element: <AccessRoute permissions={[PERMISSIONS.COMPANIES_VIEW]}>{lazyPage(<CompaniesPage />)}</AccessRoute> },
+              { path: paths.newCompany, element: <AccessRoute permissions={[PERMISSIONS.COMPANIES_MANAGE]}>{lazyPage(<CreateCompanyPage />)}</AccessRoute> },
+              { path: `${paths.companies}/:id`, element: <AccessRoute permissions={[PERMISSIONS.COMPANIES_VIEW]}>{lazyPage(<CompanyDetailsPage />)}</AccessRoute> },
+              { path: `${paths.companies}/:id/edit`, element: <AccessRoute permissions={[PERMISSIONS.COMPANIES_MANAGE]}>{lazyPage(<EditCompanyPage />)}</AccessRoute> },
+              { path: paths.items, element: <AccessRoute permissions={[PERMISSIONS.ITEMS_VIEW]}>{lazyPage(<ItemsPage />)}</AccessRoute> },
+              { path: `${paths.items}/new`, element: <AccessRoute permissions={[PERMISSIONS.ITEMS_MANAGE]}>{lazyPage(<CreateItemPage />)}</AccessRoute> },
+              { path: `${paths.items}/:id`, element: <AccessRoute permissions={[PERMISSIONS.ITEMS_VIEW]}>{lazyPage(<ItemDetailsPage />)}</AccessRoute> },
+              { path: `${paths.items}/:id/edit`, element: <AccessRoute permissions={[PERMISSIONS.ITEMS_MANAGE]}>{lazyPage(<EditItemPage />)}</AccessRoute> },
+              { path: paths.categories, element: <AccessRoute permissions={[PERMISSIONS.CATALOG_VIEW]}>{lazyPage(<CategoriesPage />)}</AccessRoute> },
+              { path: paths.measurementUnits, element: <AccessRoute permissions={[PERMISSIONS.CATALOG_VIEW]}>{lazyPage(<MeasurementUnitsPage />)}</AccessRoute> },
+              { path: paths.quotations, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_VIEW]}>{lazyPage(<QuotationsPage />)}</AccessRoute> },
+              { path: paths.inventory, element: <AccessRoute permissions={[PERMISSIONS.INVENTORY_VIEW]}>{lazyPage(<InventoryPage />)}</AccessRoute> },
+              { path: paths.purchasing, element: <AccessRoute permissions={[PERMISSIONS.PURCHASING_VIEW, PERMISSIONS.SUPPLIER_BILLS_VIEW, PERMISSIONS.EXPENSES_VIEW]}>{lazyPage(<PurchasingPage />)}</AccessRoute> },
+              { path: paths.reports, element: <AccessRoute permissions={[PERMISSIONS.REPORTS_VIEW]}>{lazyPage(<ReportsPage />)}</AccessRoute> },
+              { path: paths.manufacturing, element: <AccessRoute permissions={[PERMISSIONS.MANUFACTURING_VIEW]}>{lazyPage(<ManufacturingPage />)}</AccessRoute> },
+              { path: paths.crm, element: <AccessRoute permissions={[PERMISSIONS.CRM_VIEW]}>{lazyPage(<CrmPage />)}</AccessRoute> },
+              { path: paths.salesOrders, element: <AccessRoute permissions={[PERMISSIONS.SALES_ORDERS_VIEW]}>{lazyPage(<SalesOrdersPage />)}</AccessRoute> },
+              { path: `${paths.salesOrders}/:id`, element: <AccessRoute permissions={[PERMISSIONS.SALES_ORDERS_VIEW]}>{lazyPage(<SalesOrderDetailsPage />)}</AccessRoute> },
+              { path: paths.portalAccess, element: <AccessRoute permissions={[PERMISSIONS.PORTAL_MANAGE]}>{lazyPage(<PortalAccessPage />)}</AccessRoute> },
+              { path: paths.billingSettings, element: <AccessRoute permissions={[PERMISSIONS.BILLING_SETTINGS_MANAGE, PERMISSIONS.INVOICE_FIELDS_MANAGE]}>{lazyPage(<BillingSettingsPage />)}</AccessRoute> },
+              { path: paths.payments, element: <AccessRoute permissions={[PERMISSIONS.PAYMENTS_VIEW]}>{lazyPage(<PaymentsPage />)}</AccessRoute> },
+              { path: `${paths.payments}/:id`, element: <AccessRoute permissions={[PERMISSIONS.PAYMENTS_VIEW]}>{lazyPage(<PaymentDetailsPage />)}</AccessRoute> },
+              { path: paths.receivables, element: <AccessRoute permissions={[PERMISSIONS.PAYMENTS_VIEW]}>{lazyPage(<ReceivablesPage />)}</AccessRoute> },
+              { path: paths.billingSchedules, element: <AccessRoute permissions={[PERMISSIONS.BILLING_RECURRING]}><AccessRoute permissions={[PERMISSIONS.INVOICES_CREATE]}>{lazyPage(<BillingSchedulesPage />)}</AccessRoute></AccessRoute> },
+              ...([
+                { scope: 'invoices' as const, view: PERMISSIONS.INVOICES_VIEW, create: PERMISSIONS.INVOICES_CREATE, edit: PERMISSIONS.INVOICES_EDIT },
+                { scope: 'proformas' as const, view: PERMISSIONS.PROFORMAS_VIEW, create: PERMISSIONS.PROFORMAS_MANAGE, edit: PERMISSIONS.PROFORMAS_MANAGE },
+                { scope: 'billing-adjustments' as const, view: PERMISSIONS.ADJUSTMENTS_VIEW, create: PERMISSIONS.ADJUSTMENTS_MANAGE, edit: PERMISSIONS.ADJUSTMENTS_MANAGE },
+              ]).flatMap(({ scope, view, create, edit }) => [
+                { path: `/${scope}`, element: <AccessRoute permissions={[view]}>{lazyPage(<InvoicesPage scope={scope} />)}</AccessRoute> },
+                { path: `/${scope}/:id`, element: <AccessRoute permissions={[view]}>{lazyPage(<InvoiceDetailsPage scope={scope} />)}</AccessRoute> },
+                { path: `/${scope}/:id/fields`, element: <AccessRoute permissions={[edit]}>{lazyPage(<InvoiceFieldsReviewPage scope={scope} />)}</AccessRoute> },
+                ...(scope === 'billing-adjustments' ? [] : [
+                  { path: `/${scope}/new`, element: <AccessRoute permissions={[create]}>{lazyPage(<InvoiceEditorPage scope={scope} />)}</AccessRoute> },
+                  { path: `/${scope}/:id/edit`, element: <AccessRoute permissions={[edit]}>{lazyPage(<InvoiceEditorPage scope={scope} editing />)}</AccessRoute> },
+                ]),
+              ]),
+              { path: paths.newQuotation, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_CREATE]}>{lazyPage(<CreateQuotationPage />)}</AccessRoute> },
+              { path: `${paths.quotations}/:id`, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_VIEW]}>{lazyPage(<QuotationDetailsPage />)}</AccessRoute> },
+              { path: `${paths.quotations}/:id/edit`, element: <AccessRoute permissions={[PERMISSIONS.QUOTATIONS_EDIT]}>{lazyPage(<EditQuotationPage />)}</AccessRoute> },
+              { path: paths.firmUsers, element: <AccessRoute permissions={[PERMISSIONS.USERS_MANAGE]}>{lazyPage(<UsersPage />)}</AccessRoute> },
+              { path: paths.firmRoles, element: <AccessRoute permissions={[PERMISSIONS.ROLES_MANAGE]}>{lazyPage(<RolesPage />)}</AccessRoute> },
+              { path: paths.auditLogs, element: <AccessRoute permissions={[PERMISSIONS.AUDIT_VIEW]}>{lazyPage(<AuditLogsPage />)}</AccessRoute> },
             ],
           },
         ],

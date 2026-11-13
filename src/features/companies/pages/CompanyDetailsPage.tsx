@@ -3,14 +3,11 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
-import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type MouseEvent } from 'react';
 import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -18,10 +15,15 @@ import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParam
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
-import { PageContainer } from '@shared/ui/layout';
+import { DetailHeader, PageContainer, WorkspaceTabs } from '@shared/ui/layout';
 import { paths } from '@shared/routing/paths';
 import { getSafeListReturnPath } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
+import { ReceivablesPanel } from '@features/payments';
+import { CustomerTimeline } from '@features/crm';
+import { SupplierPurchasingPanel } from '@features/purchasing';
+import { TenantFieldsPanel } from '@features/automation';
 import { createCompanyAddressRequest, deleteCompanyAddressRequest, setPrimaryCompanyAddressRequest, updateCompanyAddressRequest } from '../api/addresses.api';
 import { deleteCompanyRequest, getCompanyRequest, updateCompanyStatusRequest } from '../api/companies.api';
 import { createCompanyContactRequest, deleteCompanyContactRequest, setPrimaryCompanyContactRequest, updateCompanyContactRequest } from '../api/contacts.api';
@@ -44,6 +46,7 @@ export function CompanyDetailsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const canManage = useHasPermission(PERMISSIONS.COMPANIES_MANAGE);
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') as CompanyTab | null;
   const selectedTab = tabParam !== null && tabs.includes(tabParam) ? tabParam : 'overview';
@@ -149,37 +152,24 @@ export function CompanyDetailsPage() {
 
   return (
     <PageContainer>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-        <Box>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-            <Typography component="h1" variant="h1">{company.name}</Typography>
-            <CompanyStatusChip isActive={company.isActive} />
-          </Stack>
-          <Typography color="text.secondary">{company.companyCode}</Typography>
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>
-            Back to Companies
-          </AppButton>
-          <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</AppButton>
+      <DetailHeader title={company.name} description={company.companyCode}
+        status={<><CompanyStatusChip isActive={company.isActive} />{company.isSupplier ? <Chip size="small" label="Supplier" variant="outlined" /> : null}</>}
+        backAction={<AppButton component={RouterLink} to={returnPath} variant="outlined" startIcon={<ArrowBackOutlinedIcon />}>Back to Companies</AppButton>}
+        actionLabel="Company actions" actions={canManage ? <>
+          <AppButton component={RouterLink} to={`${paths.companies}/${company.id}/edit`} state={{ from: returnPath }} variant="contained" startIcon={<EditOutlinedIcon />}>Edit Company</AppButton>
           <AppIconButton label="Open company actions" onClick={openMenu}><MoreVertOutlinedIcon /></AppIconButton>
-          <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
-            <MenuItem onClick={() => { setMenuAnchor(null); setStatusOpen(true); }}><PowerSettingsNewOutlinedIcon fontSize="small" sx={{ mr: 1 }} />{company.isActive ? 'Deactivate' : 'Activate'}</MenuItem>
-            <MenuItem onClick={() => { setMenuAnchor(null); setDeleteOpen(true); }} sx={{ color: 'error.main' }}><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Delete</MenuItem>
-          </Menu>
-        </Stack>
-      </Stack>
+        </> : undefined} />
+      <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
+        <MenuItem onClick={() => { setMenuAnchor(null); setStatusOpen(true); }}><PowerSettingsNewOutlinedIcon fontSize="small" sx={{ mr: 1 }} />{company.isActive ? 'Deactivate' : 'Activate'}</MenuItem>
+        <MenuItem onClick={() => { setMenuAnchor(null); setDeleteOpen(true); }} sx={{ color: 'error.main' }}><DeleteOutlineOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Delete</MenuItem>
+      </Menu>
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
-      <Tabs value={selectedTab} onChange={(_event, value: CompanyTab) => setSearchParams((current) => { const next = new URLSearchParams(current); next.set('tab', value); return next; })} variant="scrollable" allowScrollButtonsMobile>
-        <Tab label="Overview" value="overview" />
-        <Tab label="Contacts" value="contacts" />
-        <Tab label="Addresses" value="addresses" />
-        <Tab label="Quotations" value="quotations" />
-      </Tabs>
-      {selectedTab === 'overview' ? <CompanyOverview company={company} /> : null}
+      <WorkspaceTabs value={selectedTab} label="Company information" items={[{ value: 'overview', label: 'Overview' }, { value: 'contacts', label: 'Contacts' }, { value: 'addresses', label: 'Addresses' }, { value: 'quotations', label: 'Quotations' }]} onChange={(value: CompanyTab) => setSearchParams((current) => { const next = new URLSearchParams(current); next.set('tab', value); return next; })} />
+      {selectedTab === 'overview' ? <><CompanyOverview company={company} /><TenantFieldsPanel key={`fields:${company.id}`} entity="COMPANY" entityId={company.id} editable={canManage} />{company.isSupplier ? <SupplierPurchasingPanel key={`purchasing:${company.id}`} supplierId={company.id} /> : null}<ReceivablesPanel companyId={company.id} /><CustomerTimeline key={`timeline:${company.id}`} companyId={company.id} /></> : null}
       {selectedTab === 'contacts' ? (
         <ContactsSection
           contacts={company.contacts}
+          canManage={canManage}
           disabled={isMutating}
           errorMessage={pageError}
           onAdd={() => { setEditingContact(null); setDialogError(null); setContactDialogOpen(true); }}
@@ -191,6 +181,7 @@ export function CompanyDetailsPage() {
       {selectedTab === 'addresses' ? (
         <AddressesSection
           addresses={company.addresses}
+          canManage={canManage}
           disabled={isMutating}
           errorMessage={pageError}
           onAdd={() => { setEditingAddress(null); setDialogError(null); setAddressDialogOpen(true); }}
@@ -200,7 +191,7 @@ export function CompanyDetailsPage() {
         />
       ) : null}
       {selectedTab === 'quotations' ? <CompanyQuotationHistory companyId={company.id} /> : null}
-      <ContactDialog
+      {canManage ? <ContactDialog
         open={contactDialogOpen}
         contact={editingContact}
         isSubmitting={createContactMutation.isPending || updateContactMutation.isPending}
@@ -210,8 +201,8 @@ export function CompanyDetailsPage() {
           if (editingContact) await updateContactMutation.mutateAsync({ contactId: editingContact.id, values });
           else await createContactMutation.mutateAsync(values);
         }}
-      />
-      <AddressDialog
+      /> : null}
+      {canManage ? <AddressDialog
         open={addressDialogOpen}
         address={editingAddress}
         isSubmitting={createAddressMutation.isPending || updateAddressMutation.isPending}
@@ -221,9 +212,9 @@ export function CompanyDetailsPage() {
           if (editingAddress) await updateAddressMutation.mutateAsync({ addressId: editingAddress.id, values });
           else await createAddressMutation.mutateAsync(values);
         }}
-      />
-      <CompanyStatusDialog company={statusOpen ? company : null} isSubmitting={statusMutation.isPending} onClose={() => setStatusOpen(false)} onConfirm={async () => { await statusMutation.mutateAsync(); }} />
-      <DeleteCompanyDialog company={deleteOpen ? company : null} isDeleting={deleteMutation.isPending} onClose={() => setDeleteOpen(false)} onConfirm={() => deleteMutation.mutateAsync()} />
+      /> : null}
+      {canManage ? <CompanyStatusDialog company={statusOpen ? company : null} isSubmitting={statusMutation.isPending} onClose={() => setStatusOpen(false)} onConfirm={async () => { await statusMutation.mutateAsync(); }} /> : null}
+      {canManage ? <DeleteCompanyDialog company={deleteOpen ? company : null} isDeleting={deleteMutation.isPending} onClose={() => setDeleteOpen(false)} onConfirm={() => deleteMutation.mutateAsync()} /> : null}
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </PageContainer>
   );

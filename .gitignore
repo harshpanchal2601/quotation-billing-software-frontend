@@ -4,6 +4,20 @@ build/
 coverage/
 .env
 .env.local
+.env.*
+.aws/
+.ssh/
+private/
+secrets/
+backups/
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.zip
+*.tar.gz
 *.log
 
 *.tsbuildinfo

@@ -1,3 +1,4 @@
+import { EmptyState } from '@shared/components/common/EmptyState';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
@@ -7,29 +8,19 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
-import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError } from '@shared/api/apiClient';
-import { AppButton, AppIconButton } from '@shared/ui/actions';
-import { DataTableShell, TableSkeleton } from '@shared/ui/tables';
+import { AppButton } from '@shared/ui/actions';
+import { DetailSection } from '@shared/ui/layout';
+import { RecordTable, TableSkeleton } from '@shared/ui/tables';
 import {
   downloadQuotationAttachmentBlobRequest,
   getQuotationAttachmentsRequest,
@@ -69,6 +60,7 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
 
   const [selectedAttachment, setSelectedAttachment] = useState<QuotationAttachment | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const downloadPending = useRef(false);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: quotationAttachmentsQueryKeys.list(quotationId),
@@ -87,7 +79,8 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
   };
 
   const handleDownload = async (attachment: QuotationAttachment) => {
-    if (downloadingId === attachment.id) return;
+    if (downloadPending.current) return;
+    downloadPending.current = true;
     try {
       setDownloadingId(attachment.id);
       const { blob, filename } = await downloadQuotationAttachmentBlobRequest(
@@ -108,6 +101,7 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
       const apiError = toApiError(err);
       if (!apiError.cancelled) onFeedback(apiError.message, 'error');
     } finally {
+      downloadPending.current = false;
       setDownloadingId(null);
     }
   };
@@ -120,202 +114,50 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
   const showRefreshing = isFetching && !isLoading;
 
   return (
-    <Paper variant="outlined" sx={{ p: 3, mt: 3, borderRadius: 2 }} aria-busy={isLoading || showRefreshing}>
-      {/* Header */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
-        <Box>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography variant="h6" component="h2" fontWeight={600}>
-              Supporting Attachments
-            </Typography>
-            <Chip
-              label={`${attachments.length}/${limits.maximumAttachments}`}
-              size="small"
-              color={attachments.length >= limits.maximumAttachments ? 'warning' : 'default'}
-            />
-          </Stack>
-          <Typography variant="caption" color="text.secondary">
-            Upload technical drawings, layout specifications, and approval documents (Max 20 MB per file).
-          </Typography>
-        </Box>
-
+    <DetailSection
+      title="Supporting attachments"
+      description={`Upload technical drawings, layout specifications and approval documents. Maximum ${formatFileSize(limits.maximumFileSizeBytes)} per file.`}
+      aria-busy={isLoading || showRefreshing}
+      actions={<>
+        <Chip
+          label={`${attachments.length}/${limits.maximumAttachments}`}
+          aria-label={`${attachments.length} of ${limits.maximumAttachments} attachment spaces used`}
+          size="small"
+          color={attachments.length >= limits.maximumAttachments ? 'warning' : 'default'}
+        />
         <AppButton
           variant="contained"
           size="small"
           startIcon={<UploadFileOutlinedIcon />}
           onClick={() => setUploadDialogOpen(true)}
-          disabled={limits.remainingAttachments <= 0}
+          disabled={isLoading || isError || limits.remainingAttachments <= 0}
         >
-          Upload Attachment
+          Upload attachment
         </AppButton>
-      </Stack>
-
-      <Divider sx={{ mb: 2 }} />
-      <RefreshIndicator show={showRefreshing} label="Refreshing attachments..." />
-
-      {/* Content */}
+      </>}
+    >
+      <RefreshIndicator show={showRefreshing} label="Refreshing attachments…" />
       {isLoading ? (
         <TableSkeleton rowCount={2} rowHeight={48} />
       ) : isError ? (
         <ErrorState message={toApiError(error).message} onRetry={() => void refetch()} />
       ) : attachments.length === 0 ? (
-        <Box sx={{ text: 'center', py: 4, px: 2, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
-          <UploadFileOutlinedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-          <Typography variant="subtitle2" color="text.secondary">
-            No supporting attachments uploaded for this quotation yet.
-          </Typography>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-            Attached documents are kept separate from generated quotation PDFs.
-          </Typography>
-        </Box>
+        <EmptyState title="No supporting attachments" description="No supporting attachments uploaded for this quotation yet. Attached documents are kept separate from generated quotation PDFs." />
       ) : (
-        <>
-          {/* Desktop Table View */}
-          <DataTableShell
-            isLoading={false}
-            isError={false}
-            isEmpty={false}
-            loadingContent={null}
-            errorContent={null}
-            emptyContent={null}
-            tableContainerProps={{ sx: { display: { xs: 'none', md: 'block' } } }}
-          >
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Type</TableCell>
-                  <TableCell>File Name</TableCell>
-                  <TableCell>Size</TableCell>
-                  <TableCell>Uploaded Date</TableCell>
-                  <TableCell>Uploaded By</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {attachments.map((att) => (
-                  <TableRow key={att.id} hover>
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        {getFileIcon(att.fileCategory)}
-                        <Typography variant="body2">{att.fileCategory}</Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, maxWidth: 260 }}>
-                      <Tooltip title={att.originalFilename}>
-                        <Typography variant="body2" noWrap fontWeight={600}>
-                          {att.originalFilename}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell>{formatFileSize(att.fileSize)}</TableCell>
-                    <TableCell>{new Date(att.uploadedAt).toLocaleDateString()}</TableCell>
-                    <TableCell>{att.uploadedBy?.name || '—'}</TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                        {att.canPreview ? (
-                          <Tooltip title="Preview inline">
-                            <AppIconButton size="small" color="primary" onClick={() => handlePreview(att)} label={`Preview ${att.originalFilename}`}>
-                              <VisibilityOutlinedIcon fontSize="small" />
-                            </AppIconButton>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title="Preview not available for this format. Download file to view.">
-                            <span>
-                              <AppIconButton size="small" disabled label={`Preview unavailable for ${att.originalFilename}`}>
-                                <VisibilityOutlinedIcon fontSize="small" />
-                              </AppIconButton>
-                            </span>
-                          </Tooltip>
-                        )}
-
-                        <Tooltip title="Download file">
-                          <AppIconButton
-                            size="small"
-                            color="info"
-                            onClick={() => handleDownload(att)}
-                            disabled={downloadingId === att.id}
-                            label={`Download ${att.originalFilename}`}
-                          >
-                            {downloadingId === att.id ? <CircularProgress size={18} aria-label={`Downloading ${att.originalFilename}`} /> : <DownloadOutlinedIcon fontSize="small" />}
-                          </AppIconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Delete attachment">
-                          <AppIconButton size="small" color="error" onClick={() => handleDelete(att)} label={`Delete ${att.originalFilename}`} disabled={downloadingId === att.id}>
-                            <DeleteOutlineOutlinedIcon fontSize="small" />
-                          </AppIconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </DataTableShell>
-
-          {/* Mobile Cards View */}
-          <Stack spacing={1.5} sx={{ display: { xs: 'flex', md: 'none' } }}>
-            {attachments.map((att) => (
-              <Card key={att.id} variant="outlined">
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ overflow: 'hidden' }}>
-                      {getFileIcon(att.fileCategory)}
-                      <Box sx={{ overflow: 'hidden' }}>
-                        <Typography variant="subtitle2" noWrap fontWeight={600}>
-                          {att.originalFilename}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {att.fileCategory} • {formatFileSize(att.fileSize)}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Stack>
-
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                    Uploaded on {new Date(att.uploadedAt).toLocaleDateString()} {att.uploadedBy?.name ? `by ${att.uploadedBy.name}` : ''}
-                  </Typography>
-
-                  <Divider sx={{ my: 1.5 }} />
-
-                  <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                    {att.canPreview && (
-                      <AppButton
-                        size="small"
-                        variant="outlined"
-                        startIcon={<VisibilityOutlinedIcon />}
-                        onClick={() => handlePreview(att)}
-                        disabled={downloadingId === att.id}
-                      >
-                        Preview
-                      </AppButton>
-                    )}
-                    <AppButton
-                      size="small"
-                      variant="outlined"
-                      startIcon={<DownloadOutlinedIcon />}
-                      onClick={() => handleDownload(att)}
-                      isLoading={downloadingId === att.id}
-                      loadingPosition="start"
-                    >
-                      {downloadingId === att.id ? 'Downloading...' : 'Download'}
-                    </AppButton>
-                    <AppButton
-                      size="small"
-                      color="error"
-                      variant="outlined"
-                      startIcon={<DeleteOutlineOutlinedIcon />}
-                      onClick={() => handleDelete(att)}
-                      disabled={downloadingId === att.id}
-                    >
-                      Delete
-                    </AppButton>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
-        </>
+        <RecordTable rows={attachments} label="Supporting quotation attachments" rowKey={(attachment) => attachment.id} columns={[
+          { key: 'type', label: 'Type', minWidth: 160, sortValue: (attachment) => attachment.fileCategory, render: (attachment) => <Stack direction="row" alignItems="center" spacing={1}>{getFileIcon(attachment.fileCategory)}<Typography variant="body2">{attachment.fileCategory}</Typography></Stack> },
+          { key: 'filename', label: 'File name', minWidth: 240, sortValue: (attachment) => attachment.originalFilename, render: (attachment) => <Tooltip title={attachment.originalFilename}><Typography variant="body2" fontWeight={600} sx={{ overflowWrap: 'anywhere' }}>{attachment.originalFilename}</Typography></Tooltip> },
+          { key: 'size', label: 'Size', align: 'right', sortValue: (attachment) => attachment.fileSize, render: (attachment) => formatFileSize(attachment.fileSize) },
+          { key: 'uploadedAt', label: 'Uploaded date', sortValue: (attachment) => attachment.uploadedAt, render: (attachment) => new Date(attachment.uploadedAt).toLocaleDateString() },
+          { key: 'uploadedBy', label: 'Uploaded by', sortValue: (attachment) => attachment.uploadedBy?.name, render: (attachment) => attachment.uploadedBy?.name || '—' },
+          { key: 'actions', label: 'Actions', minWidth: 300, render: (attachment) => <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Tooltip title={attachment.canPreview ? 'Preview inline' : 'Preview is unavailable for this format. Download the file to view it.'}>
+              <span><AppButton size="small" variant="outlined" startIcon={<VisibilityOutlinedIcon />} onClick={() => handlePreview(attachment)} disabled={!attachment.canPreview || downloadingId === attachment.id} aria-label={attachment.canPreview ? `Preview ${attachment.originalFilename}` : `Preview unavailable for ${attachment.originalFilename}`}>Preview</AppButton></span>
+            </Tooltip>
+            <AppButton size="small" variant="outlined" color="info" startIcon={<DownloadOutlinedIcon />} onClick={() => void handleDownload(attachment)} disabled={downloadingId !== null} isLoading={downloadingId === attachment.id} loadingPosition="start" loadingLabel="Downloading…" aria-label={`Download ${attachment.originalFilename}`}>Download</AppButton>
+            <AppButton size="small" variant="outlined" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => handleDelete(attachment)} disabled={downloadingId === attachment.id} aria-label={`Delete ${attachment.originalFilename}`}>Delete</AppButton>
+          </Stack> },
+        ]} />
       )}
 
       {/* Dialogs */}
@@ -348,6 +190,6 @@ export function QuotationAttachmentsSection({ quotationId, onFeedback }: Quotati
         }}
         onSuccess={(msg) => onFeedback(msg, 'success')}
       />
-    </Paper>
+    </DetailSection>
   );
 }

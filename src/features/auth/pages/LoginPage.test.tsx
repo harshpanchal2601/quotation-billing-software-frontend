@@ -27,7 +27,20 @@ describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authMock.isLoggingIn = false;
-    authMock.login.mockResolvedValue({ id: 1, name: 'Admin', email: 'admin@example.com', username: 'admin', role: 'ADMIN', status: 'ACTIVE' });
+    authMock.login.mockResolvedValue({
+      id: 1,
+      name: 'Admin',
+      email: 'admin@example.com',
+      username: 'admin',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      accountType: 'FIRM_ADMIN',
+      firmId: 1,
+      firm: { id: 1, name: 'Example Firm', slug: 'example-firm' },
+      firmRole: null,
+      permissions: ['dashboard.view'],
+      mustChangePassword: false,
+    });
   });
 
   it('renders identifier and password fields', () => {
@@ -60,6 +73,7 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled();
     expect(screen.getByLabelText(/email or username/i)).toBeDisabled();
     expect(screen.getByLabelText(/^password$/i)).toBeDisabled();
+    expect(screen.getByRole('button', { name: /show password/i })).toBeDisabled();
     expect(container.querySelector('form')).toHaveAttribute('aria-busy', 'true');
   });
 });

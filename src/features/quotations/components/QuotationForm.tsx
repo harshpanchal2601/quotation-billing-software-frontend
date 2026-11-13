@@ -17,8 +17,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { getItemOptionsRequest } from '@features/items';
 import { listBankDetailsRequest } from '@features/settings';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
-import { FormActions } from '@shared/forms';
-import { ControlledTextField } from '@shared/forms/controlled';
+import { FormActions, FormExitGuard } from '@shared/forms';
+import { ControlledCurrencyField, ControlledTextField } from '@shared/forms/controlled';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { applyApiFieldErrors } from '@shared/forms/formErrors';
 import { calculatePreviewRequest } from '../api/quotations.api';
@@ -42,6 +42,7 @@ type QuotationFormProps = {
   initialValues?: Partial<QuotationFormSubmitValues>;
   editingQuotation?: QuotationDetail | null;
   isSubmitting?: boolean;
+  hasSaved?: boolean;
   serverError?: string | null;
   fieldErrors?: ApiFieldErrors;
   defaultValidityDays?: number;
@@ -53,6 +54,7 @@ export function QuotationForm({
   initialValues,
   editingQuotation,
   isSubmitting = false,
+  hasSaved = false,
   serverError = null,
   fieldErrors = EMPTY_FIELD_ERRORS,
   defaultValidityDays = 30,
@@ -214,6 +216,7 @@ export function QuotationForm({
     const [items, taxMode, quotationDiscountType, quotationDiscountValue, freightAmount, otherCharges] =
       watchedCalculationValues;
     const payload = buildCalculationPreviewInput({
+      currency: watchedCurrency,
       items,
       taxMode,
       quotationDiscountType,
@@ -254,12 +257,13 @@ export function QuotationForm({
     return () => clearTimeout(timer);
   }, [
     watchedCalculationValues,
+    watchedCurrency,
     calculatePreview,
     calculatedTotals,
   ]);
 
   return (
-    <FormProvider {...methods}>
+    <FormExitGuard dirty={methods.formState.isDirty} hasSaved={hasSaved} isSubmitting={isSubmitting} onCancel={onCancel}>{(requestCancel) => <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)} noValidate aria-busy={isSubmitting || isPreviewCalculating}>
         <Stack spacing={3}>
           <ServerErrorAlert message={serverError} />
@@ -274,7 +278,7 @@ export function QuotationForm({
           ) : (
             <Card variant="outlined" sx={{ bgcolor: 'grey.50', p: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Quotation number will be generated automatically upon saving in <code>BUMINEX/2026-27/000001</code> format. Initial status will be set to <strong>Draft</strong>.
+                Quotation number will be generated automatically using your firm's configured prefix and financial year. Initial status will be set to <strong>Draft</strong>.
               </Typography>
             </Card>
           )}
@@ -289,7 +293,7 @@ export function QuotationForm({
                 Dates & Tax Configuration
               </Typography>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr 1fr' }, gap: 2 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: 2 }}>
                 <Controller
                   name="quotationDate"
                   control={control}
@@ -324,13 +328,11 @@ export function QuotationForm({
                   )}
                 />
 
-                <ControlledTextField
+                <ControlledCurrencyField
                   control={control}
                   name="currency"
                   size="small"
-                  label="Currency Code"
-                  placeholder="INR"
-                  inputProps={{ maxLength: 3 }}
+                  currentCurrency={watchedCurrency}
                 />
 
                 <Controller
@@ -365,7 +367,7 @@ export function QuotationForm({
                 Quotation Discounts & Freight
               </Typography>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr 1fr' }, gap: 2 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: 2 }}>
                 <Controller
                   name="quotationDiscountType"
                   control={control}
@@ -518,7 +520,7 @@ export function QuotationForm({
             <FormActions
               spacing={2}
               isSubmitting={isSubmitting}
-              onCancel={onCancel}
+              onCancel={requestCancel}
               submitLabel={isSubmitting ? 'Saving quotation...' : editingQuotation ? 'Update Draft Quotation' : 'Save Quotation Draft'}
               cancelButtonProps={{ color: 'inherit' }}
               submitButtonProps={{ color: 'primary' }}
@@ -526,6 +528,6 @@ export function QuotationForm({
           </Box>
         </Stack>
       </form>
-    </FormProvider>
+    </FormProvider>}</FormExitGuard>
   );
 }

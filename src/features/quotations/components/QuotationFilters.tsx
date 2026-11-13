@@ -10,26 +10,17 @@ import TextField from '@mui/material/TextField';
 import { useEffect, useState } from 'react';
 
 import { AppButton } from '@shared/ui/actions';
+import { TableSortControls, type TableSorting } from '@shared/ui/tables';
 import type { QuotationListParams, QuotationStatus } from '../model/quotations.types';
 import { formatQuotationStatusLabel } from '../model/quotations.utils';
 
 type QuotationFiltersProps = {
   params: QuotationListParams;
+  sorting: TableSorting;
   onFilterChange: (newParams: Partial<QuotationListParams>) => void;
   onClearFilters: () => void;
   companyOptions?: { id: number; name: string }[];
 };
-
-const SORT_OPTIONS: { label: string; sortBy: QuotationListParams['sortBy']; sortOrder: QuotationListParams['sortOrder'] }[] = [
-  { label: 'Newest First', sortBy: 'createdAt', sortOrder: 'desc' },
-  { label: 'Oldest First', sortBy: 'createdAt', sortOrder: 'asc' },
-  { label: 'Quotation Number (A-Z)', sortBy: 'quotationNumber', sortOrder: 'asc' },
-  { label: 'Quotation Number (Z-A)', sortBy: 'quotationNumber', sortOrder: 'desc' },
-  { label: 'Quotation Date (Newest)', sortBy: 'quotationDate', sortOrder: 'desc' },
-  { label: 'Quotation Date (Oldest)', sortBy: 'quotationDate', sortOrder: 'asc' },
-  { label: 'Grand Total (High to Low)', sortBy: 'grandTotal', sortOrder: 'desc' },
-  { label: 'Grand Total (Low to High)', sortBy: 'grandTotal', sortOrder: 'asc' },
-];
 
 const STATUS_LIST: QuotationStatus[] = [
   'DRAFT',
@@ -44,6 +35,7 @@ const STATUS_LIST: QuotationStatus[] = [
 
 export function QuotationFilters({
   params,
+  sorting,
   onFilterChange,
   onClearFilters,
   companyOptions = [],
@@ -62,15 +54,6 @@ export function QuotationFilters({
     }, 400);
     return () => clearTimeout(timer);
   }, [searchValue, params.search, onFilterChange]);
-
-  const currentSortKey = `${params.sortBy || 'createdAt'}-${params.sortOrder || 'desc'}`;
-
-  const handleSortChange = (value: string) => {
-    const option = SORT_OPTIONS.find((opt) => `${opt.sortBy}-${opt.sortOrder}` === value);
-    if (option) {
-      onFilterChange({ sortBy: option.sortBy, sortOrder: option.sortOrder, page: 1 });
-    }
-  };
 
   const hasActiveFilters = Boolean(
     params.search ||
@@ -161,22 +144,6 @@ export function QuotationFilters({
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 180 }, width: { xs: '100%', sm: 'auto' } }}>
-          <InputLabel id="sort-filter-label">Sort By</InputLabel>
-          <Select
-            labelId="sort-filter-label"
-            value={currentSortKey}
-            label="Sort By"
-            onChange={(e) => handleSortChange(e.target.value)}
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <MenuItem key={`${opt.sortBy}-${opt.sortOrder}`} value={`${opt.sortBy}-${opt.sortOrder}`}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
         {hasActiveFilters ? (
           <AppButton size="small" color="inherit" onClick={onClearFilters} startIcon={<FilterListOutlinedIcon />} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Clear Filters
@@ -257,6 +224,7 @@ export function QuotationFilters({
           sx={{ width: { xs: '100%', sm: 120 } }}
         />
       </Box>
+      <TableSortControls {...sorting} />
     </Box>
   );
 }

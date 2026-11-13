@@ -91,6 +91,7 @@ export type QuotationStatusHistoryItem = {
   toStatus: QuotationStatus;
   comment: string | null;
   changedBy: UserSummary | null;
+  portalActorName?: string | null;
   changedAt: string;
 };
 
@@ -188,6 +189,7 @@ export type QuotationItemInput = {
 };
 
 export type CalculationPreviewInput = {
+  currency?: string;
   taxMode?: TaxMode;
   quotationDiscountType?: DiscountType;
   quotationDiscountValue?: number | string;

@@ -14,11 +14,12 @@ export function PageContainer({
 }: PageContainerProps) {
   const containerSx: SxProps<Theme> = {
     width: '100%',
+    minWidth: 0,
     maxWidth,
   };
 
   return (
-    <Stack spacing={spacing} sx={[containerSx, ...(Array.isArray(sx) ? sx : [sx])]} {...props}>
+    <Stack spacing={spacing} useFlexGap sx={[containerSx, ...(Array.isArray(sx) ? sx : [sx])]} {...props}>
       {children}
     </Stack>
   );

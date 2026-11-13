@@ -8,6 +8,10 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
 import Grid from '@mui/material/Grid';
 import Skeleton from '@mui/material/Skeleton';
+import MenuItem from '@mui/material/MenuItem';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
@@ -17,6 +21,7 @@ import { PageContainer, PageHeader } from '@shared/ui/layout';
 import { toApiError } from '@shared/api/apiClient';
 import { paths } from '@shared/routing/paths';
 import { useAuth } from '@features/auth';
+import { ReceivablesPanel } from '@features/payments';
 import { formatCurrency } from '@features/quotations';
 import { getDashboardOverviewRequest } from '../api/dashboard.api';
 import { DashboardMetricCard } from '../components/DashboardMetricCard';
@@ -40,6 +45,7 @@ export function DashboardPage() {
   const dateToParam = searchParams.get('dateTo') || undefined;
 
   const queryParams: DashboardOverviewQuery = {
+    currency: searchParams.get('currency') || undefined,
     period: periodParam,
     dateFrom: dateFromParam,
     dateTo: dateToParam,
@@ -116,8 +122,7 @@ export function DashboardPage() {
     <PageContainer>
       <PageHeader
         title="Dashboard"
-        titleTypographyProps={{ variant: 'h4', fontWeight: 700 }}
-        description={`Welcome back, ${firstName}. Commercial quotation proposals & operational metrics overview.`}
+        description={`Welcome back, ${firstName}. Here’s your quotation activity at a glance.`}
         descriptionTypographyProps={{ variant: 'body2' }}
         actions={
           <AppButton component={RouterLink} to={paths.newQuotation} variant="contained" startIcon={<AddOutlinedIcon />}>
@@ -126,6 +131,7 @@ export function DashboardPage() {
         }
       />
 
+      <ReceivablesPanel compact />
       {/* Period Filter */}
       <DashboardPeriodFilter
         period={range.period}
@@ -137,6 +143,28 @@ export function DashboardPage() {
         onRefresh={refetch}
       />
 
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
+        <TextField
+          select
+          size="small"
+          label="Value currency"
+          value={currency}
+          disabled={isFetching}
+          sx={{ minWidth: 160 }}
+          onChange={(event) => {
+            const params = new URLSearchParams(searchParams);
+            params.set('currency', event.target.value);
+            setSearchParams(params, { replace: true });
+          }}
+        >
+          {Array.from(new Set([currency, ...data.currencyTotals.map((total) => total.currency)]))
+            .sort().map((code) => <MenuItem key={code} value={code}>{code}</MenuItem>)}
+        </TextField>
+        <Typography variant="body2" color="text.secondary">
+          Values and customer rankings use {currency}. Overall quotation counts include all currencies.
+        </Typography>
+      </Stack>
+
       {/* Primary Metric Cards Grid */}
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6} md={4} lg={3}>
@@ -145,7 +173,7 @@ export function DashboardPage() {
             value={quotationMetrics.totalQuotations}
             caption="Quotations created in period"
             icon={<DescriptionOutlinedIcon />}
-            iconBgColor="primary.50"
+            iconBgColor="primary.light"
             iconColor="primary.main"
             linkTo="/quotations"
           />
@@ -157,7 +185,7 @@ export function DashboardPage() {
             value={formatCurrency(quotationMetrics.totalQuotationValue, currency)}
             caption="Value of quotations created in this period"
             icon={<RequestQuoteOutlinedIcon />}
-            iconBgColor="success.50"
+            iconBgColor="primary.light"
             iconColor="success.main"
           />
         </Grid>
@@ -168,7 +196,7 @@ export function DashboardPage() {
             value={formatCurrency(quotationMetrics.acceptedQuotationValue, currency)}
             caption="Accepted and completed quotation value"
             icon={<CheckCircleOutlinedIcon />}
-            iconBgColor="success.50"
+            iconBgColor="primary.light"
             iconColor="success.main"
           />
         </Grid>
@@ -177,9 +205,9 @@ export function DashboardPage() {
           <DashboardMetricCard
             title="Average Quotation Value"
             value={formatCurrency(quotationMetrics.averageQuotationValue, currency)}
-            caption="Average value per quotation in period"
+            caption={`Average per ${currency} quotation in period`}
             icon={<CalculateOutlinedIcon />}
-            iconBgColor="info.50"
+            iconBgColor="action.hover"
             iconColor="info.main"
           />
         </Grid>
@@ -214,7 +242,7 @@ export function DashboardPage() {
             value={operationalMetrics.expiringSoonCount}
             caption="Open quotations expiring within 7 days"
             icon={<HourglassEmptyOutlinedIcon />}
-            iconBgColor="warning.50"
+            iconBgColor="action.hover"
             iconColor="warning.main"
           />
         </Grid>

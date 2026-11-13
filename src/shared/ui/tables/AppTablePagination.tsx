@@ -7,6 +7,7 @@ export type AppTablePaginationProps = {
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
   rowsPerPageOptions?: number[];
+  hasNextPage?: boolean;
   sx?: TablePaginationProps['sx'];
 };
 
@@ -17,6 +18,7 @@ export function AppTablePagination({
   onPageChange,
   onRowsPerPageChange,
   rowsPerPageOptions = [10, 20, 50],
+  hasNextPage,
   sx,
 }: AppTablePaginationProps) {
   return (
@@ -26,9 +28,19 @@ export function AppTablePagination({
       page={page - 1}
       rowsPerPage={rowsPerPage}
       rowsPerPageOptions={rowsPerPageOptions}
+      {...(hasNextPage === undefined ? {} : { nextIconButtonProps: { disabled: !hasNextPage } })}
       onPageChange={(_event, nextPage) => onPageChange(nextPage + 1)}
       onRowsPerPageChange={(event) => onRowsPerPageChange(Number(event.target.value))}
-      sx={sx}
+      sx={[
+        {
+          '& .MuiTablePagination-toolbar': { flexWrap: 'wrap', justifyContent: 'flex-end', columnGap: 1, px: { xs: 1, sm: 2 } },
+          '& .MuiTablePagination-spacer': { display: { xs: 'none', sm: 'block' } },
+          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { my: 1 },
+          '& .MuiTablePagination-input': { mr: { xs: 1, sm: 4 }, ml: 0 },
+          '& .MuiTablePagination-actions': { ml: { xs: 0, sm: 2 } },
+        },
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
     />
   );
 }

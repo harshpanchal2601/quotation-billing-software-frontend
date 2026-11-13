@@ -1,670 +1,186 @@
+import { useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Box, Chip, CircularProgress, Stack, Tooltip, Typography } from '@mui/material';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-import KeyboardArrowDownOutlinedIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
-import KeyboardArrowRightOutlinedIcon from '@mui/icons-material/KeyboardArrowRightOutlined';
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
-import Collapse from '@mui/material/Collapse';
-import Divider from '@mui/material/Divider';
-import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Fragment, useState } from 'react';
-
+import { toApiError } from '@shared/api/apiClient';
+import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
-import { toApiError } from '@shared/api/apiClient';
 import { AppButton, AppIconButton } from '@shared/ui/actions';
-import { DataTableShell, TableSkeleton } from '@shared/ui/tables';
-import {
-  downloadQuotationPdfBlobRequest,
-  generateQuotationPdfRequest,
-  getQuotationPdfPreviewBlobRequest,
-} from '../../api/quotations.api';
-import {
-  getGeneratedDocumentHistoryRequest,
-  getQuotationCommunicationHistoryRequest,
-} from '../api/quotation-documents.api';
+import { AppDialog } from '@shared/ui/dialogs';
+import { DetailFields, DetailSection } from '@shared/ui/layout';
+import { DataTableShell, RecordPagination, RecordTable, TableSkeleton, TableSortControls, useTableSort } from '@shared/ui/tables';
+import { dashboardQueryKeys } from '@features/dashboard';
+import { downloadQuotationPdfBlobRequest, generateQuotationPdfRequest, getQuotationPdfPreviewBlobRequest } from '../../api/quotations.api';
+import { getGeneratedDocumentHistoryRequest, getQuotationCommunicationHistoryRequest } from '../api/quotation-documents.api';
 import type { GeneratedDocumentHistoryItem, QuotationCommunicationHistoryItem } from '../model/quotation-documents.types';
 import type { QuotationDetail } from '../../model/quotations.types';
 import { quotationDocumentsQueryKeys } from '../model/quotation-documents.query-keys';
 import { quotationsQueryKeys } from '../../model/quotations.query-keys';
-import { dashboardQueryKeys } from '@features/dashboard';
 import { QuotationPdfPreviewDialog } from './QuotationPdfPreviewDialog';
 import { QuotationEmailDialog } from '../../email/components/QuotationEmailDialog';
 
+const documentSortFields = [
+  { key: 'generatedAt', label: 'Generated at' }, { key: 'versionNumber', label: 'Version' },
+  { key: 'documentType', label: 'Type' }, { key: 'id', label: 'Record number' },
+];
+const communicationSortFields = [
+  { key: 'createdAt', label: 'Created at' }, { key: 'status', label: 'Status' },
+  { key: 'subjectSnapshot', label: 'Subject' }, { key: 'attemptNumber', label: 'Attempt' }, { key: 'id', label: 'Record number' },
+];
+
 interface QuotationDocumentsSectionProps {
   quotation: QuotationDetail;
+  canManageDocuments: boolean;
+  canEmail: boolean;
   onFeedback: (message: string, severity?: 'success' | 'error') => void;
 }
 
-export function QuotationDocumentsSection({ quotation, onFeedback }: QuotationDocumentsSectionProps) {
+export function QuotationDocumentsSection({ quotation, canManageDocuments, canEmail, onFeedback }: QuotationDocumentsSectionProps) {
   const queryClient = useQueryClient();
-
+  const [params, setParams] = useSearchParams();
+  const page = Math.min(100000, Math.max(1, Math.trunc(Number(params.get('documentsPage'))) || 1));
+  const communicationPage = Math.min(100000, Math.max(1, Math.trunc(Number(params.get('communicationsPage'))) || 1));
+  const changePage = (key: string, value: number) => setParams((current) => {
+    const next = new URLSearchParams(current); next.set(key, String(value)); return next;
+  }, { replace: true });
+  const documentSorting = useTableSort(documentSortFields, { defaultSortBy: 'generatedAt', paramPrefix: 'documents' });
+  const communicationSorting = useTableSort(communicationSortFields, { defaultSortBy: 'createdAt', paramPrefix: 'communications' });
+  const documentParams = { page, limit: 20, sortBy: documentSorting.sortBy, sortOrder: documentSorting.sortOrder };
+  const communicationParams = { page: communicationPage, limit: 20, sortBy: communicationSorting.sortBy, sortOrder: communicationSorting.sortOrder };
+  const history = useQuery({
+    queryKey: quotationDocumentsQueryKeys.list(quotation.id, documentParams),
+    queryFn: () => getGeneratedDocumentHistoryRequest(quotation.id, documentParams),
+    enabled: quotation.id > 0, staleTime: 30000,
+  });
+  const communicationHistory = useQuery({
+    queryKey: quotationDocumentsQueryKeys.communications(quotation.id, communicationParams),
+    queryFn: () => getQuotationCommunicationHistoryRequest(quotation.id, communicationParams),
+    enabled: canEmail && quotation.id > 0, staleTime: 30000,
+  });
+  const documents = history.data?.documents ?? [];
+  const communications = communicationHistory.data?.communications ?? [];
+  const [previewDocument, setPreviewDocument] = useState<GeneratedDocumentHistoryItem | null>(null);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
-  const [activeDocNumber, setActiveDocNumber] = useState<string>('');
-  const [activeDocId, setActiveDocId] = useState<number | null>(null);
-
-  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-  const [selectedDocForEmail, setSelectedDocForEmail] = useState<GeneratedDocumentHistoryItem | null>(null);
-
+  const previewInFlight = useRef(false);
+  const downloadInFlight = useRef(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: quotationDocumentsQueryKeys.list(quotation.id),
-    queryFn: () => getGeneratedDocumentHistoryRequest(quotation.id),
-    enabled: Boolean(quotation.id && quotation.id > 0),
-    staleTime: 30000,
-  });
-
-  const documents = data?.documents || [];
-
-  const {
-    data: communicationData,
-    isLoading: communicationsLoading,
-    isError: communicationsIsError,
-    error: communicationsError,
-    refetch: refetchCommunications,
-    isFetching: communicationsFetching,
-  } = useQuery({
-    queryKey: quotationDocumentsQueryKeys.communications(quotation.id),
-    queryFn: () => getQuotationCommunicationHistoryRequest(quotation.id),
-    enabled: Boolean(quotation.id && quotation.id > 0),
-    staleTime: 30000,
-  });
-
-  const communications = communicationData?.communications || [];
-
+  const [selectedDocForEmail, setSelectedDocForEmail] = useState<GeneratedDocumentHistoryItem | null>(null);
+  const [selectedCommunication, setSelectedCommunication] = useState<QuotationCommunicationHistoryItem | null>(null);
   const generatePdfMutation = useMutation({
     mutationFn: () => generateQuotationPdfRequest(quotation.id),
     onSuccess: () => {
       onFeedback('New quotation PDF generated successfully', 'success');
-      queryClient.invalidateQueries({ queryKey: quotationDocumentsQueryKeys.all });
+      changePage('documentsPage', 1);
+      void queryClient.invalidateQueries({ queryKey: quotationDocumentsQueryKeys.all });
     },
     onError: (error) => {
       const apiError = toApiError(error);
       if (!apiError.cancelled) onFeedback(apiError.message, 'error');
     },
   });
-
   const handlePreviewPdf = async (doc: GeneratedDocumentHistoryItem) => {
-    if (pdfLoading) return;
-    setActiveDocNumber(doc.quotationNumber);
-    setActiveDocId(doc.id);
-    setPdfPreviewOpen(true);
-    setPdfLoading(true);
-    setPdfError(null);
-    setPdfBlob(null);
-
-    try {
-      const blob = await getQuotationPdfPreviewBlobRequest(quotation.id, doc.id);
-      setPdfBlob(blob);
-    } catch (err: unknown) {
-      const apiError = toApiError(err);
-      if (!apiError.cancelled) setPdfError(apiError.message);
-    } finally {
-      setPdfLoading(false);
-    }
+    if (previewInFlight.current) return;
+    previewInFlight.current = true;
+    setPreviewDocument(doc); setPdfPreviewOpen(true); setPdfLoading(true); setPdfError(null); setPdfBlob(null);
+    try { setPdfBlob(await getQuotationPdfPreviewBlobRequest(quotation.id, doc.id)); }
+    catch (error) { const apiError = toApiError(error); if (!apiError.cancelled) setPdfError(apiError.message); }
+    finally { previewInFlight.current = false; setPdfLoading(false); }
   };
-
   const handleDownloadPdf = async (doc: GeneratedDocumentHistoryItem) => {
-    if (downloadingId === doc.id) return;
+    if (downloadInFlight.current) return;
+    downloadInFlight.current = true; setDownloadingId(doc.id);
     try {
-      setDownloadingId(doc.id);
       const { blob, filename } = await downloadQuotationPdfBlobRequest(quotation.id, doc.id);
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename || doc.displayFilename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (err: unknown) {
-      const apiError = toApiError(err);
-      if (!apiError.cancelled) onFeedback(apiError.message, 'error');
-    } finally {
-      setDownloadingId(null);
-    }
+      const link = document.createElement('a'); link.href = url; link.download = filename || doc.displayFilename;
+      document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+    } catch (error) { const apiError = toApiError(error); if (!apiError.cancelled) onFeedback(apiError.message, 'error'); }
+    finally { downloadInFlight.current = false; setDownloadingId(null); }
   };
 
-  const handleOpenEmailDialog = (doc: GeneratedDocumentHistoryItem) => {
-    if (generatePdfMutation.isPending || downloadingId === doc.id || pdfLoading) return;
-    setSelectedDocForEmail(doc);
-    setEmailDialogOpen(true);
-  };
-  const showRefreshing = isFetching && !isLoading;
-
-  return (
-    <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 3 }, mt: 3, borderRadius: 2 }} aria-busy={isLoading || showRefreshing}>
-      {/* Header */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Box>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography variant="h6" component="h2" fontWeight={600}>
-              Generated Documents
-            </Typography>
-            <Chip label={`${documents.length} version${documents.length === 1 ? '' : 's'}`} size="small" />
-          </Stack>
-          <Typography variant="caption" color="text.secondary">
-            Immutable history of generated quotation PDFs. Uploaded supporting files are managed under Attachments.
-          </Typography>
-        </Box>
-
-        <AppButton
-          variant="contained"
-          size="small"
-          startIcon={<PictureAsPdfOutlinedIcon />}
-          onClick={() => generatePdfMutation.mutate()}
-          isLoading={generatePdfMutation.isPending}
-          loadingPosition="start"
-        >
-          {generatePdfMutation.isPending ? 'Generating PDF...' : 'Generate New PDF'}
-        </AppButton>
-      </Stack>
-
-      <Divider sx={{ mb: 2 }} />
-
-      {/* Content */}
-      <RefreshIndicator show={showRefreshing} label="Refreshing document history..." />
-      {isLoading ? (
-        <TableSkeleton rowCount={2} rowHeight={48} />
-      ) : isError ? (
-        <ErrorState message={toApiError(error).message} onRetry={() => void refetch()} />
-      ) : documents.length === 0 ? (
-        <Box sx={{ py: 4, px: 2, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
-          <PictureAsPdfOutlinedIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-          <Typography variant="subtitle2" color="text.secondary">
-            No generated PDF documents yet.
-          </Typography>
-          <AppButton
-            size="small"
-            variant="outlined"
-            sx={{ mt: 1.5 }}
-            onClick={() => generatePdfMutation.mutate()}
-            isLoading={generatePdfMutation.isPending}
-            loadingPosition="start"
-          >
-            {generatePdfMutation.isPending ? 'Generating...' : 'Generate Initial Quotation PDF'}
-          </AppButton>
-        </Box>
-      ) : (
-        <>
-          {/* Desktop Table View */}
-          <DataTableShell
-            isLoading={false}
-            isError={false}
-            isEmpty={false}
-            loadingContent={null}
-            errorContent={null}
-            emptyContent={null}
-            tableContainerProps={{ sx: { display: { xs: 'none', md: 'block' } } }}
-          >
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Version</TableCell>
-                  <TableCell>Document Name</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Generated At</TableCell>
-                  <TableCell>Generated By</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {documents.map((doc) => (
-                  <TableRow key={doc.id} hover>
-                    <TableCell sx={{ fontWeight: 600 }}>v{doc.versionNumber}</TableCell>
-                    <TableCell sx={{ fontWeight: 600, wordBreak: 'break-word', whiteSpace: 'normal' }}>{doc.displayFilename}</TableCell>
-                    <TableCell>
-                      <Chip label={doc.documentType} size="small" variant="outlined" color="primary" />
-                    </TableCell>
-                    <TableCell>{new Date(doc.generatedAt).toLocaleString()}</TableCell>
-                    <TableCell>{doc.generatedBy?.name || 'Admin'}</TableCell>
-                    <TableCell>
-                      {doc.isAvailable ? (
-                        <Chip label="Available" size="small" color="success" variant="outlined" />
-                      ) : (
-                        <Chip label="File Missing" size="small" color="error" variant="outlined" />
-                      )}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                        <Tooltip title={doc.isAvailable ? 'Preview PDF' : 'File missing from storage'}>
-                          <span>
-                            <AppIconButton
-                              size="small"
-                              color="primary"
-                              disabled={!doc.isAvailable || (pdfLoading && activeDocId === doc.id)}
-                              onClick={() => handlePreviewPdf(doc)}
-                              label={`Preview ${doc.displayFilename}`}
-                            >
-                              {pdfLoading && activeDocId === doc.id ? <CircularProgress size={18} aria-label={`Loading preview for ${doc.displayFilename}`} /> : <VisibilityOutlinedIcon fontSize="small" />}
-                            </AppIconButton>
-                          </span>
-                        </Tooltip>
-
-                        <Tooltip title={doc.isAvailable ? 'Download PDF' : 'File missing from storage'}>
-                          <span>
-                            <AppIconButton
-                              size="small"
-                              color="info"
-                              disabled={!doc.isAvailable || downloadingId === doc.id}
-                              onClick={() => handleDownloadPdf(doc)}
-                              label={`Download ${doc.displayFilename}`}
-                            >
-                              {downloadingId === doc.id ? <CircularProgress size={18} aria-label={`Downloading ${doc.displayFilename}`} /> : <DownloadOutlinedIcon fontSize="small" />}
-                            </AppIconButton>
-                          </span>
-                        </Tooltip>
-
-                        <Tooltip title={doc.isAvailable ? 'Send via Email' : 'File missing from storage'}>
-                          <span>
-                            <AppButton
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                              disabled={!doc.isAvailable || generatePdfMutation.isPending || downloadingId === doc.id || (pdfLoading && activeDocId === doc.id)}
-                              startIcon={<EmailOutlinedIcon fontSize="small" />}
-                              onClick={() => handleOpenEmailDialog(doc)}
-                              sx={{ py: 0.25, px: 1, minWidth: 0, fontSize: '0.75rem' }}
-                            >
-                              Send Email
-                            </AppButton>
-                          </span>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </DataTableShell>
-
-          {/* Mobile Cards View */}
-          <Stack spacing={1.5} sx={{ display: { xs: 'flex', md: 'none' } }}>
-            {documents.map((doc) => (
-              <Card key={doc.id} variant="outlined">
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle2" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
-                        {doc.displayFilename}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Version {doc.versionNumber} • {new Date(doc.generatedAt).toLocaleString()}
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label={doc.isAvailable ? 'Available' : 'Missing'}
-                      size="small"
-                      color={doc.isAvailable ? 'success' : 'error'}
-                    />
-                  </Stack>
-
-                  <Divider sx={{ my: 1.5 }} />
-
-                  <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1}>
-                    <AppButton
-                      size="small"
-                      variant="outlined"
-                      disabled={!doc.isAvailable || (pdfLoading && activeDocId === doc.id)}
-                      isLoading={pdfLoading && activeDocId === doc.id}
-                      loadingPosition="start"
-                      startIcon={<VisibilityOutlinedIcon />}
-                      onClick={() => handlePreviewPdf(doc)}
-                    >
-                      {pdfLoading && activeDocId === doc.id ? 'Loading...' : 'Preview'}
-                    </AppButton>
-                    <AppButton
-                      size="small"
-                      variant="outlined"
-                      disabled={!doc.isAvailable}
-                      isLoading={downloadingId === doc.id}
-                      loadingPosition="start"
-                      startIcon={<DownloadOutlinedIcon />}
-                      onClick={() => handleDownloadPdf(doc)}
-                    >
-                      {downloadingId === doc.id ? 'Downloading...' : 'Download'}
-                    </AppButton>
-                    <AppButton
-                      size="small"
-                      variant="contained"
-                      disabled={!doc.isAvailable || generatePdfMutation.isPending || downloadingId === doc.id || (pdfLoading && activeDocId === doc.id)}
-                      startIcon={<EmailOutlinedIcon />}
-                      onClick={() => handleOpenEmailDialog(doc)}
-                    >
-                      Email
-                    </AppButton>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
-        </>
-      )}
-
-      {/* PDF Preview Dialog */}
-      <QuotationPdfPreviewDialog
-        open={pdfPreviewOpen}
-        quotationNumber={activeDocNumber}
-        pdfBlob={pdfBlob}
-        isLoading={pdfLoading}
-        error={pdfError}
-        onClose={() => setPdfPreviewOpen(false)}
-        onDownload={() => {
-          const activeDocument = documents.find((doc) => doc.id === activeDocId);
-          if (activeDocument) handleDownloadPdf(activeDocument);
-        }}
-      />
-
-      {/* Email Dialog */}
-      <QuotationEmailDialog
-        open={emailDialogOpen}
-        quotation={quotation}
-        document={selectedDocForEmail}
-        onClose={() => {
-          setEmailDialogOpen(false);
-          setSelectedDocForEmail(null);
-        }}
-        onSuccess={(msg) => {
-          onFeedback(msg, 'success');
-          queryClient.invalidateQueries({ queryKey: quotationDocumentsQueryKeys.communications(quotation.id) });
-          queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.detail(quotation.id) });
-          queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.lists() });
-          queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
-        }}
-      />
-
-      <CommunicationHistorySection
-        communications={communications}
-        isLoading={communicationsLoading}
-        isRefreshing={communicationsFetching && !communicationsLoading}
-        isError={communicationsIsError}
-        error={communicationsError}
-        onRetry={refetchCommunications}
-      />
-    </Paper>
-  );
-}
-
-function CommunicationHistorySection({
-  communications,
-  isLoading,
-  isRefreshing,
-  isError,
-  error,
-  onRetry,
-}: {
-  communications: QuotationCommunicationHistoryItem[];
-  isLoading: boolean;
-  isRefreshing: boolean;
-  isError: boolean;
-  error: unknown;
-  onRetry: () => void;
-}) {
-  const [expandedCommunicationId, setExpandedCommunicationId] = useState<number | null>(null);
-  const theme = useTheme();
-  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
-
-  return (
-    <Box sx={{ mt: 3 }}>
-      <Divider sx={{ mb: 2 }} />
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-        <Box>
-          <Typography variant="h6" component="h2" fontWeight={600}>
-            Communication History
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            SMTP acceptance history for this exact quotation revision.
-          </Typography>
-        </Box>
-        <Chip label={`${communications.length} attempt${communications.length === 1 ? '' : 's'}`} size="small" />
-      </Stack>
-      <RefreshIndicator show={isRefreshing} label="Refreshing communication history..." />
-
-      {isLoading ? (
-        <TableSkeleton rowCount={2} rowHeight={48} />
-      ) : isError ? (
-        <ErrorState message={toApiError(error).message} onRetry={onRetry} />
-      ) : communications.length === 0 ? (
-        <Box sx={{ py: 3, px: 2, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
-          <EmailOutlinedIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />
-          <Typography variant="subtitle2" color="text.secondary">
-            No email attempts recorded for this quotation revision.
-          </Typography>
-        </Box>
-      ) : (
-        isCompact ? (
-          <Stack spacing={1.5} aria-label="Communication history cards">
-            {communications.map((communication) => {
-              const isExpanded = expandedCommunicationId === communication.id;
-              const detailId = `communication-${communication.id}-mobile-details`;
-
-              return (
-                <Card key={communication.id} variant="outlined">
-                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                    <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="flex-start">
-                      <Box sx={{ minWidth: 0 }}>
-                        <CommunicationStatusChip communication={communication} />
-                        <Typography variant="body2" fontWeight={600} sx={{ mt: 1, wordBreak: 'break-word' }}>
-                          {communication.subject}
-                        </Typography>
-                        {communication.failureSummary ? (
-                          <Typography variant="caption" color="error.main" display="block" sx={{ wordBreak: 'break-word' }}>
-                            {communication.failureSummary}
-                          </Typography>
-                        ) : null}
-                      </Box>
-                      <AppIconButton
-                        size="small"
-                        label={isExpanded ? 'Collapse communication details' : 'Expand communication details'}
-                        aria-expanded={isExpanded}
-                        aria-controls={detailId}
-                        onClick={() => setExpandedCommunicationId(isExpanded ? null : communication.id)}
-                      >
-                        {isExpanded ? (
-                          <KeyboardArrowDownOutlinedIcon fontSize="small" />
-                        ) : (
-                          <KeyboardArrowRightOutlinedIcon fontSize="small" />
-                        )}
-                      </AppIconButton>
-                    </Stack>
-
-                    <Divider sx={{ my: 1.5 }} />
-
-                    <Stack spacing={1}>
-                      <DetailRow label="Recipients" value={`To: ${communication.to.join(', ')}`} />
-                      {communication.cc.length > 0 ? <DetailRow label="CC" value={communication.cc.join(', ')} /> : null}
-                      {communication.bcc.length > 0 ? <DetailRow label="BCC" value={communication.bcc.join(', ')} /> : null}
-                      <DetailRow label="PDF" value={getDocumentLabel(communication)} />
-                      <DetailRow label="Revision" value={getRevisionLabel(communication)} />
-                      <DetailRow label="Attachments" value={getAttachmentSummary(communication)} />
-                      <DetailRow label="Sent By" value={communication.sender?.name || 'Admin'} />
-                      <DetailRow label="Timestamp" value={getTimestampLabel(communication)} />
-                    </Stack>
-
-                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                      <Box id={detailId} sx={{ pt: 2 }}>
-                        <CommunicationExpandedDetails communication={communication} />
-                      </Box>
-                    </Collapse>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </Stack>
-        ) : (
-        <DataTableShell
-          isLoading={false}
-          isError={false}
-          isEmpty={false}
-          loadingContent={null}
-          errorContent={null}
-          emptyContent={null}
-        >
-          <Table size="small" sx={{ minWidth: 1120 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell width={48} />
-                <TableCell>Status</TableCell>
-                <TableCell>Recipients</TableCell>
-                <TableCell>Subject</TableCell>
-                <TableCell>PDF</TableCell>
-                <TableCell>Revision</TableCell>
-                <TableCell>Attachments</TableCell>
-                <TableCell>Sent By</TableCell>
-                <TableCell>Timestamp</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {communications.map((communication) => {
-                const isExpanded = expandedCommunicationId === communication.id;
-                const detailId = `communication-${communication.id}-details`;
-
-                return (
-                  <Fragment key={communication.id}>
-                    <TableRow key={communication.id} hover>
-                      <TableCell>
-                        <AppIconButton
-                          size="small"
-                          label={isExpanded ? 'Collapse communication details' : 'Expand communication details'}
-                          aria-expanded={isExpanded}
-                          aria-controls={detailId}
-                          onClick={() => setExpandedCommunicationId(isExpanded ? null : communication.id)}
-                        >
-                          {isExpanded ? (
-                            <KeyboardArrowDownOutlinedIcon fontSize="small" />
-                          ) : (
-                            <KeyboardArrowRightOutlinedIcon fontSize="small" />
-                          )}
-                        </AppIconButton>
-                      </TableCell>
-                      <TableCell>
-                        <CommunicationStatusChip communication={communication} />
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 260 }}>
-                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                          To: {communication.to.join(', ')}
-                        </Typography>
-                        {communication.cc.length > 0 ? (
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: 'break-word' }}>
-                            CC: {communication.cc.join(', ')}
-                          </Typography>
-                        ) : null}
-                        {communication.bcc.length > 0 ? (
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ wordBreak: 'break-word' }}>
-                            BCC: {communication.bcc.join(', ')}
-                          </Typography>
-                        ) : null}
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 260 }}>
-                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                          {communication.subject}
-                        </Typography>
-                        {communication.failureSummary ? (
-                          <Typography variant="caption" color="error.main" display="block">
-                            {communication.failureSummary}
-                          </Typography>
-                        ) : null}
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 220, wordBreak: 'break-word' }}>{getDocumentLabel(communication)}</TableCell>
-                      <TableCell>{getRevisionLabel(communication)}</TableCell>
-                      <TableCell>{getAttachmentSummary(communication)}</TableCell>
-                      <TableCell>{communication.sender?.name || 'Admin'}</TableCell>
-                      <TableCell>
-                        {getTimestampLabel(communication)}
-                      </TableCell>
-                    </TableRow>
-                    <TableRow key={`${communication.id}-details`}>
-                      <TableCell colSpan={9} sx={{ py: 0, borderBottom: isExpanded ? undefined : 0 }}>
-                        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                          <Box id={detailId} sx={{ py: 2 }}>
-                            <CommunicationExpandedDetails communication={communication} />
-                          </Box>
-                        </Collapse>
-                      </TableCell>
-                    </TableRow>
-                  </Fragment>
-                );
-              })}
-            </TableBody>
-          </Table>
+  return <Stack spacing={3} sx={{ mt: 3, minWidth: 0 }}>
+    <DetailSection title="Generated Documents" description="Saved versions of generated quotation PDFs. Supporting files are managed under Attachments."
+      actions={canManageDocuments ? <AppButton variant="contained" size="small" startIcon={<PictureAsPdfOutlinedIcon />} onClick={() => generatePdfMutation.mutate()} isLoading={generatePdfMutation.isPending} loadingPosition="start">{generatePdfMutation.isPending ? 'Generating PDF...' : 'Generate New PDF'}</AppButton> : undefined}>
+      <Stack spacing={2}>
+        <Typography variant="body2" color="text.secondary">{history.data?.pagination.total ?? 0} saved version{history.data?.pagination.total === 1 ? '' : 's'}</Typography>
+        <TableSortControls {...documentSorting} />
+        <DataTableShell wrapInTableContainer={false} isLoading={history.isLoading} isError={history.isError} isEmpty={documents.length === 0}
+          isRefreshing={history.isFetching && !history.isLoading} refreshIndicator={<RefreshIndicator show={history.isFetching && !history.isLoading} label="Refreshing document history..." />}
+          loadingContent={<TableSkeleton rowCount={2} rowHeight={48} />} errorContent={<ErrorState message={toApiError(history.error).message} onRetry={() => void history.refetch()} />}
+          emptyContent={<EmptyState title="No generated PDF documents" description="Generate a quotation PDF to see saved versions here." />}>
+          <RecordTable rows={documents} rowKey={(doc) => doc.id} label="Generated quotation documents" rowNumberStart={(page - 1) * 20 + 1} sorting={documentSorting} showSortControls={false} columns={[
+            { key: 'version', label: 'Version', sortKey: 'versionNumber', render: (doc) => `v${doc.versionNumber}` },
+            { key: 'name', label: 'Document name', minWidth: 280, render: (doc) => doc.displayFilename },
+            { key: 'type', label: 'Type', sortKey: 'documentType', render: (doc) => doc.documentType === 'QUOTATION_PDF' ? 'Quotation PDF' : doc.documentType },
+            { key: 'date', label: 'Generated at', sortKey: 'generatedAt', render: (doc) => new Date(doc.generatedAt).toLocaleString() },
+            { key: 'by', label: 'Generated by', render: (doc) => doc.generatedBy?.name ?? 'User unavailable' },
+            { key: 'status', label: 'Status', render: (doc) => <Chip label={doc.isAvailable ? 'Available' : 'File missing'} size="small" color={doc.isAvailable ? 'success' : 'error'} variant="outlined" /> },
+            { key: 'actions', label: 'Actions', minWidth: 240, render: (doc) => <Stack direction="row" spacing={0.5} alignItems="center">
+              {canManageDocuments ? <>
+                <Tooltip title={doc.isAvailable ? 'Preview PDF' : 'File missing from storage'}><span><AppIconButton size="small" color="primary" disabled={!doc.canPreview || pdfLoading} onClick={() => void handlePreviewPdf(doc)} label={`Preview ${doc.displayFilename}`}>{pdfLoading && previewDocument?.id === doc.id ? <CircularProgress size={18} /> : <VisibilityOutlinedIcon fontSize="small" />}</AppIconButton></span></Tooltip>
+                <Tooltip title={doc.isAvailable ? 'Download PDF' : 'File missing from storage'}><span><AppIconButton size="small" disabled={!doc.isAvailable || downloadingId !== null} onClick={() => void handleDownloadPdf(doc)} label={`Download ${doc.displayFilename}`}>{downloadingId === doc.id ? <CircularProgress size={18} /> : <DownloadOutlinedIcon fontSize="small" />}</AppIconButton></span></Tooltip>
+              </> : null}
+              {canEmail ? <AppButton size="small" variant="outlined" disabled={!doc.canEmail || generatePdfMutation.isPending || downloadingId !== null || pdfLoading} startIcon={<EmailOutlinedIcon />} onClick={() => setSelectedDocForEmail(doc)}>Send Email</AppButton> : null}
+            </Stack> },
+          ]} />
         </DataTableShell>
-        )
-      )}
-    </Box>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <Box sx={{ minWidth: 0 }}>
-      <Typography variant="caption" color="text.secondary" display="block">
-        {label}
-      </Typography>
-      <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-        {value}
-      </Typography>
-    </Box>
-  );
-}
-
-function CommunicationExpandedDetails({ communication }: { communication: QuotationCommunicationHistoryItem }) {
-  return (
-    <Stack spacing={1.5}>
-      <Box>
-        <Typography variant="caption" color="text.secondary" display="block">
-          Message
-        </Typography>
-        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {communication.message}
-        </Typography>
-      </Box>
-      <Box>
-        <Typography variant="caption" color="text.secondary" display="block">
-          Supporting attachments
-        </Typography>
-        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-          {getAttachmentNames(communication)}
-        </Typography>
-      </Box>
-      {communication.failureSummary ? (
-        <Box>
-          <Typography variant="caption" color="text.secondary" display="block">
-            Failure
-          </Typography>
-          <Typography variant="body2" color="error.main" sx={{ wordBreak: 'break-word' }}>
-            {communication.failureSummary}
-          </Typography>
-        </Box>
-      ) : null}
-    </Stack>
-  );
+        {!history.isError ? <RecordPagination pagination={history.data?.pagination} page={page} change={(value) => changePage('documentsPage', value)} /> : null}
+      </Stack>
+    </DetailSection>
+    {canEmail ? <DetailSection title="Communication History" description="Email attempts for this quotation revision. Acceptance by the email server does not confirm delivery to the recipient.">
+      <Stack spacing={2}>
+        <TableSortControls {...communicationSorting} />
+        <DataTableShell wrapInTableContainer={false} isLoading={communicationHistory.isLoading} isError={communicationHistory.isError} isEmpty={communications.length === 0}
+          isRefreshing={communicationHistory.isFetching && !communicationHistory.isLoading} refreshIndicator={<RefreshIndicator show={communicationHistory.isFetching && !communicationHistory.isLoading} label="Refreshing communication history..." />}
+          loadingContent={<TableSkeleton rowCount={2} rowHeight={48} />} errorContent={<ErrorState message={toApiError(communicationHistory.error).message} onRetry={() => void communicationHistory.refetch()} />}
+          emptyContent={<EmptyState title="No email history" description="Emails sent from this quotation will appear here." />}>
+          <RecordTable rows={communications} rowKey={(communication) => communication.id} label="Quotation communication history" rowNumberStart={(communicationPage - 1) * 20 + 1} sorting={communicationSorting} showSortControls={false} columns={[
+            { key: 'status', label: 'Status', sortKey: 'status', minWidth: 220, render: (communication) => <CommunicationStatusChip communication={communication} /> },
+            { key: 'recipients', label: 'Recipients', minWidth: 240, render: (communication) => <Box><Typography variant="body2">To: {communication.to.join(', ')}</Typography>{communication.cc.length ? <Typography variant="caption" display="block">CC: {communication.cc.join(', ')}</Typography> : null}{communication.bcc.length ? <Typography variant="caption" display="block">BCC: {communication.bcc.join(', ')}</Typography> : null}</Box> },
+            { key: 'subject', label: 'Subject', sortKey: 'subjectSnapshot', minWidth: 220, render: (communication) => <Box>{communication.subject}{communication.failureSummary ? <Typography variant="caption" color="error" display="block">{communication.failureSummary}</Typography> : null}</Box> },
+            { key: 'document', label: 'PDF', minWidth: 240, render: getDocumentLabel },
+            { key: 'revision', label: 'Revision', render: getRevisionLabel },
+            { key: 'attachments', label: 'Attachments', render: getAttachmentSummary },
+            { key: 'sender', label: 'Sent by', render: (communication) => communication.sender?.name ?? 'User unavailable' },
+            { key: 'created', label: 'Created at', sortKey: 'createdAt', render: (communication) => new Date(communication.createdAt).toLocaleString() },
+            { key: 'timestamp', label: 'Last update', render: getTimestampLabel },
+            { key: 'actions', label: 'Actions', render: (communication) => <AppButton size="small" variant="outlined" onClick={() => setSelectedCommunication(communication)}>View email details</AppButton> },
+          ]} />
+        </DataTableShell>
+        {!communicationHistory.isError ? <RecordPagination pagination={communicationHistory.data?.pagination} page={communicationPage} change={(value) => changePage('communicationsPage', value)} /> : null}
+      </Stack>
+    </DetailSection> : null}
+    {canManageDocuments ? <QuotationPdfPreviewDialog open={pdfPreviewOpen} quotationNumber={previewDocument?.quotationNumber ?? ''} pdfBlob={pdfBlob} isLoading={pdfLoading} error={pdfError} onClose={() => setPdfPreviewOpen(false)} onDownload={() => { if (previewDocument) void handleDownloadPdf(previewDocument); }} /> : null}
+    {canEmail ? <QuotationEmailDialog open={selectedDocForEmail !== null} quotation={quotation} document={selectedDocForEmail} onClose={() => setSelectedDocForEmail(null)} onSuccess={(message) => {
+      onFeedback(message, 'success');
+      void queryClient.invalidateQueries({ queryKey: quotationDocumentsQueryKeys.communications(quotation.id) });
+      void queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.detail(quotation.id) });
+      void queryClient.invalidateQueries({ queryKey: quotationsQueryKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
+    }} /> : null}
+    <AppDialog open={selectedCommunication !== null} title="Email details" fullWidth maxWidth="md" showCloseButton onClose={() => setSelectedCommunication(null)} actions={<AppButton onClick={() => setSelectedCommunication(null)}>Close</AppButton>}>
+      {selectedCommunication ? <Stack spacing={2}>
+        <DetailSection title="Email summary"><DetailFields fields={[
+          { label: 'Subject', value: selectedCommunication.subject }, { label: 'Status', value: <CommunicationStatusChip communication={selectedCommunication} /> },
+          { label: 'To', value: selectedCommunication.to.join(', ') }, { label: 'CC', value: selectedCommunication.cc.join(', ') || 'None' },
+          { label: 'BCC', value: selectedCommunication.bcc.join(', ') || 'None' }, { label: 'Sent by', value: selectedCommunication.sender?.name ?? 'User unavailable' },
+          { label: 'PDF', value: getDocumentLabel(selectedCommunication) }, { label: 'Revision', value: getRevisionLabel(selectedCommunication) },
+          { label: 'Attempt', value: selectedCommunication.attemptNumber }, { label: 'Last update', value: getTimestampLabel(selectedCommunication) },
+        ]} /></DetailSection>
+        <DetailSection title="Message"><Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{selectedCommunication.message}</Typography></DetailSection>
+        <DetailSection title="Supporting attachments"><Typography variant="body2">{getAttachmentNames(selectedCommunication)}</Typography></DetailSection>
+        {selectedCommunication.failureSummary ? <DetailSection title="Failure"><Typography variant="body2" color="error">{selectedCommunication.failureSummary}</Typography></DetailSection> : null}
+      </Stack> : null}
+    </AppDialog>
+  </Stack>;
 }
 
 function CommunicationStatusChip({ communication }: { communication: QuotationCommunicationHistoryItem }) {

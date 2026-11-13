@@ -3,8 +3,20 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppTablePagination } from './AppTablePagination';
+import { RecordPagination } from './DataTableShell';
 
 describe('AppTablePagination', () => {
+  it('preserves an unknown-count page and stops Next when the server has no more records', async () => {
+    const change = vi.fn();
+    const view = render(<RecordPagination pagination={{ page: 2, limit: 20, total: -1, hasMore: true }} page={2} change={change} />);
+    expect(change).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /go to previous page/i })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: /go to next page/i }));
+    expect(change).toHaveBeenCalledWith(3);
+    view.rerender(<RecordPagination pagination={{ page: 3, limit: 20, total: -1, hasMore: false }} page={3} change={change} />);
+    expect(screen.getByRole('button', { name: /go to next page/i })).toBeDisabled();
+    expect(change).toHaveBeenCalledTimes(1);
+  });
   it('converts one-based feature pages to MUI pagination callbacks', async () => {
     const onPageChange = vi.fn();
 

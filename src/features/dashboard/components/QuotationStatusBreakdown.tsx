@@ -26,14 +26,14 @@ export function QuotationStatusBreakdown({ statusBreakdown, currency = 'INR' }: 
             const pct = Number(item.percentageOfCount) || 0;
             return (
               <Box key={item.status}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, minWidth: 0 }}>
                     <QuotationStatusChip status={item.status} size="small" />
                     <Typography variant="body2" color="text.secondary" fontWeight={500}>
                       {item.count} quotation{item.count === 1 ? '' : 's'} ({pct.toFixed(1)}%)
                     </Typography>
                   </Box>
-                  <Typography variant="body2" fontWeight={700}>
+                  <Typography variant="body2" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
                     {formatCurrency(item.totalValue, currency)}
                   </Typography>
                 </Box>

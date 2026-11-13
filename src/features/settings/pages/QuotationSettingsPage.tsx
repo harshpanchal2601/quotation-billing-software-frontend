@@ -6,16 +6,19 @@ import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import { useRef, useState, type PropsWithChildren } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
-import { FormActions } from '@shared/forms';
+import { FormActions, FormExitGuard } from '@shared/forms';
+import { useAuth } from '@features/auth';
+import { useFirmId } from '@shared/tenancy/useFirmId';
+import { AppDialog } from '@shared/ui/dialogs';
 import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
-import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { DetailFields, DetailSection, PageContainer, PageHeader } from '@shared/ui/layout';
 import {
   getQuotationSettingsRequest,
   quotationSettingsQueryKey,
@@ -32,37 +35,43 @@ import {
 import type { QuotationSettings } from '../model/settings.types';
 
 export function QuotationSettingsPage() {
+  const firmId = useFirmId(); const { user } = useAuth();
+  return <QuotationSettingsWorkspace key={`${firmId}:${user?.id}`} />;
+}
+
+function QuotationSettingsWorkspace() {
   const queryClient = useQueryClient();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
-  const hydratedSettingsId = useRef<number | null>(null);
-  const query = useQuery({ queryKey: quotationSettingsQueryKey, queryFn: getQuotationSettingsRequest });
+  const [editing, setEditing] = useState(false);
+  const saveLock = useRef(false);
+  const firmId = useFirmId(); const { user } = useAuth();
+  const queryKey = [...quotationSettingsQueryKey, firmId, user?.id];
+  const query = useQuery({ queryKey, queryFn: getQuotationSettingsRequest });
   const form = useForm<QuotationSettingsFormValues, unknown, QuotationSettingsSubmitValues>({
     resolver: zodResolver(quotationSettingsSchema),
     mode: 'onChange',
     defaultValues: emptyQuotationValues,
   });
 
-  useEffect(() => {
-    if (query.data && hydratedSettingsId.current !== query.data.id && !form.formState.isDirty) {
-      form.reset(toQuotationFormValues(query.data));
-      hydratedSettingsId.current = query.data.id;
-    }
-  }, [form, query.data]);
-
   const updateMutation = useMutation({
     mutationFn: updateQuotationSettingsRequest,
     onSuccess: (quotationSettings) => {
-      queryClient.setQueryData(quotationSettingsQueryKey, quotationSettings);
+      queryClient.setQueryData(queryKey, quotationSettings);
       form.reset(toQuotationFormValues(quotationSettings));
       setServerError(null);
+      setEditing(false);
       setSuccessMessage('Quotation settings saved.');
     },
     onError: (error) => setServerError(toApiError(error).message),
+    onSettled: () => { saveLock.current = false; },
   });
 
   async function onSubmit(values: QuotationSettingsSubmitValues) {
-    await updateMutation.mutateAsync(values);
+    if (saveLock.current) return;
+    saveLock.current = true;
+    setServerError(null);
+    try { await updateMutation.mutateAsync(values); } catch { /* The mutation displays the failure and preserves the editor. */ }
   }
 
   if (query.isPending) {
@@ -74,7 +83,7 @@ export function QuotationSettingsPage() {
     );
   }
 
-  if (query.isError) {
+  if (query.isError && !query.data) {
     return (
       <PageContainer maxWidth={1120}>
         <PageHeader title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences." />
@@ -85,11 +94,37 @@ export function QuotationSettingsPage() {
   }
 
   const isBusy = updateMutation.isPending;
+  const settings = query.data!;
+  const openEditor = () => {
+    if (saveLock.current) return;
+    form.reset(toQuotationFormValues(settings));
+    setServerError(null);
+    setEditing(true);
+  };
 
   return (
     <PageContainer maxWidth={1120}>
       <PageHeader title="Quotation Settings" description="Manage numbering, defaults and PDF display preferences." />
-      <Stack component="form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate>
+      {query.isError ? <ErrorState message={toApiError(query.error).message} onRetry={() => void query.refetch()} /> : null}
+      <DetailSection title="Numbering and defaults" actions={<AppButton variant="outlined" disabled={editing} onClick={openEditor}>Edit quotation settings</AppButton>}>
+        <DetailFields fields={[
+          { label: 'Quotation prefix', value: settings.quotationPrefix }, { label: 'Financial year format', value: settings.financialYearFormat },
+          { label: 'Next sequence number', value: settings.nextSequenceNumber }, { label: 'Number sequence', value: 'Continuous across financial years' },
+          { label: 'Default validity', value: `${settings.defaultValidityDays} days` }, { label: 'Default tax mode', value: taxModeOptions.find((option) => option.value === settings.defaultTaxMode)?.label },
+          { label: 'Default GST rate', value: `${settings.defaultGstRate}%` },
+        ]} />
+      </DetailSection>
+      <DetailSection title="Commercial terms and content"><DetailFields fields={[
+        { label: 'Delivery terms', value: settings.defaultDeliveryTerms || 'Not set' }, { label: 'Dispatch terms', value: settings.defaultDispatchTerms || 'Not set' },
+        { label: 'Payment terms', value: settings.defaultPaymentTerms || 'Not set' }, { label: 'Freight terms', value: settings.defaultFreightTerms || 'Not set' },
+        { label: 'Warranty terms', value: settings.defaultWarrantyTerms || 'Not set' }, { label: 'Default remarks', value: settings.defaultRemarks || 'Not set' },
+        { label: 'Default terms and conditions', value: settings.defaultTermsAndConditions || 'Not set' },
+      ]} /></DetailSection>
+      <DetailSection title="PDF display preferences"><DetailFields fields={[
+        { label: 'Show bank details', value: settings.showBankDetails ? 'Yes' : 'No' }, { label: 'Show amount in words', value: settings.showAmountInWords ? 'Yes' : 'No' },
+      ]} /></DetailSection>
+      {editing ? <FormExitGuard dirty={form.formState.isDirty} isSubmitting={isBusy} onCancel={() => setEditing(false)}>{(requestClose) => <AppDialog open title="Edit quotation settings" fullWidth maxWidth="md" preventClose={isBusy || saveLock.current} onClose={requestClose} actions={<FormActions submitLabel="Save changes" isSubmitting={isBusy} isSubmitDisabled={!form.formState.isDirty} onCancel={requestClose} submitButtonProps={{ form: 'quotation-settings-form' }} />}>
+      <Stack component="form" id="quotation-settings-form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate>
         <ServerErrorAlert message={serverError} />
         {form.formState.isDirty ? <Alert severity="info">You have unsaved changes.</Alert> : null}
         <SettingsSection title="Quotation numbering">
@@ -99,7 +134,7 @@ export function QuotationSettingsPage() {
               <MenuItem value="YYYY-YY">YYYY-YY</MenuItem>
             </QuotationTextField>
             <QuotationTextField form={form} name="nextSequenceNumber" label="Next sequence number" required disabled={isBusy} type="number" />
-            <QuotationTextField form={form} name="sequenceResetRule" label="Sequence reset rule" required disabled={isBusy} select>
+            <QuotationTextField form={form} name="sequenceResetRule" label="Saved sequence rule" required disabled select helperText="Quotation numbers continue in sequence across financial years.">
               {sequenceResetRuleOptions.map((option) => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
             </QuotationTextField>
           </TwoColumnGrid>
@@ -110,7 +145,7 @@ export function QuotationSettingsPage() {
             <QuotationTextField form={form} name="defaultTaxMode" label="Default tax mode" required disabled={isBusy} select>
               {taxModeOptions.map((option) => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
             </QuotationTextField>
-            <QuotationTextField form={form} name="defaultGstRate" label="Default GST rate" required disabled={isBusy} helperText="Stored and submitted as a decimal string." />
+            <QuotationTextField form={form} name="defaultGstRate" label="Default GST rate" required disabled={isBusy} helperText="Enter a percentage from 0 to 100, for example 18.00." />
           </TwoColumnGrid>
         </SettingsSection>
         <SettingsSection title="Default commercial terms">
@@ -144,16 +179,8 @@ export function QuotationSettingsPage() {
             />
           </Stack>
         </SettingsSection>
-        <FormActions
-          submitLabel={isBusy ? 'Saving' : 'Save changes'}
-          isSubmitting={isBusy}
-          isSubmitDisabled={isBusy || !form.formState.isDirty}
-          isCancelDisabled={isBusy || !form.formState.isDirty}
-          onCancel={() => form.reset(toQuotationFormValues(query.data))}
-          cancelLabel="Reset changes"
-          cancelButtonProps={{ type: 'button', variant: 'outlined' }}
-        />
       </Stack>
+      </AppDialog>}</FormExitGuard> : null}
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </PageContainer>
   );

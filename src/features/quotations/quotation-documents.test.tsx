@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -24,7 +25,7 @@ function createTestQueryClient() {
 
 function renderWithProviders(ui: React.ReactNode) {
   const queryClient = createTestQueryClient();
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(<MemoryRouter><QueryClientProvider client={queryClient}>{ui}</QueryClientProvider></MemoryRouter>);
 }
 
 const mockQuotationDetail: QuotationDetail = {
@@ -166,14 +167,14 @@ describe('Generated Document History & Quotation Email Frontend', () => {
     const pendingHistory = deferred<GeneratedDocumentHistoryResponse>();
     vi.mocked(documentsApi.getGeneratedDocumentHistoryRequest).mockReturnValue(pendingHistory.promise);
 
-    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} canManageDocuments canEmail onFeedback={mockOnFeedback} />);
 
     expect(screen.getByText(/Generated Documents/i)).toBeInTheDocument();
     expect(screen.queryByText(/No generated PDF documents yet/i)).not.toBeInTheDocument();
   });
 
   it('renders generated document history section and displays version history table', async () => {
-    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} canManageDocuments canEmail onFeedback={mockOnFeedback} />);
 
     expect(screen.getByText(/Generated Documents/i)).toBeInTheDocument();
 
@@ -185,7 +186,7 @@ describe('Generated Document History & Quotation Email Frontend', () => {
 
   it('opens email dialog prefilled with contact snapshot email and name', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} canManageDocuments canEmail onFeedback={mockOnFeedback} />);
 
     await waitFor(() => {
       expect(screen.getAllByText('Quotation-BUMINEX-2026-27-000001-v1.pdf')[0]).toBeInTheDocument();
@@ -201,7 +202,7 @@ describe('Generated Document History & Quotation Email Frontend', () => {
 
   it('renders revision-specific communication history with SMTP acceptance wording', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} canManageDocuments canEmail onFeedback={mockOnFeedback} />);
 
     expect(await screen.findByText('Accepted by email server')).toBeInTheDocument();
     expect(screen.getByText('Communication History')).toBeInTheDocument();
@@ -212,7 +213,7 @@ describe('Generated Document History & Quotation Email Frontend', () => {
     expect(screen.getByText('1 file')).toBeInTheDocument();
     expect(screen.getAllByText('Quotation-BUMINEX-2026-27-000001-v1.pdf')[0]).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /expand communication details/i }));
+    await user.click(screen.getByRole('button', { name: /view email details/i }));
 
     expect(screen.getByText('Message')).toBeInTheDocument();
     expect(screen.getByText('Please find attached.')).toBeInTheDocument();
@@ -221,21 +222,37 @@ describe('Generated Document History & Quotation Email Frontend', () => {
   });
 
   it('renders communication history as compact cards on mobile and tablet widths', async () => {
-    mockViewport(700);
+    mockViewport(360);
     const user = userEvent.setup();
-    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} canManageDocuments canEmail onFeedback={mockOnFeedback} />);
 
-    expect(await screen.findByLabelText('Communication history cards')).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Quotation communication history' })).toBeInTheDocument();
     expect(screen.getByText('Recipients')).toBeInTheDocument();
     expect(screen.getByText(/To: ramesh@mankind.com/i)).toBeInTheDocument();
     expect(screen.getByText('PDF')).toBeInTheDocument();
     expect(screen.getAllByText('Revision 0')[0]).toBeInTheDocument();
     expect(screen.getByText('Attachments')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /expand communication details/i }));
+    await user.click(screen.getByRole('button', { name: /view email details/i }));
 
     expect(screen.getByText('Please find attached.')).toBeInTheDocument();
     expect(screen.getByText('layout.pdf')).toBeInTheDocument();
+  });
+
+  it('loads older PDF versions from the server and resets the page when sorting changes', async () => {
+    vi.mocked(documentsApi.getGeneratedDocumentHistoryRequest).mockImplementation(async (_id, params) => ({
+      ...mockHistoryResponse,
+      documents: [{ ...mockHistoryResponse.documents[0]!, id: typeof params === 'object' && params.page === 2 ? 30 : 10 }],
+      pagination: { page: typeof params === 'object' ? params.page ?? 1 : 1, limit: 20, total: 21, totalPages: 2 },
+    }));
+    const user = userEvent.setup();
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} canManageDocuments canEmail={false} onFeedback={mockOnFeedback} />);
+    await screen.findByRole('region', { name: 'Generated quotation documents' });
+    await user.click(screen.getByRole('button', { name: /go to next page/i }));
+    await waitFor(() => expect(documentsApi.getGeneratedDocumentHistoryRequest).toHaveBeenLastCalledWith(1, { page: 2, limit: 20, sortBy: 'generatedAt', sortOrder: 'desc' }));
+    expect(await screen.findByText('21–21 of 21')).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sort by' }), 'versionNumber');
+    await waitFor(() => expect(documentsApi.getGeneratedDocumentHistoryRequest).toHaveBeenLastCalledWith(1, { page: 1, limit: 20, sortBy: 'versionNumber', sortOrder: 'desc' }));
   });
 
   it('shows local pending state while generating a new PDF', async () => {
@@ -243,7 +260,7 @@ describe('Generated Document History & Quotation Email Frontend', () => {
     vi.mocked(quotationsApi.generateQuotationPdfRequest).mockReturnValue(pendingPdf.promise);
 
     const user = userEvent.setup();
-    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} onFeedback={mockOnFeedback} />);
+    renderWithProviders(<QuotationDocumentsSection quotation={mockQuotationDetail} canManageDocuments canEmail onFeedback={mockOnFeedback} />);
 
     await screen.findAllByText('Quotation-BUMINEX-2026-27-000001-v1.pdf');
     await user.click(screen.getByRole('button', { name: /generate new pdf/i }));

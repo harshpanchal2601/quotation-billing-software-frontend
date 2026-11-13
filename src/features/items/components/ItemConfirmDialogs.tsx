@@ -73,7 +73,7 @@ export function ItemDeleteDialog({ item, isDeleting, onClose, onConfirm }: Delet
         {hasQuotations ? (
           <Alert severity="info">
             This item is referenced in <strong>{item.quotationUsageCount}</strong> quotation line item(s).
-            Historical quotation snapshots will remain valid and unchanged.
+            Existing quotations keep their saved item details.
           </Alert>
         ) : null}
 
@@ -82,7 +82,7 @@ export function ItemDeleteDialog({ item, isDeleting, onClose, onConfirm }: Delet
         </Typography>
 
         <Typography variant="body2" color="text.secondary">
-          Note: Deletion is a soft deletion. This item will no longer appear in normal item lists or dropdowns.
+          The item will be removed from normal item lists and selection fields. Its existing business history is kept.
         </Typography>
       </Stack>
     </DeleteConfirmDialog>

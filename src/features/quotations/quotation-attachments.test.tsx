@@ -117,7 +117,7 @@ describe('Quotation Attachments Frontend Component', () => {
     expect(screen.getByText(/Are you sure you want to delete/i)).toBeInTheDocument();
   });
 
-  it('shows row-level download loading for the selected attachment only', async () => {
+  it('prevents overlapping downloads while keeping the active file identifiable', async () => {
     const pendingDownload = deferred<{ blob: Blob; filename: string }>();
     vi.mocked(attachmentsApi.downloadQuotationAttachmentBlobRequest).mockReturnValue(pendingDownload.promise);
 
@@ -128,8 +128,30 @@ describe('Quotation Attachments Frontend Component', () => {
     const downloadButtons = screen.getAllByRole('button', { name: /download/i });
     await user.click(downloadButtons[0]!);
 
-    expect(screen.getByRole('button', { name: /downloading/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Download technical-specs.docx' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Download layout-drawing.pdf' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Download technical-specs.docx' })).toBeDisabled();
+    expect(attachmentsApi.downloadQuotationAttachmentBlobRequest).toHaveBeenCalledTimes(1);
+  });
+  it('prevents repeated upload submissions, blocks closing in flight, then closes and resets after success', async () => {
+    const pendingUpload = deferred<QuotationAttachmentListResponse['attachments'][number]>();
+    vi.mocked(attachmentsApi.uploadQuotationAttachmentRequest).mockReturnValue(pendingUpload.promise);
+    const user = userEvent.setup();
+    renderWithProviders(<QuotationAttachmentsSection quotationId={1} onFeedback={mockOnFeedback} />);
+    await screen.findAllByText('layout-drawing.pdf');
+    await user.click(screen.getByRole('button', { name: 'Upload attachment' }));
+    const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await user.upload(fileInput, new File(['QA supporting document'], 'qa-upload.txt', { type: 'text/plain' }));
+    await user.dblClick(screen.getByRole('button', { name: 'Upload Attachment' }));
+    expect(attachmentsApi.uploadQuotationAttachmentRequest).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await user.keyboard('{Escape}');
+    expect(screen.getByRole('heading', { name: 'Upload Quotation Attachment' })).toBeInTheDocument();
+    pendingUpload.resolve({ ...mockAttachmentListResponse.attachments[0]!, originalFilename: 'qa-upload.txt' });
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Upload Quotation Attachment' })).not.toBeInTheDocument());
+    expect(mockOnFeedback).toHaveBeenCalledWith('Uploaded "qa-upload.txt" successfully', 'success');
+    await user.click(screen.getByRole('button', { name: 'Upload attachment' }));
+    expect(screen.getByRole('button', { name: 'Upload Attachment' })).toBeDisabled();
+    expect(document.querySelector<HTMLInputElement>('input[type="file"]')?.value).toBe('');
   });
 });
 

@@ -1,0 +1,101 @@
+import { NotificationProvider } from '@shared/ui/feedback';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PurchasingPage } from './PurchasingPage';
+import * as api from './purchasing.api';
+
+const access = vi.hoisted(() => ({ permissions: new Set<string>() }));
+vi.mock('@shared/tenancy/useFirmId', () => ({ useFirmId: () => 1 }));
+vi.mock('@features/auth', async (original) => ({ ...(await original<typeof import('@features/auth')>()), useHasPermission: (...permissions: string[]) => permissions.some((permission) => access.permissions.has(permission)) }));
+vi.mock('./purchasing.api', async (original) => ({ ...(await original<typeof import('./purchasing.api')>()), listPurchases: vi.fn(), getPurchase: vi.fn(), purchaseOptions: vi.fn(), purchaseCommand: vi.fn(), listReceiptReturns: vi.fn() }));
+const defaultOptions: api.PurchaseOptions = { suppliers: [], items: [], receiptLines: [], warehouses: [], financial: { version: 0, policy: { schemaVersion: 1, currency: 'KWD', rounding: 'HALF_UP', grandTotal: 'MINOR_UNIT', tax: { id: 'none', version: 1 }, inAppNotifications: false } } };
+beforeEach(() => {
+  vi.clearAllMocks(); access.permissions = new Set(['expenses.view', 'expenses.manage']);
+  vi.mocked(api.listPurchases).mockResolvedValue({ records: [], pagination: { page: 1, limit: 20, total: 0 } });
+  vi.mocked(api.purchaseOptions).mockResolvedValue(defaultOptions);
+});
+afterEach(cleanup);
+describe('purchasing and standalone expense workflow', () => {
+  it.each([
+    ['orders', 'purchasing.view', 'CANCELLED', 'cancellationReason'],
+    ['receipts', 'purchasing.view', undefined, 'cancellationReason'],
+    ['bills', 'supplier-bills.view', 'VOID', 'voidReason'],
+    ['expenses', 'expenses.view', 'VOID', 'voidReason'],
+  ] as const)('shows the saved cancellation reason in a read-only %s detail', async (kind, permission, status, reasonField) => {
+    access.permissions = new Set([permission]);
+    vi.mocked(api.getPurchase).mockResolvedValue({ id: 1, status, reference: 'QA-CANCELLED', [reasonField]: 'Saved cancellation explanation', ...(kind === 'receipts' ? { cancelledAt: '2026-11-13T10:00:00Z' } : {}) });
+    vi.mocked(api.listReceiptReturns).mockResolvedValue({ records: [], pagination: { page: 1, limit: 20, total: 0 } });
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })}><NotificationProvider><MemoryRouter initialEntries={[`/purchasing?tab=${kind}&documentId=1`]}><PurchasingPage /></MemoryRouter></NotificationProvider></QueryClientProvider>);
+    expect(await screen.findByText('Saved cancellation explanation')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cancellation details' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Purchasing document actions' })).not.toBeInTheDocument();
+    expect(api.purchaseCommand).not.toHaveBeenCalled();
+  });
+  it('renders source receipt identities and delegates return ordering to the server', async () => {
+    access.permissions = new Set(['purchasing.view']);
+    const receipt: api.PurchaseDocument = { id: 1, reference: 'GR-1', purchaseOrderId: 2, createdAt: '2026-11-10T10:00:00Z', order: { orderNumber: 'PO-2', currency: 'INR', supplierSnapshot: { name: 'Historical supplier' } }, warehouse: { name: 'Main store', code: 'MAIN' }, lines: [{ id: 3, purchaseOrderLineId: 4, quantity: '2', returnedQuantity: '1', orderLine: { lineNumber: 1, unitCost: '25', snapshot: { itemName: 'Historical component', description: 'Description retained from original order' } } }] };
+    vi.mocked(api.getPurchase).mockResolvedValue(receipt);
+    vi.mocked(api.listReceiptReturns).mockResolvedValue({ records: [{ id: 1, receiptLineId: 3, quantity: '1', reason: 'QA return', actorId: 8, createdAt: '2026-11-10T10:00:00Z' }], pagination: { page: 1, limit: 20, total: 1 } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    render(<QueryClientProvider client={client}><NotificationProvider><MemoryRouter initialEntries={['/purchasing?tab=receipts&documentId=1']}><PurchasingPage /></MemoryRouter></NotificationProvider></QueryClientProvider>);
+    expect(await screen.findByText('Historical supplier')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Goods receipt #1' })).toBeInTheDocument();
+    expect(screen.getByText('Main store (MAIN)')).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Historical component Description retained from original order' })).toBeInTheDocument();
+    const returns = await screen.findByRole('table', { name: 'Supplier return history' });
+    await userEvent.click(within(returns).getByRole('button', { name: 'Quantity' }));
+    await waitFor(() => expect(api.listReceiptReturns).toHaveBeenLastCalledWith(1, 1, expect.any(AbortSignal), { sortBy: 'quantity', sortOrder: 'asc' }));
+    expect(screen.queryByRole('group', { name: 'Purchasing document actions' })).not.toBeInTheDocument();
+  });
+  it('retains exact expense amounts and retry keys without requiring inventory or sales permissions', async () => {
+    vi.mocked(api.purchaseCommand).mockRejectedValue(new Error('Response lost'));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } });
+    render(<QueryClientProvider client={client}><NotificationProvider><MemoryRouter><PurchasingPage /></MemoryRouter></NotificationProvider></QueryClientProvider>);
+    await userEvent.click(await screen.findByRole('button', { name: 'Record standalone expense' }));
+    expect(screen.queryByRole('tab', { name: 'Purchase orders' })).not.toBeInTheDocument(); expect(screen.queryByLabelText('Receiving warehouse')).not.toBeInTheDocument();
+    const form = within(screen.getByRole('dialog', { name: 'Record standalone expense' }));
+    for (const [label, value] of [['Expense reference', 'E-001'], ['Expense date', '2026-11-08'], ['Expense category', 'Office'], ['Expense description', 'Exact fractional expense'], ['Net expense amount', '0.003']]) fireEvent.change(form.getByLabelText(new RegExp(label!)), { target: { value } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.purchaseCommand).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled());
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.purchaseCommand).toHaveBeenCalledTimes(2));
+    const first = vi.mocked(api.purchaseCommand).mock.calls[0]!; const second = vi.mocked(api.purchaseCommand).mock.calls[1]!;
+    expect(first[0]).toBe('expenses'); expect(first[1]).toMatchObject({ amount: '0.003', category: 'Office', taxMode: 'NONE' }); expect(first[1]).toEqual(second[1]);
+  });
+  it('keeps entered bill values and selected receipt when searching for other record choices', async () => {
+    access.permissions = new Set(['supplier-bills.view', 'supplier-bills.manage']);
+    const initialOptions: api.PurchaseOptions = { ...defaultOptions, suppliers: [{ id: 4, name: 'QA Supplier' }], receiptLines: [{ id: 9, purchaseOrderLineId: 10, supplierId: 4, reference: 'GR-9', description: 'Selected component', quantity: '2', unitCost: '25', taxRate: '0', taxMode: 'NONE', currency: 'KWD' }] };
+    let completeSearch!: (options: api.PurchaseOptions) => void;
+    vi.mocked(api.purchaseOptions).mockImplementation((_kind, search) => search ? new Promise((resolve) => { completeSearch = resolve; }) : Promise.resolve(initialOptions));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    render(<QueryClientProvider client={client}><NotificationProvider><MemoryRouter initialEntries={['/purchasing?tab=bills']}><PurchasingPage /></MemoryRouter></NotificationProvider></QueryClientProvider>);
+    await userEvent.click(await screen.findByRole('button', { name: 'Create supplier bill draft' }));
+    const form = within(screen.getByRole('dialog', { name: 'Create supplier bill draft' }));
+    await userEvent.click(form.getByRole('combobox', { name: /Supplier$/ }));
+    await userEvent.click(screen.getByRole('option', { name: 'QA Supplier' }));
+    await userEvent.click(form.getByRole('combobox', { name: 'Match receipt on line 1' }));
+    await userEvent.click(screen.getByRole('option', { name: /GR-9/ }));
+    fireEvent.change(form.getByLabelText(/Supplier bill reference/), { target: { value: 'BILL-KEPT' } });
+    fireEvent.change(form.getByLabelText(/Description on line 1/), { target: { value: 'Edited description kept' } });
+    fireEvent.change(form.getByLabelText('Find suppliers or receipts'), { target: { value: 'Other choices' } });
+    await waitFor(() => expect(api.purchaseOptions).toHaveBeenLastCalledWith('bills', 'Other choices', expect.any(AbortSignal)));
+    expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
+    completeSearch(defaultOptions);
+    await waitFor(() => expect(form.getByRole('button', { name: 'Save' })).not.toBeDisabled());
+    expect(form.getByLabelText(/Supplier bill reference/)).toHaveValue('BILL-KEPT');
+    expect(form.getByLabelText(/Description on line 1/)).toHaveValue('Edited description kept');
+    expect(form.getByRole('combobox', { name: /Supplier$/ })).toHaveTextContent('QA Supplier');
+    expect(form.getByRole('combobox', { name: 'Match receipt on line 1' })).toHaveTextContent('GR-9');
+    expect(client.getQueryData(['purchasing', 1, 'options', 'bills', 'Other choices'])).toEqual(defaultOptions);
+  });
+  it('keeps bill view permission independent from posting and order approval', async () => {
+    access.permissions = new Set(['supplier-bills.view']);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    render(<QueryClientProvider client={client}><NotificationProvider><MemoryRouter initialEntries={['/purchasing?tab=bills']}><PurchasingPage /></MemoryRouter></NotificationProvider></QueryClientProvider>);
+    await waitFor(() => expect(api.listPurchases).toHaveBeenCalledWith('bills', expect.anything(), expect.anything())); expect(screen.queryByText('Create supplier bill draft')).not.toBeInTheDocument(); expect(api.purchaseOptions).not.toHaveBeenCalled(); expect(screen.queryByRole('tab', { name: 'Purchase orders' })).not.toBeInTheDocument();
+  });
+});

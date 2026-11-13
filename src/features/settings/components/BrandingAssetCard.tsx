@@ -149,7 +149,7 @@ export function BrandingAssetCard({
             </Box>
           ) : null}
           <ServerErrorAlert message={error} />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ '& > .MuiButton-root': { flex: '1 1 140px' } }}>
             <AppButton component="label" variant="outlined" startIcon={<UploadOutlinedIcon />} disabled={isBusy} isLoading={isBusy && fileName !== null}>
               {isBusy && fileName !== null ? 'Uploading...' : imageUrl ? 'Replace image' : 'Select image'}
               <input

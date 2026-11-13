@@ -1,20 +1,7 @@
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined';
-import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
-import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
 
-import { AppButton, AppIconButton } from '@shared/ui/actions';
-import { DataTableShell } from '@shared/ui/tables';
+import { RecordTable, RowActionsMenu } from '@shared/ui/tables';
 import type { BankDetail } from '../model/settings.types';
 import { maskAccountNumber } from '../model/settings.utils';
 
@@ -24,95 +11,22 @@ type BankDetailsTableProps = {
   onDelete: (bankDetail: BankDetail) => void;
   onSetDefault: (bankDetail: BankDetail) => void;
   busyBankDetailId?: number | null;
+  isBusy?: boolean;
 };
 
-export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, busyBankDetailId }: BankDetailsTableProps) {
-  return (
-    <>
-      <DataTableShell
-        isLoading={false}
-        isError={false}
-        isEmpty={false}
-        loadingContent={null}
-        errorContent={null}
-        emptyContent={null}
-        tableContainerProps={{ component: Paper, variant: 'outlined', sx: { display: { xs: 'none', md: 'block' } } }}
-      >
-        <Table aria-label="Bank details">
-          <TableHead>
-            <TableRow>
-              <TableCell>Bank</TableCell>
-              <TableCell>Account name</TableCell>
-              <TableCell>Account number</TableCell>
-              <TableCell>Account type</TableCell>
-              <TableCell>IFSC</TableCell>
-              <TableCell>Branch</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {bankDetails.map((bankDetail) => (
-              <TableRow key={bankDetail.id}>
-                <TableCell>{bankDetail.bankName}</TableCell>
-                <TableCell>{bankDetail.accountName}</TableCell>
-                <TableCell>{maskAccountNumber(bankDetail.accountNumber)}</TableCell>
-                <TableCell>{bankDetail.accountType ?? '-'}</TableCell>
-                <TableCell>{bankDetail.ifscCode ?? '-'}</TableCell>
-                <TableCell>{bankDetail.branchName ?? '-'}</TableCell>
-                <TableCell>
-                  {bankDetail.isDefault ? (
-                    <Chip size="small" icon={<CheckCircleOutlineOutlinedIcon />} color="primary" label="Default account" />
-                  ) : (
-                    <Chip size="small" label="Active" />
-                  )}
-                </TableCell>
-                <TableCell align="right">
-                  <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                    <AppIconButton label={`Edit ${bankDetail.bankName}`} onClick={() => onEdit(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>
-                      <EditOutlinedIcon fontSize="small" />
-                    </AppIconButton>
-                    <AppIconButton
-                      label={`Set ${bankDetail.bankName} as default`}
-                      onClick={() => onSetDefault(bankDetail)}
-                      disabled={busyBankDetailId === bankDetail.id || bankDetail.isDefault}
-                    >
-                      <StarBorderOutlinedIcon fontSize="small" />
-                    </AppIconButton>
-                    <AppIconButton label={`Delete ${bankDetail.bankName}`} color="error" onClick={() => onDelete(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>
-                      <DeleteOutlineOutlinedIcon fontSize="small" />
-                    </AppIconButton>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </DataTableShell>
-      <Stack spacing={1.5} sx={{ display: { xs: 'flex', md: 'none' } }}>
-        {bankDetails.map((bankDetail) => (
-          <Paper key={bankDetail.id} variant="outlined" sx={{ p: 2 }}>
-            <Stack spacing={1.5}>
-              <Box>
-                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                  <Typography variant="h3">{bankDetail.bankName}</Typography>
-                  {bankDetail.isDefault ? <Chip size="small" icon={<CheckCircleOutlineOutlinedIcon />} color="primary" label="Default" /> : null}
-                </Stack>
-                <Typography color="text.secondary">{bankDetail.accountName}</Typography>
-              </Box>
-              <Typography>Account: {maskAccountNumber(bankDetail.accountNumber)}</Typography>
-              <Typography color="text.secondary">IFSC: {bankDetail.ifscCode ?? '-'} · Branch: {bankDetail.branchName ?? '-'}</Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                <AppButton size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEdit(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>Edit</AppButton>
-                <AppButton size="small" startIcon={<StarBorderOutlinedIcon />} onClick={() => onSetDefault(bankDetail)} disabled={bankDetail.isDefault} isLoading={busyBankDetailId === bankDetail.id}>
-                  {busyBankDetailId === bankDetail.id ? 'Updating...' : 'Set default'}
-                </AppButton>
-                <AppButton size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => onDelete(bankDetail)} disabled={busyBankDetailId === bankDetail.id}>Delete</AppButton>
-              </Stack>
-            </Stack>
-          </Paper>
-        ))}
-      </Stack>
-    </>
-  );
+export function BankDetailsTable({ bankDetails, onEdit, onDelete, onSetDefault, busyBankDetailId, isBusy = false }: BankDetailsTableProps) {
+  return <RecordTable rows={bankDetails} label="Bank details" rowKey={(bankDetail) => bankDetail.id} emptyMessage="No bank accounts yet. Add a bank account to include payment details on your documents." columns={[
+    { key: 'bank', label: 'Bank', sortValue: (bankDetail) => bankDetail.bankName, render: (bankDetail) => bankDetail.bankName },
+    { key: 'accountName', label: 'Account name', sortValue: (bankDetail) => bankDetail.accountName, render: (bankDetail) => bankDetail.accountName },
+    { key: 'accountNumber', label: 'Account number', noWrap: true, sortValue: (bankDetail) => maskAccountNumber(bankDetail.accountNumber), render: (bankDetail) => maskAccountNumber(bankDetail.accountNumber) },
+    { key: 'accountType', label: 'Account type', minWidth: 112, sortValue: (bankDetail) => bankDetail.accountType, render: (bankDetail) => bankDetail.accountType ?? '—' },
+    { key: 'ifsc', label: 'IFSC', minWidth: 96, sortValue: (bankDetail) => bankDetail.ifscCode, render: (bankDetail) => bankDetail.ifscCode ?? '—' },
+    { key: 'branch', label: 'Branch', sortValue: (bankDetail) => bankDetail.branchName, render: (bankDetail) => bankDetail.branchName ?? '—' },
+    { key: 'status', label: 'Status', minWidth: 96, sortValue: (bankDetail) => bankDetail.isDefault ? 'Default account' : 'Active', render: (bankDetail) => bankDetail.isDefault ? <Chip size="small" icon={<CheckCircleOutlineOutlinedIcon />} color="primary" label="Default account" /> : <Chip size="small" label="Active" /> },
+    { key: 'actions', label: 'Actions', align: 'right', minWidth: 72, render: (bankDetail) => <RowActionsMenu triggerLabel={`Actions for ${bankDetail.bankName}`} disabled={isBusy || busyBankDetailId === bankDetail.id} actions={[
+      { key: 'edit', label: 'Edit account', onSelect: () => onEdit(bankDetail) },
+      { key: 'default', label: 'Set as default', disabled: bankDetail.isDefault, onSelect: () => onSetDefault(bankDetail) },
+      { key: 'delete', label: 'Delete account', destructive: true, onSelect: () => onDelete(bankDetail) },
+    ]} /> },
+  ]} />;
 }

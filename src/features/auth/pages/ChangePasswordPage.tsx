@@ -44,7 +44,7 @@ export function ChangePasswordPage() {
     <Stack spacing={3} maxWidth={760}>
       <Box>
         <Typography component="h1" variant="h1">Change Password</Typography>
-        <Typography color="text.secondary">Update your administrator password. You will need to sign in again.</Typography>
+        <Typography color="text.secondary">Update your password. You will need to sign in again.</Typography>
       </Box>
       <Card>
         <CardContent>

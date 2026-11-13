@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import { useEffect } from 'react';
 import { useForm, type Control, type FieldPath } from 'react-hook-form';
 
-import { FormActions, FormSection } from '@shared/forms';
+import { FormActions, FormExitGuard, FormSection } from '@shared/forms';
 import { ControlledCheckbox, ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { ServerErrorAlert } from '@shared/ui/feedback';
@@ -29,6 +29,7 @@ const emptyCompanyCreateValues: CompanyCreateFormValues = {
   legalName: '',
   website: '',
   isActive: true,
+  isSupplier: false,
   gstin: '',
   pan: '',
   notes: '',
@@ -42,6 +43,7 @@ type CompanyFormProps =
   | {
       mode: 'create';
       isSubmitting: boolean;
+      hasSaved?: boolean;
       errorMessage: string | null;
       onSubmit: (values: CompanyCreateSubmitValues) => Promise<void>;
       onCancel: () => void;
@@ -50,6 +52,7 @@ type CompanyFormProps =
       mode: 'edit';
       company: CompanyDetail;
       isSubmitting: boolean;
+      hasSaved?: boolean;
       errorMessage: string | null;
       onSubmit: (values: CompanyUpdateSubmitValues) => Promise<void>;
       onCancel: () => void;
@@ -60,7 +63,7 @@ export function CompanyForm(props: CompanyFormProps) {
   return <CompanyEditForm {...props} />;
 }
 
-function CompanyCreateForm({ isSubmitting, errorMessage, onSubmit, onCancel }: Extract<CompanyFormProps, { mode: 'create' }>) {
+function CompanyCreateForm({ isSubmitting, hasSaved, errorMessage, onSubmit, onCancel }: Extract<CompanyFormProps, { mode: 'create' }>) {
   const form = useForm<CompanyCreateFormValues>({
     resolver: zodResolver(companyCreateFormSchema),
     defaultValues: emptyCompanyCreateValues,
@@ -70,7 +73,7 @@ function CompanyCreateForm({ isSubmitting, errorMessage, onSubmit, onCancel }: E
   const handleSubmit = form.handleSubmit(async (values) => onSubmit(toCompanyCreateSubmitValues(values)));
 
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+    <FormExitGuard dirty={form.formState.isDirty} hasSaved={hasSaved} isSubmitting={isSubmitting} onCancel={onCancel}>{(requestCancel) => <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
       <Stack component="form" spacing={3} onSubmit={(event) => void handleSubmit(event)} noValidate>
         <ServerErrorAlert message={errorMessage} />
         <Typography color="text.secondary">Company code is generated automatically after saving.</Typography>
@@ -96,13 +99,13 @@ function CompanyCreateForm({ isSubmitting, errorMessage, onSubmit, onCancel }: E
           disabled={isSubmitting}
         />
         {!useBillingAsShipping ? <AddressFields control={form.control} prefix="shippingAddress" title="Shipping address" disabled={isSubmitting} /> : null}
-        <FormActions isSubmitting={isSubmitting} isSubmitDisabled={!form.formState.isValid || isSubmitting} onCancel={onCancel} submitLabel="Create company" />
+        <FormActions isSubmitting={isSubmitting} isSubmitDisabled={!form.formState.isValid || isSubmitting} onCancel={requestCancel} submitLabel="Create company" />
       </Stack>
-    </Paper>
+    </Paper>}</FormExitGuard>
   );
 }
 
-function CompanyEditForm({ company, isSubmitting, errorMessage, onSubmit, onCancel }: Extract<CompanyFormProps, { mode: 'edit' }>) {
+function CompanyEditForm({ company, isSubmitting, hasSaved, errorMessage, onSubmit, onCancel }: Extract<CompanyFormProps, { mode: 'edit' }>) {
   const form = useForm<CompanyUpdateFormValues>({
     resolver: zodResolver(companyUpdateSchema),
     defaultValues: companyToUpdateValues(company),
@@ -115,7 +118,7 @@ function CompanyEditForm({ company, isSubmitting, errorMessage, onSubmit, onCanc
   }, [company, form]);
 
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+    <FormExitGuard dirty={form.formState.isDirty} hasSaved={hasSaved} isSubmitting={isSubmitting} onCancel={onCancel}>{(requestCancel) => <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
       <Stack component="form" spacing={3} onSubmit={(event) => void handleSubmit(event)} noValidate>
         <ServerErrorAlert message={errorMessage} />
         <Box>
@@ -126,7 +129,7 @@ function CompanyEditForm({ company, isSubmitting, errorMessage, onSubmit, onCanc
         <FormActions
           isSubmitting={isSubmitting}
           isSubmitDisabled={isSubmitting || !form.formState.isValid || !form.formState.isDirty}
-          onCancel={onCancel}
+          onCancel={requestCancel}
           submitLabel={isSubmitting ? 'Saving' : 'Save changes'}
           secondaryAction={
             <AppButton onClick={() => form.reset(companyToUpdateValues(company))} disabled={isSubmitting || !form.formState.isDirty}>
@@ -135,7 +138,7 @@ function CompanyEditForm({ company, isSubmitting, errorMessage, onSubmit, onCanc
           }
         />
       </Stack>
-    </Paper>
+    </Paper>}</FormExitGuard>
   );
 }
 
@@ -150,6 +153,7 @@ function CompanyFields<TFieldValues extends CompanyCreateFormValues | CompanyUpd
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
           <ControlledTextField control={control} name={'website' as FieldPath<TFieldValues>} label="Website" disabled={disabled} />
           <ControlledCheckbox control={control} name={'isActive' as FieldPath<TFieldValues>} label="Active company" disabled={disabled} />
+          <ControlledCheckbox control={control} name={'isSupplier' as FieldPath<TFieldValues>} label="Also a supplier" disabled={disabled} />
         </Stack>
       </FormSection>
       <FormSection title="Legal and tax information">
@@ -184,6 +188,7 @@ function companyToUpdateValues(company: CompanyDetail): CompanyUpdateFormValues 
     legalName: company.legalName ?? '',
     website: company.website ?? '',
     isActive: company.isActive,
+    isSupplier: company.isSupplier,
     gstin: company.gstin ?? '',
     pan: company.pan ?? '',
     notes: company.notes ?? '',

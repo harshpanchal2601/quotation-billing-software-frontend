@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 
 import { categoriesQueryKeys, getCategoryOptionsRequest } from '@features/categories';
 import { getMeasurementUnitOptionsRequest, measurementUnitsQueryKeys } from '@features/measurement-units';
-import { FormActions } from '@shared/forms';
+import { FormActions, FormExitGuard } from '@shared/forms';
 import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
 import { ServerErrorAlert } from '@shared/ui/feedback';
 import { itemFormSchema, type ItemFormValues } from '../model/items.schema';
@@ -23,6 +23,7 @@ import { ItemSpecificationsField } from './ItemSpecificationsField';
 type ItemFormProps = {
   initialValues?: ItemDetail | null;
   isSubmitting?: boolean;
+  hasSaved?: boolean;
   onSubmit: (values: ItemFormValues) => Promise<void>;
   onCancel: () => void;
   serverError?: string | null;
@@ -31,6 +32,7 @@ type ItemFormProps = {
 export function ItemForm({
   initialValues,
   isSubmitting = false,
+  hasSaved = false,
   onSubmit,
   onCancel,
   serverError,
@@ -59,6 +61,7 @@ export function ItemForm({
     resolver: zodResolver(itemFormSchema),
     defaultValues: {
       name: '',
+      kind: 'GOODS',
       categoryId: null,
       measurementUnitId: undefined as unknown as number,
       shortDescription: '',
@@ -78,6 +81,7 @@ export function ItemForm({
     if (initialValues) {
       reset({
         name: initialValues.name,
+        kind: initialValues.kind,
         categoryId: initialValues.category?.id ?? null,
         measurementUnitId: initialValues.measurementUnit.id,
         shortDescription: initialValues.shortDescription ?? '',
@@ -92,7 +96,7 @@ export function ItemForm({
   }, [initialValues, reset]);
 
   return (
-    <Box component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
+    <FormExitGuard dirty={isDirty} hasSaved={hasSaved} isSubmitting={isSubmitting} onCancel={onCancel}>{(requestCancel) => <Box component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
       <Stack spacing={3}>
         <ServerErrorAlert message={serverError} />
 
@@ -103,6 +107,7 @@ export function ItemForm({
             </Typography>
 
             <Stack spacing={2.5}>
+              <TextField select label="Item kind" value={watch('kind')} onChange={(event) => setValue('kind', event.target.value as ItemFormValues['kind'], { shouldDirty: true, shouldValidate: true })} disabled={isSubmitting || initialValues?.stockTracking} helperText="Goods may optionally track stock after creation. Services never require inventory."><MenuItem value="GOODS">Goods</MenuItem><MenuItem value="SERVICE">Service</MenuItem></TextField>
               <ControlledTextField
                 control={control}
                 name="name"
@@ -289,11 +294,11 @@ export function ItemForm({
           spacing={2}
           isSubmitting={isSubmitting}
           isSubmitDisabled={isSubmitting || (isEditing && !isDirty)}
-          onCancel={onCancel}
+          onCancel={requestCancel}
           submitLabel={isEditing ? 'Save Changes' : 'Create Item'}
           cancelButtonProps={{ variant: 'outlined' }}
         />
       </Stack>
-    </Box>
+    </Box>}</FormExitGuard>
   );
 }

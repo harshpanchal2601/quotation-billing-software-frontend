@@ -13,7 +13,7 @@ import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
-import { AppTablePagination, DataTableShell, TableSkeleton } from '@shared/ui/tables';
+import { AppTablePagination, DataTableShell, TableSkeleton, TableSortControls, type TableSorting } from '@shared/ui/tables';
 import { paths } from '@shared/routing/paths';
 import { getCurrentListReturnState } from '@shared/routing/returnNavigation';
 import { toApiError } from '@shared/api/apiClient';
@@ -22,18 +22,17 @@ import { companiesQueryKeys } from '../model/companies.query-keys';
 import type { CompanyListItem, CompanyListParams } from '../model/companies.types';
 import { CompanyStatusDialog, DeleteCompanyDialog } from '../components/CompanyConfirmDialogs';
 import { CompanyTable } from '../components/CompanyTable';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
 
-const sortOptions = [
-  { value: 'createdAt:desc', label: 'Newest first' },
-  { value: 'createdAt:asc', label: 'Oldest first' },
-  { value: 'name:asc', label: 'Company name A-Z' },
-  { value: 'name:desc', label: 'Company name Z-A' },
-  { value: 'companyCode:asc', label: 'Company code ascending' },
-  { value: 'companyCode:desc', label: 'Company code descending' },
-  { value: 'updatedAt:desc', label: 'Recently updated' },
+const sortFields = [
+  { key: 'name', label: 'Company name' },
+  { key: 'companyCode', label: 'Company code' },
+  { key: 'createdAt', label: 'Created date' },
+  { key: 'updatedAt', label: 'Updated date' },
 ] as const;
 
 export function CompaniesPage() {
+  const canManage = useHasPermission(PERMISSIONS.COMPANIES_MANAGE);
   const queryClient = useQueryClient();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -44,6 +43,12 @@ export function CompaniesPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const params = parseListParams(searchParams);
+  const sorting: TableSorting = {
+    sortBy: params.sortBy,
+    sortOrder: params.sortOrder,
+    fields: sortFields,
+    onChange: ({ sortBy, sortOrder }) => updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 }),
+  };
 
   useEffect(() => setSearchInput(searchParams.get('search') ?? ''), [searchParams]);
   useEffect(() => {
@@ -81,7 +86,6 @@ export function CompaniesPage() {
     onError: (error) => setPageError(toApiError(error).message),
   });
 
-  const sortValue = `${params.sortBy}:${params.sortOrder}`;
   const isFiltered = Boolean(params.search || params.isActive !== undefined);
   const busyCompanyId = statusMutation.isPending
     ? statusMutation.variables?.id
@@ -96,7 +100,7 @@ export function CompaniesPage() {
       <PageHeader
         title="Companies"
         description="Manage customer companies, contacts, addresses and quotation history."
-        actions={<AppButton component={RouterLink} to={paths.newCompany} variant="contained" startIcon={<AddOutlinedIcon />}>Add Company</AppButton>}
+        actions={canManage ? <AppButton component={RouterLink} to={paths.newCompany} state={listReturnState} variant="contained" startIcon={<AddOutlinedIcon />}>Add Company</AppButton> : undefined}
       />
       <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -106,14 +110,10 @@ export function CompaniesPage() {
           <MenuItem value="true">Active</MenuItem>
           <MenuItem value="false">Inactive</MenuItem>
         </TextField>
-        <TextField select label="Sort" value={sortValue} onChange={(event) => {
-          const [sortBy, sortOrder] = event.target.value.split(':') as [CompanyListParams['sortBy'], CompanyListParams['sortOrder']];
-          updateSearchParams(setSearchParams, { sortBy, sortOrder, page: 1 });
-        }} sx={{ minWidth: { xs: 0, md: 220 }, width: { xs: '100%', md: 'auto' } }}>
-          {sortOptions.map((option) => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
-        </TextField>
       </Stack>
+      <TableSortControls {...sorting} />
       <DataTableShell
+        wrapInTableContainer={false}
         isLoading={query.isPending}
         isError={query.isError}
         isEmpty={Boolean(query.data && query.data.companies.length === 0)}
@@ -146,9 +146,12 @@ export function CompaniesPage() {
           <>
           <Typography color="text.secondary">{query.data.pagination.total} companies found</Typography>
           <CompanyTable
+            sorting={sorting}
+            rowNumberStart={((params.page ?? 1) - 1) * (params.limit ?? 20) + 1}
             companies={query.data.companies}
             busyCompanyId={busyCompanyId}
             returnState={listReturnState}
+            canManage={canManage}
             onStatusChange={setStatusTarget}
             onDelete={setDeleteTarget}
           />

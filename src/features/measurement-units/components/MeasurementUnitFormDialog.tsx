@@ -1,14 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Stack from '@mui/material/Stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { toApiError } from '@shared/api/apiClient';
-import { applyApiFieldErrors, FormActions } from '@shared/forms';
+import { applyApiFieldErrors, FormActions, FormExitGuard } from '@shared/forms';
 import { ControlledSwitch, ControlledTextField } from '@shared/forms/controlled';
 import { FormDialogShell } from '@shared/ui/dialogs';
-import { ServerErrorAlert } from '@shared/ui/feedback';
+import { ServerErrorAlert, useNotification } from '@shared/ui/feedback';
 import {
   createMeasurementUnitRequest,
   updateMeasurementUnitRequest,
@@ -29,6 +29,8 @@ type FormDialogProps = {
 
 export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: FormDialogProps) {
   const queryClient = useQueryClient();
+  const saveLock = useRef(false);
+  const notify = useNotification();
   const [serverError, setServerError] = useState<string | null>(null);
   const isEditing = Boolean(unit);
 
@@ -89,10 +91,12 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: measurementUnitsQueryKeys.all });
       onSuccess(isEditing ? 'Measurement unit updated successfully.' : 'Measurement unit created successfully.');
       onClose();
+      try { await queryClient.invalidateQueries({ queryKey: measurementUnitsQueryKeys.all }, { throwOnError: true }); }
+      catch { notify('The record was saved, but the list could not refresh. Refresh the records before submitting again.', 'warning'); }
     },
+    onSettled: () => { saveLock.current = false; },
     onError: (error) => {
       const apiError = toApiError(error);
       applyApiFieldErrors(form, apiError.fieldErrors);
@@ -101,6 +105,8 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
   });
 
   async function onSubmit(values: MeasurementUnitFormValues) {
+    if (saveLock.current) return;
+    saveLock.current = true;
     setServerError(null);
     form.clearErrors();
     try {
@@ -111,17 +117,18 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
   }
 
   return (
-    <FormDialogShell
-      open={open}
+    open ? <FormExitGuard dirty={form.formState.isDirty} isSubmitting={mutation.isPending} onCancel={onClose}>{(requestClose) => <FormDialogShell
+      open
       title={isEditing ? 'Edit Measurement Unit' : 'Add Measurement Unit'}
-      onClose={onClose}
+      onClose={() => { if (!saveLock.current) requestClose(); }}
       onSubmit={(event) => void handleSubmit(onSubmit)(event)}
       isSubmitting={mutation.isPending}
       actions={(formId) => (
         <FormActions
           submitLabel={isEditing ? 'Save Changes' : 'Create Measurement Unit'}
           isSubmitting={mutation.isPending}
-          onCancel={onClose}
+          isSubmitDisabled={isEditing && !form.formState.isDirty}
+          onCancel={() => { if (!saveLock.current) requestClose(); }}
           submitButtonProps={{ form: formId }}
         />
       )}
@@ -134,7 +141,7 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
           name="name"
           label="Unit name"
           required
-          helperText="Full name of the unit, e.g., Kilogram, Piece, Meter."
+          helperText="Full name of the unit, for example Kilogram, Piece or Metre."
         />
 
         <ControlledTextField
@@ -142,7 +149,7 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
           name="symbol"
           label="Symbol"
           required
-          helperText="Exact symbol string, e.g., kg, m², NOS, %."
+          helperText="Enter the symbol as it should appear, for example kg, m², NOS or %."
         />
 
         <ControlledSwitch
@@ -165,6 +172,6 @@ export function MeasurementUnitFormDialog({ open, unit, onClose, onSuccess }: Fo
           helperText="Inactive measurement units cannot be selected when creating or updating items."
         />
       </Stack>
-    </FormDialogShell>
+    </FormDialogShell>}</FormExitGuard> : null
   );
 }

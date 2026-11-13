@@ -7,12 +7,16 @@ import { paths } from '../routeConfig';
 
 export function ProtectedRoute() {
   const location = useLocation();
-  const { isAuthenticated, isInitialising } = useAuth();
+  const { user, isAuthenticated, isInitialising } = useAuth();
 
   if (isInitialising) return <FullPageLoader />;
 
   if (!isAuthenticated) {
     return <Navigate to={paths.login} replace state={{ from: location }} />;
+  }
+
+  if (user?.mustChangePassword && location.pathname !== paths.changePassword) {
+    return <Navigate to={paths.changePassword} replace />;
   }
 
   return <Outlet />;

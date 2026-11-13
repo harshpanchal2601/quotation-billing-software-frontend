@@ -3,12 +3,14 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { EmptyState } from '@shared/components/common/EmptyState';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { RefreshIndicator } from '@shared/components/common/RefreshIndicator';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
+import { useAuth } from '@features/auth';
+import { useFirmId } from '@shared/tenancy/useFirmId';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
 import { PageContainer, PageHeader } from '@shared/ui/layout';
@@ -28,6 +30,11 @@ import type { BankDetailsSubmitValues } from '../model/bank-details.schema';
 import type { BankDetail } from '../model/settings.types';
 
 export function BankDetailsPage() {
+  const firmId = useFirmId(); const { user } = useAuth();
+  return <BankDetailsWorkspace key={`${firmId}:${user?.id}`} />;
+}
+
+function BankDetailsWorkspace() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBankDetail, setEditingBankDetail] = useState<BankDetail | null>(null);
@@ -37,48 +44,56 @@ export function BankDetailsPage() {
   const [dialogFieldErrors, setDialogFieldErrors] = useState<ApiFieldErrors>({});
   const [pageError, setPageError] = useState<string | null>(null);
 
-  const query = useQuery({ queryKey: bankDetailsQueryKey, queryFn: listBankDetailsRequest });
+  const actionLock = useRef(false);
+  const firmId = useFirmId(); const { user } = useAuth();
+  const queryKey = [...bankDetailsQueryKey, firmId, user?.id];
+  const query = useQuery({ queryKey, queryFn: listBankDetailsRequest });
 
   const createMutation = useMutation({
     mutationFn: createBankDetailRequest,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bankDetailsQueryKey });
+      void queryClient.invalidateQueries({ queryKey });
       closeDialog();
       setSuccessMessage('Bank account added.');
     },
     onError: setDialogApiError,
+    onSettled: () => { actionLock.current = false; },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, values }: { id: number; values: BankDetailsSubmitValues }) => updateBankDetailRequest(id, values),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bankDetailsQueryKey });
+      void queryClient.invalidateQueries({ queryKey });
       closeDialog();
       setSuccessMessage('Bank account saved.');
     },
     onError: setDialogApiError,
+    onSettled: () => { actionLock.current = false; },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteBankDetailRequest,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bankDetailsQueryKey });
+      void queryClient.invalidateQueries({ queryKey });
       setDeletingBankDetail(null);
       setSuccessMessage('Bank account deleted.');
     },
     onError: (error) => setPageError(toApiError(error).message),
+    onSettled: () => { actionLock.current = false; },
   });
 
   const defaultMutation = useMutation({
     mutationFn: setDefaultBankDetailRequest,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: bankDetailsQueryKey });
+      void queryClient.invalidateQueries({ queryKey });
       setSuccessMessage('Default bank account updated.');
     },
     onError: (error) => setPageError(toApiError(error).message),
+    onSettled: () => { actionLock.current = false; },
   });
 
   function openAddDialog() {
+    if (actionLock.current) return;
     setEditingBankDetail(null);
     setDialogError(null);
     setDialogFieldErrors({});
@@ -86,6 +101,7 @@ export function BankDetailsPage() {
   }
 
   function openEditDialog(bankDetail: BankDetail) {
+    if (actionLock.current) return;
     setEditingBankDetail(bankDetail);
     setDialogError(null);
     setDialogFieldErrors({});
@@ -106,27 +122,26 @@ export function BankDetailsPage() {
   }
 
   async function handleDialogSubmit(values: BankDetailsSubmitValues) {
+    if (actionLock.current) return;
+    actionLock.current = true;
     setDialogError(null);
     setDialogFieldErrors({});
-    if (editingBankDetail === null) {
-      await createMutation.mutateAsync(values);
-      return;
-    }
-    await updateMutation.mutateAsync({ id: editingBankDetail.id, values });
+    if (editingBankDetail === null) await createMutation.mutateAsync(values);
+    else await updateMutation.mutateAsync({ id: editingBankDetail.id, values });
   }
 
   if (query.isPending) {
     return (
-      <PageContainer maxWidth={1120}>
+      <PageContainer>
         <PageHeader title="Bank Details" description="Manage bank accounts shown on quotation documents." />
         <TableSkeleton rowCount={5} rowHeight={64} />
       </PageContainer>
     );
   }
 
-  if (query.isError) {
+  if (query.isError && !query.data) {
     return (
-      <PageContainer maxWidth={1120}>
+      <PageContainer>
         <PageHeader title="Bank Details" description="Manage bank accounts shown on quotation documents." />
         <ErrorState message={toApiError(query.error).message} />
         <AppButton onClick={() => void query.refetch()} variant="outlined">Retry</AppButton>
@@ -139,22 +154,25 @@ export function BankDetailsPage() {
     : deleteMutation.isPending
       ? deleteMutation.variables
       : null;
+  const busy = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || defaultMutation.isPending;
   const showRefreshing = query.isFetching && !query.isPending;
-  const bankDetails = query.data;
+  const bankDetails = query.data!;
 
   return (
-    <PageContainer maxWidth={1120}>
+    <PageContainer>
       <PageHeader title="Bank Details" description="Manage bank accounts shown on quotation documents." />
+      {query.isError ? <ErrorState message={toApiError(query.error).message} onRetry={() => void query.refetch()} /> : null}
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
           <Box>
             <Typography component="h2" variant="h3">Accounts</Typography>
             <Typography color="text.secondary">Only one active account can be marked as the default.</Typography>
           </Box>
-          <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={openAddDialog}>Add Bank Account</AppButton>
+          <AppButton variant="contained" startIcon={<AddOutlinedIcon />} onClick={openAddDialog} disabled={busy}>Add Bank Account</AppButton>
         </Stack>
         <ServerErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
         <DataTableShell
+          wrapInTableContainer={false}
           isLoading={false}
           isError={false}
           isEmpty={bankDetails.length === 0}
@@ -167,8 +185,14 @@ export function BankDetailsPage() {
           <BankDetailsTable
             bankDetails={bankDetails}
             onEdit={openEditDialog}
-            onDelete={setDeletingBankDetail}
-            onSetDefault={(bankDetail) => void defaultMutation.mutateAsync(bankDetail.id)}
+            onDelete={(bankDetail) => { if (!actionLock.current) setDeletingBankDetail(bankDetail); }}
+            onSetDefault={(bankDetail) => {
+              if (actionLock.current) return;
+              actionLock.current = true;
+              setPageError(null);
+              defaultMutation.mutate(bankDetail.id);
+            }}
+            isBusy={busy}
             busyBankDetailId={busyBankDetailId}
           />
         </DataTableShell>
@@ -179,7 +203,7 @@ export function BankDetailsPage() {
         isSubmitting={createMutation.isPending || updateMutation.isPending}
         errorMessage={dialogError}
         fieldErrors={dialogFieldErrors}
-        onClose={closeDialog}
+        onClose={() => { if (!actionLock.current) closeDialog(); }}
         onSubmit={handleDialogSubmit}
       />
       <BankDeleteDialog
@@ -187,7 +211,10 @@ export function BankDetailsPage() {
         isDeleting={deleteMutation.isPending}
         onClose={() => setDeletingBankDetail(null)}
         onConfirm={async () => {
-          if (deletingBankDetail !== null) await deleteMutation.mutateAsync(deletingBankDetail.id);
+          if (deletingBankDetail === null || actionLock.current) return;
+          actionLock.current = true;
+          setPageError(null);
+          try { await deleteMutation.mutateAsync(deletingBankDetail.id); } catch { /* The page displays the failure and retains confirmation. */ }
         }}
       />
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />

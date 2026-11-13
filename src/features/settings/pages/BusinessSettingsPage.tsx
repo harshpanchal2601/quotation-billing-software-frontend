@@ -5,16 +5,19 @@ import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useWatch, useForm, type FieldPath } from 'react-hook-form';
 
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { toApiError } from '@shared/api/apiClient';
-import { FormActions } from '@shared/forms';
-import { ControlledTextField } from '@shared/forms/controlled';
+import { FormActions, FormExitGuard } from '@shared/forms';
+import { useAuth } from '@features/auth';
+import { useFirmId } from '@shared/tenancy/useFirmId';
+import { AppDialog } from '@shared/ui/dialogs';
+import { ControlledCurrencyField, ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
-import { PageContainer, PageHeader } from '@shared/ui/layout';
+import { DetailFields, DetailSection, PageContainer, PageHeader } from '@shared/ui/layout';
 import {
   businessProfileQueryKey,
   deleteBrandingAssetRequest,
@@ -25,45 +28,48 @@ import {
 import { BrandingAssetCard } from '../components/BrandingAssetCard';
 import { ColourField } from '../components/ColourField';
 import { SettingsSection } from '../components/SettingsSection';
+import { BusinessPolicyPanel } from '../components/BusinessPolicyPanel';
 import { businessProfileSchema, type BusinessProfileFormValues, type BusinessProfileSubmitValues } from '../model/business-profile.schema';
 import type { BrandingAssetType, BusinessProfile } from '../model/settings.types';
 import { getSafeApiErrorMessage } from '../model/settings.utils';
 
 export function BusinessSettingsPage() {
+  const firmId = useFirmId(); const { user } = useAuth();
+  return <BusinessSettingsWorkspace key={`${firmId}:${user?.id}`} />;
+}
+
+function BusinessSettingsWorkspace() {
   const queryClient = useQueryClient();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
-  const hydratedProfileId = useRef<number | null>(null);
-  const query = useQuery({ queryKey: businessProfileQueryKey, queryFn: getBusinessProfileRequest });
+  const [editing, setEditing] = useState(false);
+  const saveLock = useRef(false);
+  const firmId = useFirmId(); const { user } = useAuth();
+  const queryKey = [...businessProfileQueryKey, firmId, user?.id];
+  const query = useQuery({ queryKey, queryFn: getBusinessProfileRequest });
   const form = useForm<BusinessProfileFormValues, unknown, BusinessProfileSubmitValues>({
     resolver: zodResolver(businessProfileSchema),
     mode: 'onChange',
     defaultValues: emptyProfileValues,
   });
 
-  useEffect(() => {
-    if (query.data && hydratedProfileId.current !== query.data.id && !form.formState.isDirty) {
-      form.reset(toBusinessProfileFormValues(query.data));
-      void form.trigger();
-      hydratedProfileId.current = query.data.id;
-    }
-  }, [form, query.data]);
-
   const updateMutation = useMutation({
     mutationFn: updateBusinessProfileRequest,
     onSuccess: (businessProfile) => {
-      queryClient.setQueryData(businessProfileQueryKey, businessProfile);
+      queryClient.setQueryData(queryKey, businessProfile);
       form.reset(toBusinessProfileFormValues(businessProfile));
       setServerError(null);
+      setEditing(false);
       setSuccessMessage('Business profile saved.');
     },
     onError: (error) => setServerError(toApiError(error).message),
+    onSettled: () => { saveLock.current = false; },
   });
 
   const uploadMutation = useMutation({
     mutationFn: ({ assetType, file }: { assetType: BrandingAssetType; file: File }) => uploadBrandingAssetRequest(assetType, file),
     onSuccess: (businessProfile) => {
-      queryClient.setQueryData(businessProfileQueryKey, businessProfile);
+      queryClient.setQueryData(queryKey, businessProfile);
       setSuccessMessage('Branding image updated.');
     },
   });
@@ -71,23 +77,27 @@ export function BusinessSettingsPage() {
   const deleteMutation = useMutation({
     mutationFn: deleteBrandingAssetRequest,
     onSuccess: (businessProfile) => {
-      queryClient.setQueryData(businessProfileQueryKey, businessProfile);
+      queryClient.setQueryData(queryKey, businessProfile);
       setSuccessMessage('Branding image removed.');
     },
   });
 
   const primaryColour = useWatch({ control: form.control, name: 'primaryColour' });
   const secondaryColour = useWatch({ control: form.control, name: 'secondaryColour' });
+  const defaultCurrency = useWatch({ control: form.control, name: 'defaultCurrency' });
 
   async function onSubmit(values: BusinessProfileSubmitValues) {
-    await updateMutation.mutateAsync(values);
+    if (saveLock.current) return;
+    saveLock.current = true;
+    setServerError(null);
+    try { await updateMutation.mutateAsync(values); } catch { /* The mutation displays the failure and preserves the editor. */ }
   }
 
   if (query.isPending) {
     return <SettingsSkeleton title="Business Settings" description="Manage company identity, contact details and branding assets." />;
   }
 
-  if (query.isError) {
+  if (query.isError && !query.data) {
     return (
       <PageContainer maxWidth={1120}>
         <PageHeader title="Business Settings" description="Manage company identity, contact details and branding assets." />
@@ -97,18 +107,41 @@ export function BusinessSettingsPage() {
     );
   }
 
-  const profile = query.data;
-  const activeBrandingAsset = uploadMutation.isPending
-    ? uploadMutation.variables?.assetType
-    : deleteMutation.isPending
-      ? deleteMutation.variables
-      : null;
+  const profile = query.data!;
   const isFormBusy = updateMutation.isPending;
+  const brandingBusy = uploadMutation.isPending || deleteMutation.isPending;
+  const openEditor = () => {
+    if (saveLock.current || brandingBusy) return;
+    form.reset(toBusinessProfileFormValues(profile));
+    setServerError(null);
+    setEditing(true);
+  };
 
   return (
     <PageContainer maxWidth={1120}>
       <PageHeader title="Business Settings" description="Manage company identity, contact details and branding assets." />
-      <Stack component="form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isFormBusy}>
+      {query.isError ? <ErrorState message={toApiError(query.error).message} onRetry={() => void query.refetch()} /> : null}
+      <DetailSection title="Business profile" actions={<AppButton variant="outlined" disabled={editing || brandingBusy} onClick={openEditor}>Edit business profile</AppButton>}>
+        <DetailFields fields={[
+          { label: 'Legal name', value: profile.legalName }, { label: 'Display name', value: profile.displayName },
+          { label: 'Website', value: profile.website || 'Not set' }, { label: 'Quotation currency', value: profile.defaultCurrency },
+          { label: 'GSTIN', value: profile.gstin || 'Not set' }, { label: 'PAN', value: profile.pan || 'Not set' }, { label: 'CIN', value: profile.cin || 'Not set' },
+          { label: 'Address', value: [profile.addressLine1, profile.addressLine2, profile.city, profile.state, profile.postalCode, profile.country].filter(Boolean).join(', ') },
+          { label: 'Primary phone', value: profile.primaryPhone || 'Not set' }, { label: 'Secondary phone', value: profile.secondaryPhone || 'Not set' },
+          { label: 'Primary email', value: profile.primaryEmail || 'Not set' }, { label: 'Secondary email', value: profile.secondaryEmail || 'Not set' },
+          { label: 'Primary colour', value: profile.primaryColour }, { label: 'Secondary colour', value: profile.secondaryColour },
+        ]} />
+      </DetailSection>
+        <DetailSection title="Branding assets">
+          <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' }} gap={2}>
+            <BrandingAssetCard assetType="logo" title="Logo" description="Displayed in quotation branding." imageUrl={profile.logoUrl} updatedAt={profile.updatedAt} isBusy={brandingBusy || editing} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'logo', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('logo').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
+            <BrandingAssetCard assetType="signature" title="Authorised signature" description="Used for signed quotation output." imageUrl={profile.signatureUrl} updatedAt={profile.updatedAt} isBusy={brandingBusy || editing} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'signature', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('signature').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
+            <BrandingAssetCard assetType="stamp" title="Company stamp" description="Used for stamped quotation output." imageUrl={profile.stampUrl} updatedAt={profile.updatedAt} isBusy={brandingBusy || editing} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'stamp', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('stamp').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
+          </Box>
+        </DetailSection>
+
+      {editing ? <FormExitGuard dirty={form.formState.isDirty} isSubmitting={isFormBusy} onCancel={() => setEditing(false)}>{(requestClose) => <AppDialog open title="Edit business profile" fullWidth maxWidth="md" preventClose={isFormBusy || saveLock.current} onClose={requestClose} actions={<FormActions submitLabel="Save changes" isSubmitting={isFormBusy} isSubmitDisabled={!form.formState.isDirty} onCancel={requestClose} submitButtonProps={{ form: 'business-profile-form' }} />}>
+      <Stack component="form" id="business-profile-form" spacing={2} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isFormBusy}>
         <ServerErrorAlert message={serverError} />
         {form.formState.isDirty ? <Alert severity="info">You have unsaved changes.</Alert> : null}
         <SettingsSection title="Company information">
@@ -116,7 +149,14 @@ export function BusinessSettingsPage() {
             <ProfileTextField form={form} name="legalName" label="Legal name" required autoComplete="organization" disabled={isFormBusy} />
             <ProfileTextField form={form} name="displayName" label="Display name" required autoComplete="organization" disabled={isFormBusy} />
             <ProfileTextField form={form} name="website" label="Website" autoComplete="url" disabled={isFormBusy} />
-            <ProfileTextField form={form} name="defaultCurrency" label="Default currency" required disabled={isFormBusy} />
+            <ControlledCurrencyField
+              control={form.control}
+              name="defaultCurrency"
+              label="Default currency"
+              currentCurrency={defaultCurrency}
+              required
+              disabled={isFormBusy}
+            />
           </TwoColumnGrid>
         </SettingsSection>
         <SettingsSection title="Legal and tax information">
@@ -154,27 +194,13 @@ export function BusinessSettingsPage() {
               <Typography fontWeight={700}>Branding preview</Typography>
             </Box>
             <Box sx={{ borderTop: 4, borderColor: secondaryColour, p: 2 }}>
-              <Typography color="text.secondary">Quotation headers will use these saved brand colours later.</Typography>
+              <Typography color="text.secondary">Saved colours are used in document branding.</Typography>
             </Box>
           </Box>
         </SettingsSection>
-        <SettingsSection title="Branding assets">
-          <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' }} gap={2}>
-            <BrandingAssetCard assetType="logo" title="Logo" description="Displayed in quotation branding." imageUrl={profile.logoUrl} updatedAt={profile.updatedAt} isBusy={activeBrandingAsset === 'logo'} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'logo', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('logo').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
-            <BrandingAssetCard assetType="signature" title="Authorised signature" description="Used for signed quotation output." imageUrl={profile.signatureUrl} updatedAt={profile.updatedAt} isBusy={activeBrandingAsset === 'signature'} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'signature', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('signature').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
-            <BrandingAssetCard assetType="stamp" title="Company stamp" description="Used for stamped quotation output." imageUrl={profile.stampUrl} updatedAt={profile.updatedAt} isBusy={activeBrandingAsset === 'stamp'} onUpload={(file) => uploadMutation.mutateAsync({ assetType: 'stamp', file }).then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} onDelete={() => deleteMutation.mutateAsync('stamp').then(() => undefined).catch((error: unknown) => { throw new Error(getSafeApiErrorMessage(toApiError(error))); })} />
-          </Box>
-        </SettingsSection>
-        <FormActions
-          submitLabel={updateMutation.isPending ? 'Saving...' : 'Save changes'}
-          isSubmitting={updateMutation.isPending}
-          isSubmitDisabled={!form.formState.isDirty}
-          isCancelDisabled={isFormBusy || !form.formState.isDirty}
-          onCancel={() => form.reset(toBusinessProfileFormValues(profile))}
-          cancelLabel="Reset changes"
-          cancelButtonProps={{ type: 'button', variant: 'outlined' }}
-        />
       </Stack>
+      </AppDialog>}</FormExitGuard> : null}
+      <BusinessPolicyPanel />
       <AppSnackbar open={successMessage !== null} message={successMessage} onClose={() => setSuccessMessage(null)} />
     </PageContainer>
   );

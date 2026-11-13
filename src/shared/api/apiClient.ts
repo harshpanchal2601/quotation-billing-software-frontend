@@ -1,3 +1,4 @@
+export type ApiPagination = { page: number; limit: number; total: number; totalPages: number };
 import axios, {
   AxiosError,
   type AxiosInstance,
@@ -6,6 +7,7 @@ import axios, {
 } from 'axios';
 
 import { resolveApiBaseUrl } from './apiBaseUrl';
+import { getFirmContextRevision, getSelectedFirm } from '../tenancy/selectedFirm';
 
 export type ApiSuccessResponse<TData> = {
   success: true;
@@ -30,6 +32,7 @@ export type ApiError = {
   cancelled: boolean;
   isAuthError: boolean;
   isConflict: boolean;
+  approvalRequested: boolean;
   isFileSizeError: boolean;
   isFileTypeError: boolean;
 };
@@ -46,14 +49,49 @@ export function setAuthenticationFailureHandler(handler: (() => void) | null) {
   authenticationFailureHandler = handler;
 }
 
-export const apiClient: AxiosInstance = axios.create({
-  baseURL: resolveApiBaseUrl(import.meta.env),
-  withCredentials: true,
-  timeout: 15_000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+export const API_REQUEST_TIMEOUTS = { standard: 15_000, pdfGeneration: 120_000 } as const;
+
+export function createHttpClient(): AxiosInstance {
+  const client = axios.create({
+    baseURL: resolveApiBaseUrl(import.meta.env),
+    withCredentials: true,
+    timeout: API_REQUEST_TIMEOUTS.standard,
+    headers: { 'Content-Type': 'application/json' },
+  });
+  // Downloads use Blob responses even when the server returns a JSON error.
+  // Decode only bounded error envelopes; keep successful file bytes untouched.
+  client.interceptors.response.use(undefined, async (error: AxiosError<unknown>) => {
+    const response = error.response;
+    const body = response?.data;
+    if (body instanceof Blob && body.size <= 64 * 1024 && /json/i.test(String(response?.headers['content-type'] ?? body.type))) {
+      try {
+        const parsed: unknown = JSON.parse(await body.text());
+        if (isRecord(parsed) && parsed.success === false && typeof parsed.message === 'string' && response) response.data = parsed;
+      } catch { /* A malformed error body retains the existing safe fallback. */ }
+    }
+    return Promise.reject(error);
+  });
+  return client;
+}
+
+export const apiClient: AxiosInstance = createHttpClient();
+
+apiClient.interceptors.request.use((config) => {
+  const selectedFirm = getSelectedFirm();
+  if (!/^\/?(?:auth|platform|health)(?:\/|$)/.test(config.url ?? '')) {
+    assertCurrentFirmRequest(config);
+    config.firmContextRevision = getFirmContextRevision();
+  }
+  if (selectedFirm !== null) config.headers.set('x-firm-id', String(selectedFirm.id));
+  else config.headers.delete('x-firm-id');
+  return config;
 });
+
+function assertCurrentFirmRequest(config: AxiosRequestConfig | undefined) {
+  if (config?.firmContextRevision !== undefined && config.firmContextRevision !== getFirmContextRevision()) {
+    throw new axios.CanceledError('Firm context changed');
+  }
+}
 
 export function createSkipAuthRefreshConfig(config: AxiosRequestConfig = {}): AxiosRequestConfig {
   return {
@@ -68,16 +106,20 @@ export function toApiError(error: unknown): ApiError {
     const responseData = error.response?.data;
     const fieldErrors = extractFieldErrors(responseData?.errors);
     const cancelled = axios.isCancel(error) || error.code === AxiosError.ERR_CANCELED;
+    const validationMessage = statusCode === 400 || statusCode === 422
+      ? firstFieldErrorMessage(fieldErrors)
+      : null;
 
     return {
       statusCode,
-      message: normaliseApiErrorMessage(statusCode, responseData?.message, error),
+      message: validationMessage ?? normaliseApiErrorMessage(statusCode, responseData?.message, error),
       errors: responseData?.errors,
       fieldErrors,
       retryable: !cancelled && isRetryableStatus(statusCode),
       cancelled,
       isAuthError: statusCode === 401,
       isConflict: statusCode === 409,
+      approvalRequested: statusCode === 409 && isRecord(responseData?.errors) && responseData.errors.code === 'APPROVAL_REQUESTED',
       isFileSizeError: statusCode === 413,
       isFileTypeError: statusCode === 415,
     };
@@ -91,6 +133,7 @@ export function toApiError(error: unknown): ApiError {
     cancelled: false,
     isAuthError: false,
     isConflict: false,
+    approvalRequested: false,
     isFileSizeError: false,
     isFileTypeError: false,
   };
@@ -103,7 +146,7 @@ function normaliseApiErrorMessage(
 ) {
   if (axios.isCancel(error) || error.code === AxiosError.ERR_CANCELED) return '';
   if (error.code === AxiosError.ECONNABORTED || error.code === 'ETIMEDOUT') {
-    return 'The request took too long. Please try again.';
+    return 'The request took too long. Check the latest records before retrying a save.';
   }
 
   if (statusCode >= 500) return fallbackMessageForStatus(statusCode);
@@ -121,7 +164,7 @@ function fallbackMessageForStatus(statusCode: number) {
   if (statusCode === 403) return 'You do not have permission to perform this action.';
   if (statusCode === 404) return 'The requested record could not be found.';
   if (statusCode === 408) return 'The request took too long. Please try again.';
-  if (statusCode === 409) return 'A record with these details already exists.';
+  if (statusCode === 409) return 'This action conflicts with the latest record. Refresh the records and try again.';
   if (statusCode === 413) return 'The selected file is too large.';
   if (statusCode === 415) return 'This file type is not supported.';
   if (statusCode === 429) return 'Too many requests. Please wait a moment and try again.';
@@ -194,6 +237,25 @@ function messageFromFieldErrorValue(value: unknown) {
   return null;
 }
 
+function firstFieldErrorMessage(fieldErrors: ApiFieldErrors) {
+  const firstError = Object.entries(fieldErrors)[0];
+  if (firstError === undefined) return null;
+
+  const [field, message] = firstError;
+  return `${formatFieldName(field)}: ${message}`;
+}
+
+function formatFieldName(field: string) {
+  const fieldSegments = field.split('.').filter(Boolean);
+  const fieldName = fieldSegments[fieldSegments.length - 1] ?? field;
+  const words = fieldName
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .trim();
+  if (words.length === 0) return 'Field';
+  return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase();
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -216,9 +278,13 @@ async function refreshSession() {
 }
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    assertCurrentFirmRequest(response.config);
+    return response;
+  },
   async (error: AxiosError<ApiErrorResponse>) => {
     const originalRequest = error.config as RetriableRequestConfig | undefined;
+    assertCurrentFirmRequest(originalRequest);
 
     if (
       error.response?.status !== 401 ||
@@ -236,7 +302,7 @@ apiClient.interceptors.response.use(
       await refreshSession();
       return apiClient(originalRequest);
     } catch (refreshError) {
-      authenticationFailureHandler?.();
+      if (!axios.isCancel(refreshError)) authenticationFailureHandler?.();
       return Promise.reject(refreshError);
     }
   },
@@ -246,5 +312,6 @@ declare module 'axios' {
   interface AxiosRequestConfig {
     skipAuthRefresh?: boolean;
     hasRetriedAfterRefresh?: boolean;
+    firmContextRevision?: number;
   }
 }

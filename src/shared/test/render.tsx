@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 import { theme } from '@app/theme/theme';
 import { AuthProvider } from '@features/auth';
+import { NotificationProvider } from '../ui/feedback';
 
 type RenderWithProvidersOptions = RenderOptions & {
   route?: string;
@@ -29,7 +30,7 @@ export function renderWithProviders(ui: ReactElement, options: RenderWithProvide
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <MemoryRouter initialEntries={[route]}>
-          <AuthProvider>{ui}</AuthProvider>
+          <AuthProvider><NotificationProvider>{ui}</NotificationProvider></AuthProvider>
         </MemoryRouter>
       </ThemeProvider>
     </QueryClientProvider>,

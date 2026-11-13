@@ -8,7 +8,7 @@ export function FullPageLoader() {
     <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
       <Stack spacing={2} alignItems="center">
         <CircularProgress aria-label="Loading application" />
-        <Typography color="text.secondary">Loading Buminex</Typography>
+        <Typography color="text.secondary">Loading workspace</Typography>
       </Stack>
     </Box>
   );

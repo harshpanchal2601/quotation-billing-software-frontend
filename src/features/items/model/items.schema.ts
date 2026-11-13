@@ -18,6 +18,7 @@ export const itemSpecificationSchema = z.object({
 
 export const itemFormSchema = z
   .object({
+    kind: z.enum(['GOODS', 'SERVICE']).default('GOODS'),
     name: z
       .string()
       .trim()

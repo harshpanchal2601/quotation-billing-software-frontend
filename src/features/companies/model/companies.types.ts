@@ -45,6 +45,7 @@ export type CompanyListItem = {
   pan: string | null;
   website: string | null;
   isActive: boolean;
+  isSupplier: boolean;
   primaryContact: CompanyContact | null;
   primaryBillingAddress: CompanyAddress | null;
   primaryShippingAddress: CompanyAddress | null;
@@ -82,6 +83,7 @@ export type CompanyListParams = {
   limit: number;
   search?: string;
   isActive?: boolean;
+  isSupplier?: boolean;
   sortBy: 'companyCode' | 'name' | 'createdAt' | 'updatedAt';
   sortOrder: 'asc' | 'desc';
 };
@@ -92,6 +94,7 @@ export type QuotationHistoryParams = {
   status?: QuotationStatus;
   dateFrom?: string;
   dateTo?: string;
+  sortBy?: 'quotationNumber' | 'revisionNumber' | 'quotationDate' | 'validUntil' | 'status' | 'currency' | 'grandTotal' | 'createdAt';
   sortOrder: 'asc' | 'desc';
 };
 

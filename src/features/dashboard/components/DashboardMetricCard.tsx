@@ -23,14 +23,14 @@ export function DashboardMetricCard({
   value,
   caption,
   icon,
-  iconBgColor = 'primary.50',
+  iconBgColor = 'primary.light',
   iconColor = 'primary.main',
   linkTo,
 }: DashboardMetricCardProps) {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <CardContent sx={{ p: 2.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
           <Typography color="text.secondary" variant="subtitle2" fontWeight={600}>
             {title}
           </Typography>
@@ -38,6 +38,7 @@ export function DashboardMetricCard({
             sx={{
               width: 42,
               height: 42,
+              flexShrink: 0,
               borderRadius: 2,
               bgcolor: iconBgColor,
               color: iconColor,
@@ -50,11 +51,11 @@ export function DashboardMetricCard({
           </Box>
         </Box>
 
-        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5, wordBreak: 'break-word' }}>
+        <Typography component="p" fontWeight={700} sx={{ fontSize: { xs: 26, sm: 28 }, lineHeight: 1.3, mb: 0.5, overflowWrap: 'anywhere' }}>
           {value}
         </Typography>
 
-        <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ mt: 'auto', display: 'flex', gap: 1, justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="caption" color="text.secondary">
             {caption}
           </Typography>

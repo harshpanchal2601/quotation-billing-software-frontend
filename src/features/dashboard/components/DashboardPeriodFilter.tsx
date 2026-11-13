@@ -58,14 +58,14 @@ export function DashboardPeriodFilter({
   };
 
   return (
-    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }} flexWrap="wrap">
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} useFlexGap alignItems={{ xs: 'stretch', sm: 'center' }} flexWrap="wrap">
       {rangeLabel ? (
         <Chip
           icon={<CalendarTodayOutlinedIcon />}
           label={rangeLabel}
           color="primary"
           variant="outlined"
-          sx={{ fontWeight: 600, py: 2.2 }}
+          sx={{ fontWeight: 600, minHeight: 40, height: 'auto', maxWidth: '100%', '& .MuiChip-label': { whiteSpace: 'normal', py: 1 } }}
         />
       ) : null}
 
@@ -85,7 +85,7 @@ export function DashboardPeriodFilter({
       </FormControl>
 
       {period === 'CUSTOM' ? (
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} useFlexGap flexWrap="wrap" alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ minWidth: 0, maxWidth: '100%', width: { xs: '100%', sm: 'auto' } }}>
           <TextField
             size="small"
             type="date"
@@ -106,7 +106,7 @@ export function DashboardPeriodFilter({
             error={Boolean(dateError)}
             sx={{ width: { xs: '100%', sm: 'auto' } }}
           />
-          <AppButton variant="outlined" size="small" onClick={handleCustomApply} sx={{ height: 40, width: { xs: '100%', sm: 'auto' } }}>
+          <AppButton variant="outlined" onClick={handleCustomApply} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Apply
           </AppButton>
         </Stack>
@@ -119,11 +119,10 @@ export function DashboardPeriodFilter({
       <AppButton
         variant="outlined"
         color="inherit"
-        size="small"
         startIcon={<RefreshOutlinedIcon />}
         onClick={onRefresh}
         disabled={isFetching}
-        sx={{ height: 40, ml: { xs: 0, sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}
+        sx={{ ml: { xs: 0, sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}
       >
         {isFetching ? 'Refreshing...' : 'Refresh'}
       </AppButton>

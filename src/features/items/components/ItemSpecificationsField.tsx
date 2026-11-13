@@ -29,8 +29,8 @@ export function ItemSpecificationsField({ control, errors, disabled = false }: I
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Box>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} useFlexGap flexWrap="wrap" justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
+        <Box sx={{ minWidth: 0, flex: { sm: '1 1 220px' } }}>
           <Typography variant="h6" fontWeight={600}>
             Item Specifications
           </Typography>

@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import { DataTableShell } from '@shared/ui/tables';
+import { AppButton } from '@shared/ui/actions';
 import { formatCurrency } from '@features/quotations';
 import type { MonthlyTrendDto } from '../model/dashboard.types';
 
@@ -31,8 +32,8 @@ export function MonthlyQuotationTrend({ monthlyTrend, currency = 'INR' }: Monthl
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardContent sx={{ p: 2.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ minWidth: 0, flex: '1 1 180px' }}>
             <Typography variant="h6" fontWeight={700}>
               Monthly Quotation Trend
             </Typography>
@@ -41,14 +42,15 @@ export function MonthlyQuotationTrend({ monthlyTrend, currency = 'INR' }: Monthl
             </Typography>
           </Box>
 
-          <Typography
-            variant="caption"
-            sx={{ cursor: 'pointer', color: 'primary.main', textDecoration: 'underline', fontWeight: 600 }}
+          <AppButton
+            size="small"
+            sx={{ flexShrink: 0 }}
             onClick={() => setShowTable(!showTable)}
             aria-label="Toggle trend view"
+            aria-pressed={showTable}
           >
             {showTable ? 'Visual View' : 'Table View'}
-          </Typography>
+          </AppButton>
         </Box>
 
         {showTable ? (

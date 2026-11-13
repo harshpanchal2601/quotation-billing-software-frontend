@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
@@ -32,6 +32,10 @@ const unitsApi = vi.hoisted(() => ({
 }));
 
 vi.mock('./api/items.api', () => itemsApi);
+vi.mock('@features/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@features/auth')>()),
+  useHasPermission: () => true,
+}));
 vi.mock('@features/categories', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@features/categories')>()),
   ...categoriesApi,
@@ -100,6 +104,8 @@ describe('item management frontend', () => {
 
     await screen.findByLabelText(/item name/i);
     await userEvent.type(screen.getByLabelText(/item name/i), 'Reactor Tank 500L');
+    await userEvent.click(screen.getByRole('combobox', { name: 'Item kind' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'Service' }));
 
     // Open measurement unit select and pick PCS option
     const unitSelect = screen.getByRole('combobox', { name: /measurement unit/i });
@@ -113,6 +119,8 @@ describe('item management frontend', () => {
     const payload = itemsApi.createItemRequest.mock.calls[0][0];
 
     expect(payload.name).toBe('Reactor Tank 500L');
+    expect(payload.kind).toBe('SERVICE');
+    expect(payload).not.toHaveProperty('stockTracking');
     expect(payload.measurementUnitId).toBe(2);
     expect(payload.defaultRate).toBe('0.00');
     expect(payload.gstRate).toBe('18.00');
@@ -188,7 +196,7 @@ describe('item management frontend', () => {
     expect(await screen.findByText('Reactor Tank 500L')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /^delete$/i }));
 
-    expect(screen.getByText(/referenced in 3 quotation line item/i)).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog', { name: 'Delete Item' })).getByRole('alert')).toHaveTextContent(/referenced in 3 quotation line item/i);
 
     const deleteConfirmBtn = screen.getByRole('button', { name: /delete item/i });
     await userEvent.click(deleteConfirmBtn);
@@ -227,6 +235,8 @@ function mockItemListItem(overrides: Partial<ItemListItem> = {}): ItemListItem {
     gstRate: '18.00',
     imageUrl: '/storage/items/item-test.png',
     sourceType: 'MANUAL',
+    kind: 'GOODS',
+    stockTracking: false,
     isActive: true,
     quotationUsageCount: 0,
     createdAt: '2026-01-01T00:00:00.000Z',

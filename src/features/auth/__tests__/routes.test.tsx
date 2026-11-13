@@ -12,6 +12,11 @@ import { PublicOnlyRoute } from '@app/router/guards/PublicOnlyRoute';
 const authState = vi.hoisted(() => ({
   isAuthenticated: false,
   isInitialising: false,
+  user: null as null | {
+    accountType: 'FIRM_ADMIN';
+    permissions: ['dashboard.view'];
+    mustChangePassword: false;
+  },
 }));
 
 vi.mock('../hooks/useAuth', () => ({
@@ -40,7 +45,7 @@ describe('auth route guards', () => {
       </Routes>,
     );
 
-    expect(screen.getByText(/loading buminex/i)).toBeInTheDocument();
+    expect(screen.getByText(/loading workspace/i)).toBeInTheDocument();
     expect(screen.queryByText(/protected dashboard/i)).not.toBeInTheDocument();
   });
 
@@ -64,6 +69,11 @@ describe('auth route guards', () => {
   it('redirects authenticated users away from login', () => {
     authState.isInitialising = false;
     authState.isAuthenticated = true;
+    authState.user = {
+      accountType: 'FIRM_ADMIN',
+      permissions: ['dashboard.view'],
+      mustChangePassword: false,
+    };
 
     renderRoutes(
       '/login',

@@ -39,6 +39,12 @@ const addressesApi = vi.hoisted(() => ({
 vi.mock('./api/companies.api', () => companiesApi);
 vi.mock('./api/contacts.api', () => contactsApi);
 vi.mock('./api/addresses.api', () => addressesApi);
+vi.mock('@features/payments', () => ({ ReceivablesPanel: () => null }));
+vi.mock('@features/crm', () => ({ CustomerTimeline: () => null }));
+vi.mock('@features/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@features/auth')>()),
+  useHasPermission: () => true,
+}));
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -71,12 +77,14 @@ describe('company frontend', () => {
     await userEvent.type(screen.getByLabelText(/^contact name/i), 'Nitish');
     await userEvent.type(screen.getByLabelText(/^phone/i), '+91 0987654321');
     await userEvent.type(screen.getByLabelText(/^address line 1/i), 'Factory Road');
+    await userEvent.click(screen.getByLabelText('Also a supplier'));
     await userEvent.click(screen.getByRole('button', { name: /create company/i }));
 
     await waitFor(() => expect(companiesApi.createCompanyRequest).toHaveBeenCalled());
     const payload = companiesApi.createCompanyRequest.mock.calls[0][0];
     expect(payload).toEqual(expect.objectContaining({
       name: 'Acme Pharma',
+      isSupplier: true,
       contacts: [expect.objectContaining({ name: 'Nitish', phone: '+91 0987654321', isPrimary: true })],
       addresses: [expect.objectContaining({ addressType: 'BILLING', addressLine1: 'Factory Road', isPrimary: true })],
     }));
@@ -140,7 +148,8 @@ describe('company frontend', () => {
       '/companies?search=acme&isActive=true&page=2&limit=10&sort=name:asc',
     );
 
-    await userEvent.click((await screen.findAllByRole('link', { name: /^view$/i }))[0]);
+    await userEvent.click(await screen.findByRole('button', { name: 'Open actions for Acme Pharma' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /^view$/i }));
 
     expect(await screen.findByText('/companies?search=acme&isActive=true&page=2&limit=10&sort=name:asc')).toBeInTheDocument();
   });
@@ -157,7 +166,8 @@ describe('company frontend', () => {
 
     renderCompany(<CompaniesPage />, '/companies');
     expect(await screen.findAllByText('Acme Pharma')).not.toHaveLength(0);
-    await userEvent.click(screen.getAllByRole('button', { name: /delete/i })[0]);
+    await userEvent.click(screen.getByRole('button', { name: 'Open actions for Acme Pharma' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /^delete$/i }));
     await userEvent.click(screen.getByRole('button', { name: /delete company/i }));
 
     expect(await screen.findByText('Company cannot be deleted because quotations are linked to it.')).toBeInTheDocument();
@@ -174,12 +184,14 @@ describe('company frontend', () => {
     renderCompany(<CompaniesPage />, '/companies');
 
     expect(await screen.findAllByText('Acme Pharma')).not.toHaveLength(0);
-    const deactivateButtons = screen.getAllByRole('button', { name: /^deactivate$/i });
-    await userEvent.click(deactivateButtons[0]!);
+    const firstActions = screen.getByRole('button', { name: 'Open actions for Acme Pharma' });
+    const otherActions = screen.getByRole('button', { name: 'Open actions for Beta Pharma' });
+    await userEvent.click(firstActions);
+    await userEvent.click(screen.getByRole('menuitem', { name: /^deactivate$/i }));
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^deactivate$/i }));
 
-    expect(deactivateButtons[0]).toBeDisabled();
-    expect(deactivateButtons[1]).not.toBeDisabled();
+    expect(firstActions).toBeDisabled();
+    expect(otherActions).not.toBeDisabled();
   });
 
   it('shows paginated quotation history amounts with returned currency', async () => {
@@ -195,8 +207,8 @@ describe('company frontend', () => {
     expect(screen.getByText(/₹10,000.00/)).toBeInTheDocument();
   });
 
-  it('renders company quotation history as compact cards on mobile and tablet widths', async () => {
-    mockViewport(700);
+  it('renders company quotation history using shared mobile records', async () => {
+    mockViewport(360);
     companiesApi.getCompanyRequest.mockResolvedValue(companyDetail());
     companiesApi.listCompanyQuotationsRequest.mockResolvedValue({
       quotations: [quotation()],
@@ -205,10 +217,11 @@ describe('company frontend', () => {
 
     renderCompanyRoute(<CompanyDetailsPage />, '/companies/:id', '/companies/1?tab=quotations');
 
-    expect(await screen.findByLabelText('Company quotation history cards')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Company quotation history')).toBeInTheDocument();
     expect(screen.getByText('Q-001')).toBeInTheDocument();
-    expect(screen.getByText('Quotation date')).toBeInTheDocument();
-    expect(screen.getByText('Valid until')).toBeInTheDocument();
+    const records = within(screen.getByRole('region', { name: 'Company quotation history' }));
+    expect(records.getByText('Quotation date')).toBeInTheDocument();
+    expect(records.getByText('Valid until')).toBeInTheDocument();
     expect(screen.getByText(/₹10,000.00/)).toBeInTheDocument();
   });
 });
@@ -260,6 +273,7 @@ function companyListItem(overrides: Partial<CompanyListItem> = {}): CompanyListI
     pan: null,
     website: null,
     isActive: true,
+    isSupplier: false,
     primaryContact: { id: 1, name: 'Nitish', designation: null, email: 'nitish@example.com', phone: '+91 9876543210', alternatePhone: null, isPrimary: true, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
     primaryBillingAddress: { id: 1, addressType: 'BILLING', addressLine1: 'Factory Road', addressLine2: null, city: 'Ahmedabad', state: 'Gujarat', postalCode: '038001', country: 'India', isPrimary: true, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
     primaryShippingAddress: null,

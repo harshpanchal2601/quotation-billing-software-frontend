@@ -12,9 +12,10 @@ type SafeImageProps = {
   fallbackLabel: string;
   imgSx?: SxProps<Theme>;
   fallback?: ReactNode;
+  compact?: boolean;
 };
 
-export function SafeImage({ src, alt, fallbackLabel, imgSx, fallback }: SafeImageProps) {
+export function SafeImage({ src, alt, fallbackLabel, imgSx, fallback, compact = false }: SafeImageProps) {
   const [hasError, setHasError] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const imageSrc = src?.trim() ?? '';
@@ -62,7 +63,7 @@ export function SafeImage({ src, alt, fallbackLabel, imgSx, fallback }: SafeImag
   return (
     <Stack spacing={0.5} alignItems="center" justifyContent="center" color="text.secondary" role="img" aria-label={fallbackLabel}>
       <ImageOutlinedIcon fontSize="small" />
-      <Typography variant="caption">{fallbackLabel}</Typography>
+      {!compact ? <Typography variant="caption">{fallbackLabel}</Typography> : null}
     </Stack>
   );
 }

@@ -52,6 +52,7 @@ describe('FormDialogShell', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(screen.getByLabelText('Name')).toBeDisabled();
 
     expect(onSubmit).not.toHaveBeenCalled();
   });

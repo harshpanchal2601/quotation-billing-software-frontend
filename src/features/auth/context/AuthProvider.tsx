@@ -11,11 +11,16 @@ import {
 } from '../api/auth.api';
 import { AuthContext, type AuthContextValue } from './auth-context';
 import type { AuthUser } from '../model/auth.types';
+import { setSelectedFirm, useSelectedFirm } from '@shared/tenancy/selectedFirm';
+import { FirmIdContext } from '@shared/tenancy/useFirmId';
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
+  const selectedFirm = useSelectedFirm();
   const [authError, setAuthError] = useState<ApiError | null>(null);
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+  const clearAuthError = useCallback(() => setAuthError(null), []);
+  const clearSessionMessage = useCallback(() => setSessionMessage(null), []);
 
   const currentUserQuery = useQuery({
     queryKey: authQueryKey,
@@ -28,8 +33,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
   });
 
   const clearAuthenticatedState = useCallback(() => {
+    setSelectedFirm(null);
     queryClient.setQueryData<AuthUser | null>(authQueryKey, null);
-    void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
   }, [queryClient]);
 
   useEffect(() => {
@@ -44,11 +50,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const loginMutation = useMutation({
     mutationFn: loginRequest,
     onSuccess: (user) => {
+      setSelectedFirm(null);
       setAuthError(null);
       setSessionMessage(null);
       queryClient.setQueryData(authQueryKey, user);
     },
-    onError: (error) => setAuthError(toApiError(error)),
+    onError: (error) => {
+      const apiError = toApiError(error);
+      setAuthError(apiError.cancelled ? null : {
+        ...apiError,
+        message: apiError.statusCode === 401
+          ? 'Email, username or password is incorrect. Please try again.'
+          : apiError.message,
+      });
+    },
   });
 
   const logoutMutation = useMutation({
@@ -81,11 +96,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       login: loginMutation.mutateAsync,
       logout: logoutMutation.mutateAsync,
       changePassword: changePasswordMutation.mutateAsync,
-      clearAuthError: () => setAuthError(null),
-      clearSessionMessage: () => setSessionMessage(null),
+      clearAuthError,
+      clearSessionMessage,
     }),
     [
       authError,
+      clearAuthError,
+      clearSessionMessage,
       changePasswordMutation.isPending,
       changePasswordMutation.mutateAsync,
       currentUserQuery.data,
@@ -98,5 +115,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     ],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const firmId = value.user?.accountType === 'SUPER_ADMIN' ? selectedFirm?.id : value.user?.firmId;
+  const firmContext = useMemo(() => ({ firmId }), [firmId]);
+  return <AuthContext.Provider value={value}><FirmIdContext.Provider value={firmContext}>{children}</FirmIdContext.Provider></AuthContext.Provider>;
 }
