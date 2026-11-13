@@ -43,7 +43,7 @@ vi.mock('@features/auth', async (importOriginal) => ({
 describe('AppLayout', () => {
   it('shows required navigation sections and active dashboard navigation', () => {
     renderWithProviders(<AppLayout />, { route: '/dashboard' });
-    expect(screen.getAllByText('Quotation Management').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Sales & Customers').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Master Management').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Configuration').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Billing').length).toBeGreaterThan(0);
@@ -67,6 +67,6 @@ describe('AppLayout', () => {
       expect(link).toHaveAttribute('aria-current', 'page');
     }
     expect(screen.queryByRole('menuitem', { name: /^create quotation$/i })).not.toBeInTheDocument();
-    expect(document.title).toBe('Create Quotation | QuoteMerit');
+    expect(document.title).toBe('Create Quotation | Qorwell');
   });
 });

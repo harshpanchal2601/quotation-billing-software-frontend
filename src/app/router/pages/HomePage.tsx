@@ -29,10 +29,10 @@ export function HomePage() {
       >
         <Stack spacing={1.5}>
           <Typography component="h1" variant="h4" fontWeight={700} color="text.primary">
-            Multi-firm Quotation Management System
+            Welcome to Qorwell
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Frontend foundation is ready.
+            Keep customers, sales, inventory and billing together in one business workspace.
           </Typography>
         </Stack>
       </Paper>

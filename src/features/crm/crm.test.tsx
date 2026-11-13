@@ -18,6 +18,13 @@ vi.mock('./crm.api', async (original) => ({ ...(await original<typeof import('./
 function wrap(element: React.ReactNode, entry = '/') { return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } } })}><NotificationProvider><MemoryRouter initialEntries={[entry]}>{element}</MemoryRouter></NotificationProvider></QueryClientProvider>); }
 beforeEach(() => { vi.clearAllMocks(); access.allowed = true; vi.mocked(api.crmOptions).mockResolvedValue({ owners: [{ id: 1, name: 'Owner' }], companies: [{ id: 7, name: 'Existing company' }], stages: { NEW: 10 } }); vi.mocked(api.leadSuggestions).mockResolvedValue([{ id: 7, name: 'Existing company', companyCode: 'COMP-0007' }]); vi.mocked(api.customerTimeline).mockResolvedValue({ records: [], pagination: { totalPages: 0 } }); });
 describe('CRM master identity and visibility', () => {
+  it('shows readable timeline changes without changes between two missing values', async () => {
+    vi.mocked(api.customerTimeline).mockResolvedValue({ records: [{ id: 1, kind: 'HISTORY', subject: 'Lead captured', notes: null, createdAt: '2026-11-12T00:00:00Z', createdBy: { name: 'Reviewer' }, details: { before: null, after: { ownerId: 6, companyId: null, status: 'NEW' } } }], pagination: { totalPages: 1 } });
+    wrap(<CustomerTimeline leadId={1} />);
+    expect(await screen.findByText('Owner: — → User #6')).toBeInTheDocument();
+    expect(screen.getByText('Status: — → New')).toBeInTheDocument();
+    expect(screen.queryByText('Company: — → —')).not.toBeInTheDocument();
+  });
   it.each([
     ['leads', 'Leads', ['Lead', 'Email', 'Phone', 'Owner', 'Source']],
     ['opportunities', 'Opportunities', ['Opportunity', 'Stage', 'Currency', 'Value', 'Probability', 'Expected close']],

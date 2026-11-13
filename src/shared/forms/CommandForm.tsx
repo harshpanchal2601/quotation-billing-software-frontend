@@ -1,6 +1,6 @@
 import { Alert, Box, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
-import { useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { toApiError } from '@shared/api/apiClient';
 import { AppButton } from '@shared/ui/actions';
 import type { AppButtonProps } from '@shared/ui/actions/AppButton';
@@ -45,8 +45,9 @@ export function CommandForm({ title, children, submit, saved, label = 'Save', ca
   const baseline = useRef<string | null>(null);
   const locked = useRef(false);
   const dismissFailure = useRef<(() => void) | null>(null);
+  useEffect(() => () => { dismissFailure.current?.(); }, []);
   const command = useCommandIdentity();
-  const close = () => { setOpen(false); setDiscard(false); baseline.current = null; onClosed?.(); };
+  const close = () => { dismissFailure.current?.(); dismissFailure.current = null; setOpen(false); setDiscard(false); baseline.current = null; onClosed?.(); };
   const mutation = useMutation({
     mutationFn: (data: FormData) => {
       return submit(data, command.getKey(fingerprint(data)));
@@ -58,7 +59,7 @@ export function CommandForm({ title, children, submit, saved, label = 'Save', ca
       try { await saved(); }
       catch { notify('Changes were saved, but the list could not refresh. Refresh the records before submitting again.', 'warning'); }
     },
-    onError: (error) => { const failure = toApiError(error); if (!failure.cancelled) { dismissFailure.current?.(); dismissFailure.current = notify(failure.message, 'error'); } },
+    onError: (error) => { const failure = toApiError(error); if (!failure.cancelled) { dismissFailure.current?.(); dismissFailure.current = notify(failure.message, failure.approvalRequested ? 'info' : 'error'); } },
     onSettled: () => { locked.current = false; },
   });
   const execute = (data: FormData) => {
@@ -80,7 +81,7 @@ export function CommandForm({ title, children, submit, saved, label = 'Save', ca
     else close();
   };
   const fields = <>
-    {mutation.isError && !toApiError(mutation.error).cancelled ? <Alert severity="error">{toApiError(mutation.error).message}</Alert> : null}
+    {mutation.isError && !toApiError(mutation.error).cancelled ? <Alert severity={toApiError(mutation.error).approvalRequested ? 'info' : 'error'}>{toApiError(mutation.error).message}</Alert> : null}
     <Box component="fieldset" disabled={mutation.isPending} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}><Stack spacing={2}>{children}</Stack></Box>
   </>;
   return <>

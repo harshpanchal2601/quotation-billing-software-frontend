@@ -19,8 +19,7 @@ import { PasswordField } from '@shared/components/common/PasswordField';
 import { ControlledTextField } from '@shared/forms/controlled';
 import { AppButton } from '@shared/ui/actions';
 import { AppSnackbar, ServerErrorAlert } from '@shared/ui/feedback';
-import { paths } from '@shared/routing/paths';
-import { getDefaultAuthenticatedPath } from '../model/auth-routing';
+import { getPostLoginPath } from '../model/auth-routing';
 import { useAuth } from '../hooks/useAuth';
 import { loginSchema, type LoginFormValues } from '../model/auth.schema';
 
@@ -29,9 +28,9 @@ type LocationState = {
 };
 
 const workspaceFeatures = [
-  { icon: BusinessOutlinedIcon, title: 'Company directory', description: 'Keep customer details close at hand.' },
-  { icon: Inventory2OutlinedIcon, title: 'Item catalogue', description: 'Keep your products and pricing organised.' },
-  { icon: DescriptionOutlinedIcon, title: 'Professional quotations', description: 'Prepare and manage quotes with clarity.' },
+  { icon: BusinessOutlinedIcon, title: 'Customers & follow-ups', description: 'Keep contact details and conversations easy to find.' },
+  { icon: DescriptionOutlinedIcon, title: 'Sales & orders', description: 'Prepare quotations and keep orders on track.' },
+  { icon: Inventory2OutlinedIcon, title: 'Stock & billing', description: 'Keep items, invoices and payments organised.' },
 ];
 
 export function LoginPage() {
@@ -73,9 +72,7 @@ export function LoginPage() {
     if (user === null) return;
     form.reset({ identifier: '', password: '' });
     const requestedPath = (location.state as LocationState | null)?.from?.pathname;
-    const destination = user.mustChangePassword
-      ? paths.changePassword
-      : requestedPath ?? getDefaultAuthenticatedPath(user);
+    const destination = getPostLoginPath(user, requestedPath);
     navigate(destination, { replace: true });
   }
 
@@ -114,16 +111,16 @@ export function LoginPage() {
           </Box>
           <Box>
             <Typography sx={{ display: { xs: 'none', md: 'block' }, color: '#B6E8C8', fontSize: 11, fontWeight: 700, letterSpacing: '2px', mb: 2 }}>
-              YOUR QUOTATION WORKSPACE
+              FOR YOUR DAY-TO-DAY WORK
             </Typography>
             <Typography component="h2" sx={{ display: { xs: 'none', md: 'block' }, fontSize: 50, fontWeight: 600, lineHeight: 1.12, letterSpacing: '-1.5px', maxWidth: 420 }}>
-              Every detail.<br />Every quote.<br /><Box component="span" sx={{ color: '#B6E8C8' }}>In one place.</Box>
+              From first enquiry<br />to final payment.
             </Typography>
             <Typography component="p" sx={{ display: { xs: 'block', md: 'none' }, fontSize: 25, fontWeight: 600, lineHeight: 1.25, letterSpacing: '-0.7px', color: '#B6E8C8' }}>
-              Every quote. In one place.
+              From first enquiry to final payment.
             </Typography>
             <Typography sx={{ display: { xs: 'none', md: 'block' }, color: '#C0D1C9', fontSize: 16, lineHeight: 1.75, mt: 2.5, maxWidth: 360 }}>
-              Bring your companies, items and quotations together. Spend less time organising and more time moving business forward.
+              Keep customer details, sales, stock and billing together, so the next step is easy to find.
             </Typography>
           </Box>
           <Stack spacing={2.5} sx={{ display: { xs: 'none', md: 'flex' } }}>
@@ -144,7 +141,7 @@ export function LoginPage() {
         <Stack component="section" aria-labelledby="login-heading" justifyContent="center" sx={{ p: { xs: 3, sm: 5, md: 6 }, minWidth: 0 }}>
             <Stack component="form" spacing={3} onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate aria-busy={isLoggingIn} sx={{ width: '100%', maxWidth: 380, mx: 'auto', '& .MuiInputBase-input': { fontSize: { xs: 16, sm: 14 } } }}>
               <Box>
-                <Typography sx={{ color: 'primary.dark', fontSize: 11, fontWeight: 700, letterSpacing: '1.8px', mb: 1.5 }}>LET’S GET TO WORK</Typography>
+                <Typography sx={{ color: 'primary.dark', fontSize: 11, fontWeight: 700, letterSpacing: '1.8px', mb: 1.5 }}>SIGN IN TO CONTINUE</Typography>
                 <Typography id="login-heading" component="h1" sx={{ fontSize: { xs: 28, md: 34 }, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.2, mb: 1.5 }}>Welcome back</Typography>
                 <Typography color="text.secondary">Sign in to your {productBrand.name} workspace to pick up where you left off.</Typography>
               </Box>
@@ -182,11 +179,11 @@ export function LoginPage() {
                 {isLoggingIn ? 'Signing in...' : 'Sign in'}
               </AppButton>
               <Typography variant="body2" color="text.secondary" textAlign="center">
-                Need access? Contact your administrator.
+                Need help signing in? Ask your administrator.
               </Typography>
               <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="center" sx={{ pt: 2, borderTop: '1px solid', borderColor: 'divider', color: 'text.secondary' }}>
                 <LockOutlinedIcon sx={{ fontSize: 15 }} />
-                <Typography variant="body2">Your workspace. Securely connected.</Typography>
+                <Typography variant="body2">Your account is protected.</Typography>
               </Stack>
             </Stack>
         </Stack>

@@ -76,7 +76,7 @@ export function QuotationDetailsPage() {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [activeDocumentId, setActiveDocumentId] = useState<number | null>(null);
 
-  const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({
     open: false,
     message: '',
     severity: 'success',
@@ -98,7 +98,8 @@ export function QuotationDetailsPage() {
     },
     onError: (error) => {
       const apiError = toApiError(error);
-      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: 'error' });
+      if (apiError.approvalRequested) setStatusDialogOpen(false);
+      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: apiError.approvalRequested ? 'info' : 'error' });
     },
   });
 

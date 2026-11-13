@@ -6,7 +6,7 @@ import { toApiError } from '@shared/api/apiClient';
 import { CommandForm } from '@shared/forms/CommandForm';
 import { useFirmId } from '@shared/tenancy/useFirmId';
 import { AppButton } from '@shared/ui/actions';
-import { formatRecordStatus } from '@shared/ui/display';
+import { formatRecordStatus, formatRecordValue } from '@shared/ui/display';
 import { DetailActions, DetailSection } from '@shared/ui/layout';
 import { RecordTable, useTableSort } from '@shared/ui/tables';
 import { crmKeys, customerTimeline, recordActivity } from './crm.api';
@@ -15,7 +15,10 @@ const historyFields = { status: 'Status', stage: 'Stage', ownerId: 'Owner', assi
 function historyValue(value: unknown, field: string) {
   if (typeof value !== 'string' && typeof value !== 'number') return '—';
   if (field === 'status' || field === 'stage') return formatRecordStatus(String(value));
-  return String(value);
+  if (field === 'ownerId' || field === 'assignedToId') return `User #${value}`;
+  if (field === 'companyId') return `Company #${value}`;
+  if (field === 'probability') return `${value}%`;
+  return formatRecordValue(value, field);
 }
 
 export function CustomerTimeline({ companyId, leadId }: { companyId?: number; leadId?: number }) {
@@ -32,12 +35,12 @@ export function CustomerTimeline({ companyId, leadId }: { companyId?: number; le
     {query.isError ? <Alert severity="error" action={<AppButton onClick={() => void query.refetch()}>Retry activities</AppButton>}>{toApiError(query.error).message}</Alert> : null}
     {query.isPending ? <Typography role="status">Loading activities…</Typography> : null}
     {query.data ? <RecordTable rows={query.data.records} sorting={sorting} rowNumberStart={(page - 1) * 20 + 1} label="Customer activities" rowKey={(activity) => activity.id} emptyMessage="No activities recorded. Record a note, call, meeting or email to keep the customer history together." columns={[
-      { key: 'subject', sortKey: 'subject', label: 'Subject', render: (activity) => activity.subject },
+      { key: 'subject', sortKey: 'subject', label: 'Subject', minWidth: 220, render: (activity) => activity.subject },
       { key: 'kind', sortKey: 'kind', label: 'Activity', render: (activity) => formatRecordStatus(activity.kind) },
       { key: 'recordedBy', label: 'Recorded by', render: (activity) => activity.createdBy.name },
-      { key: 'date', sortKey: 'createdAt', label: 'Recorded at', render: (activity) => new Date(activity.createdAt).toLocaleString() },
-      { key: 'details', label: 'Details', render: (activity) => <Stack spacing={0.5}>
-        {Object.entries(historyFields).filter(([field]) => activity.details?.after?.[field] !== undefined && activity.details?.before?.[field] !== activity.details?.after?.[field]).map(([field, label]) => <Typography variant="body2" key={field}>{label}: {historyValue(activity.details?.before?.[field], field)} → {historyValue(activity.details?.after?.[field], field)}</Typography>)}
+      { key: 'date', sortKey: 'createdAt', label: 'Recorded at', minWidth: 190, render: (activity) => new Date(activity.createdAt).toLocaleString() },
+      { key: 'details', label: 'Details', minWidth: 280, render: (activity) => <Stack spacing={0.5}>
+        {Object.entries(historyFields).filter(([field]) => activity.details?.after?.[field] !== undefined && (activity.details?.before?.[field] ?? null) !== (activity.details?.after?.[field] ?? null)).map(([field, label]) => <Typography variant="body2" key={field}>{label}: {historyValue(activity.details?.before?.[field], field)} → {historyValue(activity.details?.after?.[field], field)}</Typography>)}
         {activity.notes ? <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{activity.notes}</Typography> : null}
       </Stack> },
     ]} /> : null}

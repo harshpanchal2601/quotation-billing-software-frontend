@@ -1,14 +1,18 @@
-import { Alert, MenuItem, Stack, TextField } from '@mui/material';
+import { Alert, Autocomplete, MenuItem, Stack, TextField } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { PERMISSIONS, useHasPermission } from '@features/auth';
+import { listQuotationsRequest } from '@features/quotations/api/quotations.api';
 import { CommandForm } from '@shared/forms/CommandForm';
 import { AppButton } from '@shared/ui/actions';
 import { toApiError } from '@shared/api/apiClient';
 import { useFirmId } from '@shared/tenancy/useFirmId';
-import { crmKeys, crmOptions, saveCrm, type CrmKind, type CrmRecord } from './crm.api';
+import { formatRecordStatus } from '@shared/ui/display';
+import { crmKeys, crmOptions, listCrm, saveCrm, type CrmKind, type CrmRecord } from './crm.api';
 
 export function CrmRecordForm({ kind, record, onSaved }: { kind: CrmKind; record: CrmRecord | null; onSaved: () => void }) {
   const firmId = useFirmId(); const cache = useQueryClient(); const [companySearch, setCompanySearch] = useState('');
+  const canViewQuotations = useHasPermission(PERMISSIONS.QUOTATIONS_VIEW);
   const options = useQuery({ queryKey: [...crmKeys.firm(firmId), 'options', companySearch], queryFn: ({ signal }) => crmOptions(companySearch, signal) });
   function submit(data: FormData) {
     const value = (key: string) => String(data.get(key) ?? '').trim();
@@ -34,17 +38,39 @@ export function CrmRecordForm({ kind, record, onSaved }: { kind: CrmKind; record
     {!record && kind !== 'leads' ? <>
       <TextField label="Find existing company" value={companySearch} onChange={(event) => setCompanySearch(event.target.value)} />
       <TextField select name="companyId" label="Existing company (optional)" defaultValue=""><MenuItem value="">No company yet</MenuItem>{options.data?.companies.map((company) => <MenuItem key={company.id} value={company.id}>{company.name}</MenuItem>)}</TextField>
-      <TextField name="leadId" type="number" label="Source lead ID (optional)" inputProps={{ min: 1 }} />
-      <TextField name={kind === 'tasks' ? 'opportunityId' : 'quotationId'} type="number" label={kind === 'tasks' ? 'Opportunity ID (optional)' : 'Quotation revision ID (optional)'} inputProps={{ min: 1 }} />
+      <CrmRelatedRecordField kind="leads" name="leadId" label="Source lead (optional)" />
+      {kind === 'tasks' ? <CrmRelatedRecordField kind="opportunities" name="opportunityId" label="Opportunity (optional)" /> : canViewQuotations ? <CrmRelatedRecordField kind="quotations" name="quotationId" label="Quotation (optional)" /> : null}
     </> : null}
     {kind === 'opportunities' ? <>
-      <TextField select name="stage" label="Stage" defaultValue={record?.stage ?? 'NEW'}>{Object.keys(options.data?.stages ?? { NEW: 10, QUALIFIED: 25, PROPOSAL: 50, NEGOTIATION: 75, WON: 100, LOST: 0 }).map((stage) => <MenuItem key={stage} value={stage}>{stage}</MenuItem>)}</TextField>
+      <TextField select name="stage" label="Stage" defaultValue={record?.stage ?? 'NEW'}>{Object.keys(options.data?.stages ?? { NEW: 10, QUALIFIED: 25, PROPOSAL: 50, NEGOTIATION: 75, WON: 100, LOST: 0 }).map((stage) => <MenuItem key={stage} value={stage}>{formatRecordStatus(stage)}</MenuItem>)}</TextField>
       <TextField name="probability" type="number" label="Probability % (optional override)" defaultValue={record?.probability ?? ''} inputProps={{ min: 0, max: 100 }} />
       <TextField name="value" label="Opportunity value" defaultValue={record?.value ?? '0'} required inputProps={{ inputMode: 'decimal', pattern: '\\d+(\\.\\d{1,3})?' }} />
       <TextField name="currency" label="Currency" defaultValue={record?.currency ?? 'INR'} required inputProps={{ pattern: '[A-Z]{3}', maxLength: 3 }} />
       <TextField name="expectedClose" label="Expected close" type="date" defaultValue={record?.expectedClose?.slice(0, 10) ?? ''} InputLabelProps={{ shrink: true }} />
     </> : null}
     {kind === 'tasks' ? <><TextField name="notes" label="Follow-up notes" multiline defaultValue={record?.notes ?? ''} /><TextField name="dueAt" label="Due at" type="datetime-local" required defaultValue={localTime(record?.dueAt)} InputLabelProps={{ shrink: true }} /><TextField name="reminderAt" label="Reminder at" type="datetime-local" defaultValue={localTime(record?.reminderAt)} InputLabelProps={{ shrink: true }} /></> : null}
-    {record && kind !== 'opportunities' ? <TextField select name="status" label="Status" defaultValue={record.status}>{(kind === 'leads' ? ['NEW', 'QUALIFIED', 'CLOSED'] : ['OPEN', 'DONE', 'CANCELLED']).map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}</TextField> : null}
+    {record && kind !== 'opportunities' ? <TextField select name="status" label="Status" defaultValue={record.status}>{(kind === 'leads' ? ['NEW', 'QUALIFIED', 'CLOSED'] : ['OPEN', 'DONE', 'CANCELLED']).map((status) => <MenuItem key={status} value={status}>{formatRecordStatus(status)}</MenuItem>)}</TextField> : null}
   </CommandForm>;
+}
+
+type RelatedChoice = { id: number; label: string };
+function CrmRelatedRecordField({ kind, name, label }: { kind: 'leads' | 'opportunities' | 'quotations'; name: string; label: string }) {
+  const firmId = useFirmId();
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [value, setValue] = useState<RelatedChoice | null>(null);
+  useEffect(() => { const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 250); return () => window.clearTimeout(timer); }, [search]);
+  const query = useQuery({
+    queryKey: [...crmKeys.firm(firmId), 'related-records', kind, debouncedSearch],
+    enabled: firmId != null,
+    queryFn: async ({ signal }): Promise<RelatedChoice[]> => kind === 'quotations'
+      ? (await listQuotationsRequest({ search: debouncedSearch, limit: 20, sortBy: 'createdAt', sortOrder: 'desc' })).quotations.map((row) => ({ id: row.id, label: `${row.quotationNumber} · Revision ${row.revisionNumber} · ${row.companyNameSnapshot}` }))
+      : (await listCrm(kind, { search: debouncedSearch, limit: 20, sortBy: 'id', sortOrder: 'desc' }, signal)).records.map((row) => ({ id: row.id, label: `${row.name ?? row.title}${row.company?.name ? ` · ${row.company.name}` : ''}` })),
+  });
+  const choices = value && !query.data?.some((row) => row.id === value.id) ? [value, ...(query.data ?? [])] : query.data ?? [];
+  return <Stack spacing={1}>
+    <input type="hidden" name={name} value={value?.id ?? ''} />
+    <Autocomplete options={choices} value={value} loading={query.isFetching} filterOptions={(rows) => rows} getOptionLabel={(row) => row.label} isOptionEqualToValue={(left, right) => left.id === right.id} noOptionsText="No matching records. Try a different search." onInputChange={(_, text, reason) => { if (reason === 'input' || reason === 'clear') { setSearch(text); setValue(null); } }} onChange={(_, choice) => { setValue(choice); setSearch(''); }} renderInput={(params) => <TextField {...params} label={label} helperText="Search by name or quotation number, then select a record to link it." />} />
+    {query.isError ? <Alert severity="error" action={<AppButton onClick={() => void query.refetch()}>Retry choices</AppButton>}>{toApiError(query.error).message}</Alert> : null}
+  </Stack>;
 }

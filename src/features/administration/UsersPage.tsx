@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import { toApiError, type ApiFieldErrors } from '@shared/api/apiClient';
 import { ErrorState } from '@shared/components/common/ErrorState';
 import { paths } from '@shared/routing/paths';
+import { FormExitGuard } from '@shared/forms';
 import { AppButton } from '@shared/ui/actions';
 import { AppDialog, ConfirmDialog } from '@shared/ui/dialogs';
 import { AppStatusChip, formatRecordStatus } from '@shared/ui/display';
@@ -30,6 +31,7 @@ import type { FirmUser, UserCreateInput } from './administration.types';
 
 const emptyUser: UserCreateInput = { name: '', email: '', username: '', roleId: 0, temporaryPassword: '' };
 type UserEditForm = { name: string; email: string; username: string; roleId: number };
+const userEditForm = (user: FirmUser): UserEditForm => ({ name: user.name, email: user.email, username: user.username, roleId: user.firmRole?.id ?? 0 });
 
 export function UsersPage() {
   const queryClient = useQueryClient();
@@ -51,9 +53,7 @@ export function UsersPage() {
   const createMutation = useMutation({
     mutationFn: createFirmUserRequest,
     onSuccess: () => {
-      setCreateOpen(false);
-      setForm(emptyUser);
-      clearErrors();
+      closeCreate();
       setMessage('User created. They must change the temporary password at first login.');
       void refreshUsers();
     },
@@ -66,12 +66,12 @@ export function UsersPage() {
   });
   const editMutation = useMutation({
     mutationFn: () => updateFirmUserRequest(editTarget!.id, editForm),
-    onSuccess: () => { setEditTarget(null); clearErrors(); setMessage('User details and role updated. Active sessions were revoked if access changed.'); void refreshUsers(); },
+    onSuccess: () => { closeEdit(); setMessage('User details and role updated. Active sessions were revoked if access changed.'); void refreshUsers(); },
     onError: handleApiError,
   });
   const resetMutation = useMutation({
     mutationFn: () => resetFirmUserPasswordRequest(resetTarget!.id, temporaryPassword),
-    onSuccess: () => { setResetTarget(null); setTemporaryPassword(''); clearErrors(); setMessage('Temporary password reset. Active sessions were revoked.'); void refreshUsers(); },
+    onSuccess: () => { closeReset(); setMessage('Temporary password reset. Active sessions were revoked.'); void refreshUsers(); },
     onError: handleApiError,
   });
   const deleteMutation = useMutation({
@@ -116,32 +116,33 @@ export function UsersPage() {
 
   function openCreate() {
     clearErrors();
+    setMessage(null);
+    setForm(emptyUser);
     setCreateOpen(true);
   }
 
   function closeCreate() {
     setCreateOpen(false);
+    setForm(emptyUser);
     clearErrors();
   }
 
   function openEdit(user: FirmUser) {
     clearErrors();
+    setMessage(null);
     setEditTarget(user);
-    setEditForm({
-      name: user.name,
-      email: user.email,
-      username: user.username,
-      roleId: user.firmRole?.id ?? 0,
-    });
+    setEditForm(userEditForm(user));
   }
 
   function closeEdit() {
     setEditTarget(null);
+    setEditForm({ name: '', email: '', username: '', roleId: 0 });
     clearErrors();
   }
 
   function openReset(user: FirmUser) {
     clearErrors();
+    setMessage(null);
     setTemporaryPassword('');
     setResetTarget(user);
   }
@@ -182,8 +183,9 @@ export function UsersPage() {
         ]} />
       </DataTableShell>
 
-      <AppDialog open={createOpen} title="Add firm user" onClose={closeCreate} fullWidth maxWidth="sm" preventClose={createMutation.isPending} actions={<><AppButton onClick={closeCreate} disabled={createMutation.isPending}>Cancel</AppButton><AppButton type="submit" form="create-user-form" variant="contained" isLoading={createMutation.isPending}>Create User</AppButton></>}>
+      {createOpen ? <FormExitGuard dirty={JSON.stringify(form) !== JSON.stringify(emptyUser)} isSubmitting={createMutation.isPending} onCancel={closeCreate}>{(requestCancel) => <AppDialog open title="Add firm user" onClose={requestCancel} fullWidth maxWidth="sm" preventClose={createMutation.isPending} actions={<><AppButton onClick={requestCancel} disabled={createMutation.isPending}>Cancel</AppButton><AppButton type="submit" form="create-user-form" variant="contained" isLoading={createMutation.isPending}>Create User</AppButton></>}>
         <Stack component="form" id="create-user-form" autoComplete="off" onSubmit={submitCreate} spacing={2} pt={1}>
+          <Stack component="fieldset" disabled={createMutation.isPending} spacing={2} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
           <TextField required label="Full name" value={form.name} onChange={(e) => { clearFieldError('name'); setForm((current) => ({ ...current, name: e.target.value })); }} {...fieldFeedback('name')} />
           <TextField required type="email" label="Email" value={form.email} onChange={(e) => { clearFieldError('email'); setForm((current) => ({ ...current, email: e.target.value })); }} {...fieldFeedback('email')} />
           <TextField required autoComplete="off" label="Username" value={form.username} onChange={(e) => { clearFieldError('username'); setForm((current) => ({ ...current, username: e.target.value })); }} {...fieldFeedback('username', 'Letters, numbers, spaces, dots, underscores and hyphens are allowed')} />
@@ -191,11 +193,12 @@ export function UsersPage() {
             {rolesQuery.data?.map((role) => <MenuItem key={role.id} value={role.id}>{role.name}</MenuItem>)}
           </TextField>
           <TextField required autoComplete="new-password" type="password" label="Temporary password" value={form.temporaryPassword} onChange={(e) => { clearFieldError('temporaryPassword'); setForm((current) => ({ ...current, temporaryPassword: e.target.value })); }} {...fieldFeedback('temporaryPassword', '10+ characters with upper/lowercase, number and symbol')} />
+          </Stack>
         </Stack>
-      </AppDialog>
+      </AppDialog>}</FormExitGuard> : null}
 
-      <AppDialog open={editTarget !== null} title="Edit firm user" onClose={closeEdit} fullWidth maxWidth="sm" preventClose={editMutation.isPending} actions={<><AppButton onClick={closeEdit} disabled={editMutation.isPending}>Cancel</AppButton><AppButton variant="contained" isLoading={editMutation.isPending} onClick={() => editMutation.mutate()}>Save Changes</AppButton></>}>
-        <Stack spacing={2} pt={1}>
+      {editTarget ? <FormExitGuard dirty={JSON.stringify(editForm) !== JSON.stringify(userEditForm(editTarget))} isSubmitting={editMutation.isPending} onCancel={closeEdit}>{(requestCancel) => <AppDialog open title="Edit firm user" onClose={requestCancel} fullWidth maxWidth="sm" preventClose={editMutation.isPending} actions={<><AppButton onClick={requestCancel} disabled={editMutation.isPending}>Cancel</AppButton><AppButton variant="contained" isLoading={editMutation.isPending} onClick={() => editMutation.mutate()}>Save Changes</AppButton></>}>
+        <Stack component="fieldset" disabled={editMutation.isPending} spacing={2} pt={1} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
           <TextField required label="Full name" value={editForm.name} onChange={(e) => { clearFieldError('name'); setEditForm((current) => ({ ...current, name: e.target.value })); }} {...fieldFeedback('name')} />
           <TextField required type="email" label="Email" value={editForm.email} onChange={(e) => { clearFieldError('email'); setEditForm((current) => ({ ...current, email: e.target.value })); }} {...fieldFeedback('email')} />
           <TextField required label="Username" value={editForm.username} onChange={(e) => { clearFieldError('username'); setEditForm((current) => ({ ...current, username: e.target.value })); }} {...fieldFeedback('username', 'Letters, numbers, spaces, dots, underscores and hyphens are allowed')} />
@@ -203,11 +206,11 @@ export function UsersPage() {
             {rolesQuery.data?.map((role) => <MenuItem key={role.id} value={role.id}>{role.name}</MenuItem>)}
           </TextField>
         </Stack>
-      </AppDialog>
+      </AppDialog>}</FormExitGuard> : null}
 
-      <AppDialog open={resetTarget !== null} title="Reset temporary password" onClose={closeReset} fullWidth maxWidth="xs" preventClose={resetMutation.isPending} actions={<><AppButton onClick={closeReset} disabled={resetMutation.isPending}>Cancel</AppButton><AppButton variant="contained" disabled={temporaryPassword.length < 10} isLoading={resetMutation.isPending} onClick={() => resetMutation.mutate()}>Reset Password</AppButton></>}>
-        <Stack spacing={2} pt={1}><Typography color="text.secondary">{resetTarget?.name} will be signed out and required to change this password.</Typography><TextField autoFocus required autoComplete="new-password" type="password" label="Temporary password" value={temporaryPassword} onChange={(e) => { clearFieldError('temporaryPassword'); setTemporaryPassword(e.target.value); }} {...fieldFeedback('temporaryPassword')} /></Stack>
-      </AppDialog>
+      {resetTarget ? <FormExitGuard dirty={temporaryPassword.length > 0} isSubmitting={resetMutation.isPending} onCancel={closeReset}>{(requestCancel) => <AppDialog open title="Reset temporary password" onClose={requestCancel} fullWidth maxWidth="xs" preventClose={resetMutation.isPending} actions={<><AppButton onClick={requestCancel} disabled={resetMutation.isPending}>Cancel</AppButton><AppButton variant="contained" disabled={temporaryPassword.length < 10} isLoading={resetMutation.isPending} onClick={() => resetMutation.mutate()}>Reset Password</AppButton></>}>
+        <Stack component="fieldset" disabled={resetMutation.isPending} spacing={2} pt={1} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}><Typography color="text.secondary">{resetTarget.name} will be signed out and required to change this password.</Typography><TextField autoFocus required autoComplete="new-password" type="password" label="Temporary password" value={temporaryPassword} onChange={(e) => { clearFieldError('temporaryPassword'); setTemporaryPassword(e.target.value); }} {...fieldFeedback('temporaryPassword')} /></Stack>
+      </AppDialog>}</FormExitGuard> : null}
       <ConfirmDialog open={statusTarget !== null} title={statusTarget?.status === 'ACTIVE' ? 'Deactivate user?' : 'Activate user?'} confirmLabel={statusTarget?.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} confirmColor={statusTarget?.status === 'ACTIVE' ? 'warning' : 'success'} isConfirming={statusMutation.isPending} onClose={() => setStatusTarget(null)} onConfirm={() => statusTarget && statusMutation.mutate(statusTarget)}>Changing status revokes this user's active sessions.</ConfirmDialog>
       <ConfirmDialog open={deleteTarget !== null} title="Delete user?" confirmLabel="Delete" confirmColor="error" isConfirming={deleteMutation.isPending} onClose={() => setDeleteTarget(null)} onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}>The user will lose access immediately. Existing business records remain unchanged.</ConfirmDialog>
       <AppSnackbar open={message !== null} message={message ?? ''} onClose={() => setMessage(null)} />

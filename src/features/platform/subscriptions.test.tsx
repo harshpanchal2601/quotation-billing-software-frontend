@@ -10,6 +10,7 @@ import { canAccessNavigationItem, navigationItems, paths } from '@app/router/rou
 import { setSelectedFirm } from '@shared/tenancy/selectedFirm';
 import type { EffectiveAccess } from '@shared/tenancy/entitlements';
 import { PlatformPlansPage } from './PlatformPlansPage';
+import { PlatformAuditPanel } from './PlatformAuditPanel';
 import type { PlanDetail, PlanVersion } from './subscriptions.types';
 
 const state = vi.hoisted(() => ({
@@ -48,6 +49,19 @@ beforeEach(() => {
 });
 
 describe('entitlement route and navigation guards', () => {
+  it('presents immutable platform changes in the shared detail view and sorts through the server', async () => {
+    state.api.audit.mockResolvedValue({ events: [{ id: 8, authorId: 1, firmId: 3, kind: 'FEATURE_SWITCH', createdAt: '2026-11-12T00:00:00Z', payload: { hardDisabled: true, reason: 'Local ERP workflows first' } }], total: 1 });
+    view(<PlatformAuditPanel firmId={3} />);
+    expect(await screen.findByRole('table', { name: 'Platform audit' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'View changes' }));
+    expect(await screen.findByRole('dialog', { name: 'Platform change details' })).toBeInTheDocument();
+    expect(screen.getByText('Local ERP workflows first')).toBeInTheDocument();
+    expect(screen.getByText('Yes')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Platform change details' })).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Date' }));
+    await waitFor(() => expect(state.api.audit).toHaveBeenLastCalledWith(3, 1, expect.any(AbortSignal), { sortBy: 'createdAt', sortOrder: 'asc' }));
+  });
   function guarded() { return <Routes><Route path="/dashboard" element={<AccessRoute permissions={['dashboard.view']}><div>Private dashboard</div></AccessRoute>} /><Route path="/access-denied" element={<div>Access denied</div>} /></Routes>; }
   it('denies a direct URL when RBAC allows but subscribed access denies', () => {
     state.access = access(false); view(guarded(), '/dashboard');
@@ -102,6 +116,8 @@ describe('plan publication workflow', () => {
     expect(screen.getByRole('button', { name: 'Publish approved revision' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Preview saved revision' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Publish approved revision' })).toBeEnabled());
+    expect(screen.getByText(/Preview passed. No changes were saved/)).toBeInTheDocument();
+    expect(screen.queryByText('Platform change saved.')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Publish approved revision' }));
     await waitFor(() => expect(state.api.publish).toHaveBeenCalledWith(1, 2, 'Approved fixture publication', 'a'.repeat(64)));
   });

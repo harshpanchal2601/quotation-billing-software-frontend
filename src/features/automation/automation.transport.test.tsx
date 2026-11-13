@@ -1,7 +1,7 @@
 import { AxiosError, AxiosHeaders } from 'axios';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { apiClient, type ApiErrorResponse } from '@shared/api/apiClient';
+import { apiClient, toApiError, type ApiErrorResponse } from '@shared/api/apiClient';
 import { getPreferences, performApprovedAction, savePreferences } from './api/automation.api';
 import { ApprovalRequestBridge } from './components/ApprovalRequestBridge';
 
@@ -49,6 +49,7 @@ describe('Wave 08 approval request transport boundary', () => {
     expect(post).toHaveBeenCalledTimes(1);
     expect(post).toHaveBeenCalledWith('/approvals', expect.objectContaining({ action: 'INVOICE_ISSUE', entityId: 11 }), { firmContextRevision: 4 });
     expect(error.response?.data.message).toContain('Approval requested.');
+    expect(toApiError(error).approvalRequested).toBe(true);
     view.unmount(); expect(eject).toHaveBeenCalledWith(81);
   });
   it('never recursively requests approval or handles unrelated conflicts', async () => {
@@ -65,6 +66,7 @@ describe('Wave 08 approval request transport boundary', () => {
     const error = approvalError();
     await expect(rejectResponse(error)).rejects.toBe(failure);
     expect(error.response?.data.message).toBe('Approval required');
+    expect(toApiError(error).approvalRequested).toBe(false);
   });
 });
 describe('Wave 08 notification preference payloads', () => {

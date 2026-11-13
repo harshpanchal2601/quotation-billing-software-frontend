@@ -39,7 +39,7 @@ export function AppBrand({ variant = 'full', name = productBrand.name, logoUrl }
             {name}
           </Typography>
           <Typography variant="body2" color="text.secondary" noWrap>
-            Quotation Management
+            Business Management
           </Typography>
         </Box>
       ) : null}

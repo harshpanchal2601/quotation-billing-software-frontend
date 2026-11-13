@@ -90,13 +90,13 @@ export function RecordTable<Row>({ rows, columns, rowKey, label, emptyMessage = 
     </Stack></Paper>)}
   </Stack></Stack>;
   return <Stack spacing={2}>{controls}<TableContainer component={Paper} variant="outlined" role="region" aria-label={label} tabIndex={0} sx={{ maxWidth: '100%', overflowX: 'auto' }}>
-    <Table aria-label={label} size="small"><TableHead sx={{ bgcolor: 'grey.50', '& .MuiTableCell-root': { fontWeight: 700 } }}><TableRow><TableCell scope="col" align="right">No.</TableCell>{columns.map((column) => {
+    <Table aria-label={label} size="small"><TableHead sx={{ bgcolor: 'grey.50', '& .MuiTableCell-root': { fontWeight: 700 } }}><TableRow><TableCell scope="col" align="center" sx={{ minWidth: 64, width: 64, px: 2 }}>No.</TableCell>{columns.map((column) => {
       const key = sorting ? column.sortKey : column.sortValue ? column.key : undefined;
       const sortable = key != null && fields.some((field) => field.key === key);
       return <TableCell key={column.key} scope="col" align={column.align} aria-label={column.label} sx={{ whiteSpace: 'nowrap', minWidth: column.minWidth ?? (column.align === 'right' ? 104 : 144) }} sortDirection={sort.sortBy === key ? sort.sortOrder : false}>{sortable ? <TableSortLabel active={sort.sortBy === key} direction={sort.sortBy === key ? sort.sortOrder : 'asc'} onClick={() => sort.onChange({ sortBy: key, sortOrder: sort.sortBy === key && sort.sortOrder === 'asc' ? 'desc' : 'asc' })}>{column.label}</TableSortLabel> : column.label}</TableCell>;
     })}</TableRow></TableHead><TableBody>
       {records.length === 0 ? <EmptyTableRow columnCount={columns.length + 1} description={emptyMessage} /> : null}
-      {records.map((row, index) => <TableRow key={rowKey(row)} hover><TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{rowNumberStart + index}</TableCell>{columns.map((column) => <TableCell key={column.key} align={column.align} sx={{ minWidth: column.minWidth ?? (column.align === 'right' ? 104 : 144), overflowWrap: column.noWrap ? 'normal' : 'break-word', wordBreak: 'normal', ...(column.noWrap || column.align === 'right' ? { whiteSpace: 'nowrap' } : {}), ...(column.align === 'right' ? { fontVariantNumeric: 'tabular-nums' } : {}) }}>{column.render(row)}</TableCell>)}</TableRow>)}
+      {records.map((row, index) => <TableRow key={rowKey(row)} hover><TableCell align="center" sx={{ minWidth: 64, width: 64, px: 2, fontVariantNumeric: 'tabular-nums' }}>{rowNumberStart + index}</TableCell>{columns.map((column) => <TableCell key={column.key} align={column.align} sx={{ minWidth: column.minWidth ?? (column.align === 'right' ? 104 : 144), overflowWrap: column.noWrap ? 'normal' : 'break-word', wordBreak: 'normal', ...(column.noWrap || column.align === 'right' ? { whiteSpace: 'nowrap' } : {}), ...(column.align === 'right' ? { fontVariantNumeric: 'tabular-nums' } : {}) }}>{column.render(row)}</TableCell>)}</TableRow>)}
     </TableBody></Table>
   </TableContainer></Stack>;
 }

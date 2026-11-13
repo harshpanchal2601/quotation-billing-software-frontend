@@ -35,6 +35,7 @@ export function QuotationAttachmentUploadDialog({
 }: QuotationAttachmentUploadDialogProps) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadPending = useRef(false);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -50,15 +51,16 @@ export function QuotationAttachmentUploadDialog({
         }
       }),
     onSuccess: (att) => {
-      queryClient.invalidateQueries({ queryKey: quotationAttachmentsQueryKeys.list(quotationId) });
+      resetAndClose();
+      void queryClient.invalidateQueries({ queryKey: quotationAttachmentsQueryKeys.list(quotationId) });
       onSuccess(`Uploaded "${att.originalFilename}" successfully`);
-      handleClose();
     },
     onError: (error) => {
       const apiError = toApiError(error);
       setUploadProgress(null);
       if (!apiError.cancelled) setValidationError(apiError.message);
     },
+    onSettled: () => { uploadPending.current = false; },
   });
 
   const validateFile = (file: File): boolean => {
@@ -125,13 +127,19 @@ export function QuotationAttachmentUploadDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (uploadPending.current) return;
     if (selectedFile && validateFile(selectedFile)) {
+      uploadPending.current = true;
       uploadMutation.mutate(selectedFile);
     }
   };
 
   const handleClose = () => {
-    if (uploadMutation.isPending) return;
+    if (uploadPending.current) return;
+    resetAndClose();
+  };
+
+  const resetAndClose = () => {
     setSelectedFile(null);
     setValidationError(null);
     setUploadProgress(null);

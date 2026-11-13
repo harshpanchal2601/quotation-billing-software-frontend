@@ -29,9 +29,9 @@ export function PlatformTable({ label, columns, children, isLoading = false, isE
       >
         <Table aria-label={label} size="small" sx={{ minWidth, '& td': { verticalAlign: 'top' }, '& td, & th': { py: 1.5 } }}>
           <TableHead>
-            <TableRow><TableCell scope="col" align="right">No.</TableCell>{columns.map((column) => <TableCell scope="col" key={column.key} align={column.align}>{column.label}</TableCell>)}</TableRow>
+            <TableRow><TableCell scope="col" align="center" sx={{ minWidth: 64, width: 64, px: 2 }}>No.</TableCell>{columns.map((column) => <TableCell scope="col" key={column.key} align={column.align}>{column.label}</TableCell>)}</TableRow>
           </TableHead>
-          <TableBody>{isEmpty ? <EmptyTableRow columnCount={columns.length + 1} description={emptyMessage} /> : Children.toArray(children).map((row, index) => isValidElement(row) ? cloneElement(row as ReactElement<{ children?: ReactNode }>, {}, <TableCell align="right">{rowNumberStart + index}</TableCell>, row.props.children) : row)}</TableBody>
+          <TableBody>{isEmpty ? <EmptyTableRow columnCount={columns.length + 1} description={emptyMessage} /> : Children.toArray(children).map((row, index) => isValidElement(row) ? cloneElement(row as ReactElement<{ children?: ReactNode }>, {}, <TableCell align="center" sx={{ minWidth: 64, width: 64, px: 2, fontVariantNumeric: 'tabular-nums' }}>{rowNumberStart + index}</TableCell>, row.props.children) : row)}</TableBody>
         </Table>
       </DataTableShell>
       {!isLoading && !isError ? pagination : null}

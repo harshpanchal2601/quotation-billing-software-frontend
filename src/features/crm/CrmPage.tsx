@@ -72,6 +72,6 @@ function CrmWorkspace() {
     {query.data && !query.isError ? <Stack aria-busy={query.isFetching}><RecordTable rows={query.data.records} label={labels[kind]} sorting={sorting} rowNumberStart={(page - 1) * 20 + 1} rowKey={(record) => record.id} emptyMessage={`No ${labels[kind].toLowerCase()} match these filters.${canManage ? ' Use Add to create a record.' : ''}`} columns={columns.map((column) => ({ ...column, sortKey: column.sortKey ?? (sortAliases[column.key] ?? column.key) }))} /><RecordPagination pagination={{ limit: 20, total: query.data.pagination.total }} page={page} change={(next) => updateFilters({ page: String(next) })} /></Stack> : null}
     {editing !== undefined && canManage ? <CrmRecordForm key={`${kind}:${editing?.id ?? 'new'}`} kind={kind} record={editing} onSaved={() => setEditing(undefined)} /> : null}
     {converting ? <LeadConversion key={converting.id} lead={converting} onSaved={() => setConverting(null)} /> : null}
-    <AppDialog open={timeline !== null} onClose={() => setTimeline(null)} fullWidth fullScreen={compact} title="Lead activity" showCloseButton>{timeline ? <CustomerTimeline key={timeline.id} leadId={timeline.id} /> : null}</AppDialog>
+    <AppDialog open={timeline !== null} onClose={() => setTimeline(null)} fullWidth maxWidth="lg" fullScreen={compact} title="Lead activity" showCloseButton>{timeline ? <CustomerTimeline key={timeline.id} leadId={timeline.id} /> : null}</AppDialog>
   </PageContainer>;
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
@@ -55,6 +55,11 @@ export function PlatformPlansPage() {
   const [dirty, setDirty] = useState(false);
   const [preview, setPreview] = useState<{ errors: string[]; previewToken: string } | null>(null);
   const operation = usePlatformOperation();
+  const previewRequest = useMutation({
+    mutationFn: ({ planId, versionId }: { planId: number; versionId: number }) => api.preview(planId, versionId),
+    onSuccess: (result) => { chooseVersion(result.version); setPreview(result); },
+  });
+  const isPending = operation.isPending || previewRequest.isPending;
   const plans = useQuery({ queryKey: ['platform', 'plans', page], queryFn: ({ signal }) => api.plans(page, signal) });
   const features = useQuery({ queryKey: ['platform', 'features'], queryFn: ({ signal }) => api.features(signal) });
   const choices = useSubscriptionOptions();
@@ -64,9 +69,9 @@ export function PlatformPlansPage() {
     : detail.data?.archivedAt != null ? 'Restore the archived plan before making changes.'
     : selectedVersion?.publishedAt != null ? 'Published revisions are read only. Copy to a new revision to make changes.' : null;
   const immutable = readOnlyIssue !== null;
-  const draftFieldsDisabled = immutable || operation.isPending;
+  const draftFieldsDisabled = immutable || isPending;
   const reasonIssue = reason.trim().length < 10 ? 'Enter a change reason of at least 10 characters.' : null;
-  const allowedAction = reasonIssue === null && !operation.isPending;
+  const allowedAction = reasonIssue === null && !isPending;
   const validSlug = slug.length >= 2 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
   const quotaIssues = Object.fromEntries((Object.keys(draft.quotas) as QuotaResource[]).map((resource) => [resource, quotaIssue(resource, draft.quotas[resource])])) as Record<QuotaResource, string | null>;
   const priceIssue = draft.price !== null && !/^(0|[1-9]\d{0,15})(\.\d{1,2})?$/.test(draft.price)
@@ -77,7 +82,7 @@ export function PlatformPlansPage() {
     : draft.price !== null && draft.currency === null ? 'Select a currency for the display price.' : null;
   const dayIssue = (['trialDays', 'graceDays'] as const).some((key) => policy[key] !== '' && (!Number.isInteger(Number(policy[key])) || Number(policy[key]) < 0 || Number(policy[key]) > 365))
     ? 'Trial and grace days must be whole numbers from 0 to 365.' : null;
-  const pendingIssue = operation.isPending ? 'Wait for the current platform operation to finish.' : null;
+  const pendingIssue = isPending ? 'Wait for the current platform operation to finish.' : null;
   const saveBlockers = [readOnlyIssue, pendingIssue, reasonIssue, ...Object.values(quotaIssues), priceIssue, currencyIssue, dayIssue,
     features.isPending ? 'Wait for the feature registry to load.' : features.isError ? 'Reload the feature registry before saving.' : null,
     choices.isPending ? 'Wait for dropdown choices to load.' : choices.isError ? 'Reload dropdown choices before saving.' : null,
@@ -111,7 +116,7 @@ export function PlatformPlansPage() {
       <PageHeader
         title="Plans & Features"
         description="Create a plan, configure a revision, then save, preview and publish it before assigning it to a firm."
-        actions={<AppButton variant="contained" disabled={operation.isPending} onClick={() => { operation.reset(); setCreateOpen(true); }}>Create plan</AppButton>}
+        actions={<AppButton variant="contained" disabled={isPending} onClick={() => { operation.reset(); setCreateOpen(true); }}>Create plan</AppButton>}
       />
       {operation.isError && !createOpen ? <ErrorState message={toApiError(operation.error).message} /> : null}
       {operation.isSuccess ? <Alert severity="success">Platform change saved.</Alert> : null}
@@ -120,7 +125,7 @@ export function PlatformPlansPage() {
           rowNumberStart={(page - 1) * 50 + 1} label="Plans" isLoading={plans.isPending} isError={plans.isError} isEmpty={!plans.data?.plans.length}
           errorMessage="Plans could not be loaded." onRetry={() => { void plans.refetch(); }} emptyMessage="No plans created"
           columns={[{ key: 'name', label: 'Plan' }, { key: 'slug', label: 'Slug' }, { key: 'type', label: 'Type' }, { key: 'status', label: 'Availability' }, { key: 'actions', label: 'Actions', align: 'right' }]}
-          pagination={<PlatformPagination label="Plans" page={page} totalPages={Math.ceil((plans.data?.total ?? 0) / 50)} onChange={setPage} disabled={operation.isPending} />}
+          pagination={<PlatformPagination label="Plans" page={page} totalPages={Math.ceil((plans.data?.total ?? 0) / 50)} onChange={setPage} disabled={isPending} />}
         >
           {plans.data?.plans.map((plan) => (
             <TableRow key={plan.id} hover selected={plan.id === planId}>
@@ -128,7 +133,7 @@ export function PlatformPlansPage() {
               <TableCell>{plan.slug}</TableCell>
               <TableCell>{plan.isLegacy ? 'Legacy · read only' : 'Custom'}</TableCell>
               <TableCell><AppStatusChip label={plan.archivedAt ? 'Archived' : 'Active'} variant={plan.archivedAt ? 'neutral' : 'success'} /></TableCell>
-              <TableCell align="right"><AppButton size="small" disabled={operation.isPending} onClick={() => { setPlanId(plan.id); setVersionId(null); setRename(plan.name); setEditing(false); setDirty(false); setPreview(null); }}>Manage {plan.name}</AppButton></TableCell>
+              <TableCell align="right"><AppButton size="small" disabled={isPending} onClick={() => { setPlanId(plan.id); setVersionId(null); setRename(plan.name); setEditing(false); setDirty(false); setPreview(null); }}>Manage {plan.name}</AppButton></TableCell>
             </TableRow>
           ))}
         </PlatformTable>
@@ -142,7 +147,7 @@ export function PlatformPlansPage() {
         <PlatformSection
           title={`${detail.data.name} revisions`}
           description="Edit an unpublished draft or copy a published revision to prepare an updated plan."
-          actions={!detail.data.isLegacy ? <AppButton variant="outlined" disabled={operation.isPending || detail.data.archivedAt !== null} onClick={() => chooseVersion(detail.data!.versions.find((version) => version.publishedAt !== null) ?? detail.data!.versions[0], true)}>New revision</AppButton> : undefined}
+          actions={!detail.data.isLegacy ? <AppButton variant="outlined" disabled={isPending || detail.data.archivedAt !== null} onClick={() => chooseVersion(detail.data!.versions.find((version) => version.publishedAt !== null) ?? detail.data!.versions[0], true)}>New revision</AppButton> : undefined}
         >
           {detail.data.isLegacy ? <Alert severity="info">Legacy revisions preserve existing access and user limits. They are reserved and immutable.</Alert> : (
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'flex-start' }}>
@@ -162,8 +167,8 @@ export function PlatformPlansPage() {
                 <TableCell>{version.price === null ? 'Not set' : `${version.currency} ${version.price}`}</TableCell>
                 <TableCell>{version.publishedAt ? new Date(version.publishedAt).toLocaleString() : 'Not published'}</TableCell>
                 <TableCell align="right"><Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <AppButton size="small" disabled={operation.isPending} onClick={() => chooseVersion(version)}>{version.publishedAt || detail.data!.isLegacy ? 'View revision' : 'Edit draft'} {version.revision}</AppButton>
-                  {!detail.data!.isLegacy && !detail.data!.archivedAt ? <AppButton size="small" disabled={operation.isPending} onClick={() => chooseVersion(version, true)}>Copy to new revision</AppButton> : null}
+                  <AppButton size="small" disabled={isPending} onClick={() => chooseVersion(version)}>{version.publishedAt || detail.data!.isLegacy ? 'View revision' : 'Edit draft'} {version.revision}</AppButton>
+                  {!detail.data!.isLegacy && !detail.data!.archivedAt ? <AppButton size="small" disabled={isPending} onClick={() => chooseVersion(version, true)}>Copy to new revision</AppButton> : null}
                 </Stack></TableCell>
               </TableRow>
             ))}
@@ -212,14 +217,14 @@ export function PlatformPlansPage() {
               </PlatformFormGrid>
             </Stack>
           </Box>
-          <TextField fullWidth required label="Reason for revision change" value={reason} disabled={immutable || operation.isPending} error={reason !== '' && reasonIssue !== null} inputProps={{ maxLength: 500 }} onChange={(event) => setReason(event.target.value)} helperText="At least 10 characters. This is the same audit reason used by the platform change field above." />
+          <TextField fullWidth required label="Reason for revision change" value={reason} disabled={immutable || isPending} error={reason !== '' && reasonIssue !== null} inputProps={{ maxLength: 500 }} onChange={(event) => setReason(event.target.value)} helperText="At least 10 characters. This is the same audit reason used by the platform change field above." />
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))', xl: 'repeat(4, minmax(0, 1fr))' }, gap: 2 }}>
             <Stack spacing={1}>
               <AppButton variant="outlined" aria-describedby="save-draft-help" disabled={saveBlockers.length > 0} onClick={() => operation.mutate(async () => { const result = await api.saveVersion(planId!, versionId, { ...draft, policy: policyValue(), reason }); setVersionId(result.versionId); setDirty(false); setPreview(null); })}>Save draft</AppButton>
               <Typography id="save-draft-help" variant="caption" color="text.secondary">{saveBlockers.length ? saveBlockers.join(' ') : 'Ready to save. You can complete lifecycle approval before publishing.'}</Typography>
             </Stack>
             <Stack spacing={1}>
-              <AppButton aria-describedby="preview-revision-help" disabled={previewBlocker !== null} onClick={() => operation.mutate(async () => { const result = await api.preview(planId!, versionId!); chooseVersion(result.version); setPreview(result); })}>Preview saved revision</AppButton>
+              <AppButton aria-describedby="preview-revision-help" isLoading={previewRequest.isPending} disabled={previewBlocker !== null} onClick={() => { operation.reset(); previewRequest.mutate({ planId: planId!, versionId: versionId! }); }}>Preview saved revision</AppButton>
               <Typography id="preview-revision-help" variant="caption" color="text.secondary">{previewBlocker ?? 'Ready to check the saved revision for publication.'}</Typography>
             </Stack>
             <Stack spacing={1}>
@@ -231,7 +236,8 @@ export function PlatformPlansPage() {
               <Typography id="delete-draft-help" variant="caption" color="text.secondary">{deleteBlocker ?? 'Permanently remove this unpublished draft.'}</Typography>
             </Stack>
           </Box>
-          {preview !== null ? <Alert severity={preview.errors.length ? 'warning' : 'success'}>{preview.errors.length ? preview.errors.join(' · ') : 'Preview passed. Review the saved feature matrix, quotas, pricing and policies above before publishing.'}</Alert> : null}
+          {previewRequest.isError && previewRequest.variables?.planId === planId && previewRequest.variables.versionId === versionId ? <ErrorState message={toApiError(previewRequest.error).message} /> : null}
+          {preview !== null ? <Alert severity={preview.errors.length ? 'warning' : 'success'}>{preview.errors.length ? preview.errors.join(' · ') : 'Preview passed. No changes were saved. Review the feature matrix, quotas, pricing and policies above before publishing.'}</Alert> : null}
         </PlatformSection>
       ) : null}
       <PlatformSection title="Global feature availability" description="These controls affect all firms. A global hard disable overrides plan features and firm grants.">
@@ -248,7 +254,7 @@ export function PlatformPlansPage() {
         </PlatformTable>
       </PlatformSection>
       <PlatformAuditPanel firmId={null} />
-      <AppDialog open={createOpen} title="Create plan" description="Create the plan, then configure and publish its first revision." fullWidth maxWidth="sm" onClose={() => setCreateOpen(false)} preventClose={operation.isPending} showCloseButton actions={<><AppButton disabled={operation.isPending} onClick={() => setCreateOpen(false)}>Cancel</AppButton><AppButton variant="contained" isLoading={operation.isPending} disabled={name.trim().length < 2 || !validSlug || createReason.trim().length < 10} onClick={() => operation.mutate(async () => { const plan = await api.createPlan({ name: name.trim(), slug, reason: createReason }); setPlanId(plan.id); setRename(plan.name); setReason(createReason); chooseVersion(); setCreateOpen(false); setName(''); setSlug(''); setCreateReason(''); })}>Create draft plan</AppButton></>}>
+      <AppDialog open={createOpen} title="Create plan" description="Create the plan, then configure and publish its first revision." fullWidth maxWidth="sm" onClose={() => setCreateOpen(false)} preventClose={isPending} showCloseButton actions={<><AppButton disabled={isPending} onClick={() => setCreateOpen(false)}>Cancel</AppButton><AppButton variant="contained" isLoading={isPending} disabled={name.trim().length < 2 || !validSlug || createReason.trim().length < 10} onClick={() => operation.mutate(async () => { const plan = await api.createPlan({ name: name.trim(), slug, reason: createReason }); setPlanId(plan.id); setRename(plan.name); setReason(createReason); chooseVersion(); setCreateOpen(false); setName(''); setSlug(''); setCreateReason(''); })}>Create draft plan</AppButton></>}>
         <Stack spacing={2} sx={{ pt: 2 }}>
           {operation.isError ? <ErrorState message={toApiError(operation.error).message} /> : null}
           <TextField required fullWidth label="Plan name" value={name} inputProps={{ maxLength: 191 }} onChange={(event) => setName(event.target.value)} />

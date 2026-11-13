@@ -30,6 +30,11 @@ const stockEvents: Record<string, string> = {
 export function formatStockEvent(event: string) { return Object.prototype.hasOwnProperty.call(stockEvents, event) ? stockEvents[event] : formatRecordStatus(event); }
 
 const businessActions: Record<string, string> = {
+  FEATURE_SWITCH: 'Feature availability changed', PLAN_CREATED: 'Plan created', PLAN_UPDATED: 'Plan updated',
+  PLAN_DRAFT_SAVED: 'Plan draft saved', PLAN_DRAFT_DELETED: 'Plan draft deleted', PLAN_PUBLISHED: 'Plan published', PLAN_ARCHIVED: 'Plan archived',
+  SUBSCRIPTION_ASSIGNED: 'Subscription assigned', SCHEDULED_SUBSCRIPTION_CANCELLED: 'Scheduled subscription cancelled',
+  OVERRIDE_CREATED: 'Access exception added', OVERRIDE_REVOKED: 'Access exception removed', USAGE_RECONCILED: 'Usage totals checked',
+  MANUAL_CHARGE_CREATED: 'Manual charge recorded', MANUAL_PAYMENT_RECORDED: 'Manual payment recorded',
   INVOICE_ISSUE: 'Issue invoice', INVOICE_VOID: 'Cancel invoice', CREDIT_NOTE_ISSUE: 'Issue credit note',
   ORDER_CONFIRM: 'Create sales order', STOCK_ADJUST: 'Adjust stock', QUOTATION_SEND: 'Send quotation',
   'invoice.issued': 'Invoice issued', 'invoice.voided': 'Invoice cancelled', 'credit-note.issued': 'Credit note issued',
@@ -42,6 +47,7 @@ export function formatBusinessAction(action: string, status?: string) {
 }
 
 const fieldLabels: Record<string, string> = {
+  hardDisabled: 'Unavailable for all firms', featureKey: 'Feature', planVersionId: 'Plan revision number',
   sha256: 'File verification code', mappingHash: 'Account mapping verification code', decision: 'Outcome',
   sourceEventId: 'Source event number', schemaVersion: 'Export format version', mappingVersion: 'Account mapping version',
   dateFrom: 'From date', dateTo: 'Through date', bytes: 'File size (bytes)', kind: 'Activity type',

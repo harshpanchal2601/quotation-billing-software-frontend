@@ -10,8 +10,10 @@ import { AccessRoute } from '@app/router/guards/AccessRoute';
 import { BillingSettingsPage } from './pages/BillingSettingsPage';
 import { CustomFieldsForm } from './components/CustomFieldsForm';
 import { OrderInvoiceConversion } from './components/OrderInvoiceConversion';
+import { InvoiceDraftForm } from './components/InvoiceDraftForm';
 import { QuotationInvoiceConversion } from './components/QuotationInvoiceConversion';
 import { InvoiceDetailsPage } from './pages/InvoiceDetailsPage';
+import { InvoiceFieldsReviewPage } from './pages/InvoiceFieldsReviewPage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { InvoiceEditorPage } from './pages/InvoicesPage';
 import { NotificationProvider } from '@shared/ui/feedback';
@@ -53,6 +55,68 @@ beforeEach(() => {
   vi.mocked(api.listBillingDocuments).mockResolvedValue({ documents: [structuredClone(document)], pagination: { page: 1, limit: 20, total: 1, totalPages: 1 } });
 });
 describe('billing customization and access', () => {
+  it.each(['invoices', 'proformas'] as const)('keeps service and goods classifications when choosing catalogue items for %s', async (scope) => {
+    vi.mocked(api.getBillingItems).mockResolvedValue([
+      { id: 20, itemCode: 'SERVICE-20', name: 'Installation', supplyType: 'SERVICE', unitRate: '50.00', taxRate: '0', hsnCode: '9987', measurementUnit: 'JOB' },
+      { id: 21, itemCode: 'GOODS-21', name: 'Steel component', supplyType: 'GOODS', unitRate: '100.00', taxRate: '0', hsnCode: '7308', measurementUnit: 'PCS' },
+    ]);
+    wrap(<InvoiceDraftForm scope={scope} settings={settings} pending={false} onSave={vi.fn()} onCancel={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Choose catalog item' }));
+    await userEvent.click(screen.getByRole('combobox', { name: 'Search catalog' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'SERVICE-20 — Installation' }));
+    expect(screen.getByRole('combobox', { name: 'Supply type' })).toHaveTextContent('Service');
+    expect(screen.getByRole('textbox', { name: 'Unit' })).toHaveValue('JOB');
+    await userEvent.click(screen.getByRole('button', { name: 'Choose catalog item' }));
+    await userEvent.click(screen.getByRole('combobox', { name: 'Search catalog' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'GOODS-21 — Steel component' }));
+    expect(screen.getByRole('combobox', { name: 'Supply type' })).toHaveTextContent('Goods');
+    expect(screen.getByRole('textbox', { name: 'Unit' })).toHaveValue('PCS');
+  });
+  it.each(['invoices', 'proformas', 'billing-adjustments'] as const)('guards and saves reviewed additional fields for %s before returning to the document', async (scope) => {
+    const draft = { ...document, status: 'DRAFT' as const };
+    vi.mocked(api.getBillingDocument).mockResolvedValue(draft);
+    vi.mocked(api.updateCustomValues).mockResolvedValue({ ...draft, version: 3, customFieldValues: { cf_order: 'Reviewed value' } });
+    wrap(<Routes><Route path="/review/:id" element={<InvoiceFieldsReviewPage scope={scope} />} /><Route path={`/${scope}/:id`} element={<span>Returned to document</span>} /></Routes>, '/review/11');
+    const input = await screen.findByRole('textbox', { name: /Purchase order/ });
+    expect(screen.getByRole('button', { name: 'Apply to draft' })).toBeDisabled();
+    fireEvent.change(input, { target: { value: 'Reviewed value' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Back to document' }));
+    const discard = within(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' }));
+    await userEvent.click(discard.getByRole('button', { name: 'Keep editing' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(input).toHaveValue('Reviewed value');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply to draft' }));
+    expect(await screen.findByText('Returned to document')).toBeInTheDocument();
+    expect(api.updateCustomValues).toHaveBeenCalledTimes(1);
+    expect(api.updateCustomValues).toHaveBeenCalledWith(scope, draft, { cf_order: 'Reviewed value' }, true, 3);
+    expect(screen.getByRole('status')).toHaveTextContent('Additional fields applied to the draft.');
+  });
+  it('retains a field review when a background query discovers a newer document', async () => {
+    const draft = { ...document, status: 'DRAFT' as const };
+    vi.mocked(api.getBillingDocument).mockResolvedValue(draft);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    render(<QueryClientProvider client={client}><NotificationProvider><MemoryRouter initialEntries={['/review/11']}><Routes><Route path="/review/:id" element={<InvoiceFieldsReviewPage />} /></Routes></MemoryRouter></NotificationProvider></QueryClientProvider>);
+    const input = await screen.findByRole('textbox', { name: /Purchase order/ });
+    fireEvent.change(input, { target: { value: 'Unsaved review' } });
+    act(() => client.setQueryData(invoicesQueryKeys.detail(1, 'invoices', 11), { ...draft, version: 3 }));
+    expect(await screen.findByText(/changed while you were reviewing/)).toBeInTheDocument();
+    expect(input).toHaveValue('Unsaved review');
+    expect(screen.getByRole('button', { name: 'Apply to draft' })).toBeDisabled();
+    expect(api.updateCustomValues).not.toHaveBeenCalled();
+  });
+  it('requires confirmation before removing saved additional fields from a draft', async () => {
+    const draft = { ...document, status: 'DRAFT' as const };
+    vi.mocked(api.getBillingDocument).mockResolvedValue(draft);
+    vi.mocked(api.getBillingSettings).mockResolvedValue({ ...settings, config: { ...settings.config, customFields: [] } });
+    wrap(<Routes><Route path="/review/:id" element={<InvoiceFieldsReviewPage />} /></Routes>, '/review/11');
+    await screen.findByText(/These fields and their saved values will be removed/);
+    await userEvent.click(screen.getByRole('button', { name: 'Apply to draft' }));
+    const confirmation = within(await screen.findByRole('dialog', { name: 'Remove older fields from this draft?' }));
+    expect(api.updateCustomValues).not.toHaveBeenCalled();
+    await userEvent.click(confirmation.getByRole('button', { name: 'Keep reviewing' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(api.updateCustomValues).not.toHaveBeenCalled();
+  });
   it('retains service metadata and exact order quantities through unchanged retries and edited commands', async () => {
     vi.mocked(api.getBillingSettings).mockResolvedValue({ ...settings, config: { ...settings.config, registration: 'UNREGISTERED', customFields: [] } });
     vi.mocked(api.convertSalesOrderToInvoice).mockRejectedValueOnce(new Error('Response lost')).mockRejectedValueOnce(new Error('Response lost')).mockResolvedValueOnce({ ...document, id: 22, status: 'DRAFT' });
@@ -160,6 +224,19 @@ describe('billing customization and access', () => {
     const changed = vi.mocked(api.createBillingAdjustment).mock.calls[2]![0];
     expect(changed.idempotencyKey).not.toBe(first.idempotencyKey);
     expect(changed.lines).toEqual([{ sourceLineNumber: 1, quantity: '1', unitRate: '25.10' }]);
+  });
+  it('closes issuance confirmation after requesting approval without claiming the invoice was issued', async () => {
+    const draft = { ...document, status: 'DRAFT' as const, version: 1, documentNumber: null };
+    vi.mocked(api.getBillingDocument).mockResolvedValue(draft);
+    vi.mocked(api.issueBillingDocument).mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: 'Approval requested. A different administrator must review it.', errors: { code: 'APPROVAL_REQUESTED' } } } });
+    wrap(<Routes><Route path="/invoices/:id" element={<InvoiceDetailsPage />} /></Routes>, '/invoices/11');
+    await userEvent.click(await screen.findByRole('button', { name: 'Issue invoice' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirm issuance' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('heading', { name: 'Draft #11' })).toBeInTheDocument();
+    expect(screen.getAllByRole('status').some((element) => element.textContent?.includes('Approval requested.'))).toBe(true);
+    expect(screen.queryByText('Document issued.')).not.toBeInTheDocument();
+    expect(api.issueBillingDocument).toHaveBeenCalledTimes(1);
   });
   it('retains failed issuance confirmation and closes it with feedback only after successful retry', async () => {
     const draft = { ...document, status: 'DRAFT' as const, version: 1, documentNumber: null };
@@ -355,8 +432,8 @@ describe('billing customization and access', () => {
   });
   it('does not grant field design to an invoice editor', async () => {
     access.permissions = new Set([PERMISSIONS.INVOICES_VIEW, PERMISSIONS.INVOICES_EDIT]);
-    wrap(<Routes><Route path="/settings/billing" element={<AccessRoute permissions={[PERMISSIONS.INVOICE_FIELDS_MANAGE]}><span>Secret configuration</span></AccessRoute>} /><Route path="/invoices" element={<span>Invoice landing</span>} /></Routes>, '/settings/billing');
-    expect(await screen.findByText('Invoice landing')).toBeInTheDocument(); expect(screen.queryByText('Secret configuration')).not.toBeInTheDocument();
+    wrap(<Routes><Route path="/settings/billing" element={<AccessRoute permissions={[PERMISSIONS.INVOICE_FIELDS_MANAGE]}><span>Secret configuration</span></AccessRoute>} /><Route path="/access-denied" element={<span>Access denied</span>} /></Routes>, '/settings/billing');
+    expect(await screen.findByText('Access denied')).toBeInTheDocument(); expect(screen.queryByText('Secret configuration')).not.toBeInTheDocument();
   });
   it('denies a direct settings URL when the plan does not permit billing', async () => {
     access.entitled = false;

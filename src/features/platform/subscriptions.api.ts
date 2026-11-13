@@ -25,7 +25,7 @@ export const subscriptionsApi = {
   override: (firmId: number, input: OverrideInput) => write('post', `/platform/firms/${firmId}/overrides`, input),
   revoke: (firmId: number, id: number, reason: string) => write('delete', `/platform/firms/${firmId}/overrides/${id}`, { reason }),
   reconcile: (firmId: number, reason: string) => write('post', `/platform/firms/${firmId}/usage/reconcile`, { reason }),
-  audit: (firmId: number | null, page: number, signal?: AbortSignal) => read<{ events: SubscriptionAuditEvent[]; total: number }>(`/platform/audit?page=${page}&limit=20${firmId === null ? '' : `&firmId=${firmId}`}`, signal),
+  audit: (firmId: number | null, page: number, signal?: AbortSignal, sort?: { sortBy: string; sortOrder: 'asc' | 'desc' }) => read<{ events: SubscriptionAuditEvent[]; total: number }>(`/platform/audit?page=${page}&limit=20${firmId === null ? '' : `&firmId=${firmId}`}${sort ? `&sortBy=${encodeURIComponent(sort.sortBy)}&sortOrder=${sort.sortOrder}` : ''}`, signal),
   usageEvents: (firmId: number, page: number, signal?: AbortSignal) => read<{ events: Array<{ id: number; resource: string; eventId: string; delta: string; createdAt: string }>; total: number }>(`/platform/firms/${firmId}/usage/events?page=${page}&limit=20`, signal),
   charge: (firmId: number, input: { amount: string; currency: string; reason: string; idempotencyKey: string }) => write('post', `/platform/firms/${firmId}/charges`, input),
   payment: (firmId: number, chargeId: number, input: { amount: string; kind: 'PAYMENT' | 'REFUND'; reference: string; reason: string; idempotencyKey: string }) => write('post', `/platform/firms/${firmId}/charges/${chargeId}/payments`, input),

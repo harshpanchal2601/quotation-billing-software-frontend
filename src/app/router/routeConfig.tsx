@@ -21,7 +21,7 @@ import { permitsEntitledPermission, type EffectiveAccess } from '@shared/tenancy
 export { paths };
 export type { AppRoutePath };
 
-export const navigationSections = ['Platform', 'Main', 'Quotation Management', 'Billing', 'Master Management', 'Configuration', 'System'] as const;
+export const navigationSections = ['Platform', 'Main', 'Sales & Customers', 'Billing', 'Master Management', 'Configuration', 'System'] as const;
 
 export type NavigationItem = {
   title: string;
@@ -46,13 +46,13 @@ export const navigationItems: NavigationItem[] = [
   { title: 'Manufacturing', path: paths.manufacturing, icon: Inventory2OutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.MANUFACTURING_VIEW] },
   { title: 'Business Assistant', path: paths.assistant, icon: AssessmentOutlinedIcon, section: 'Main', permissions: [PERMISSIONS.ASSISTANT_LOCAL, PERMISSIONS.ASSISTANT_LLM], accountTypes: ['FIRM_ADMIN', 'FIRM_USER'] },
   { title: 'Assistant Settings', path: paths.assistantSettings, icon: TuneOutlinedIcon, section: 'Configuration', permissions: [PERMISSIONS.ASSISTANT_SETTINGS_MANAGE], accountTypes: ['FIRM_ADMIN'] },
-  { title: 'Quotations', path: paths.quotations, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.QUOTATIONS_VIEW], fallback: { path: paths.newQuotation, permissions: [PERMISSIONS.QUOTATIONS_CREATE] } },
+  { title: 'Quotations', path: paths.quotations, icon: DescriptionOutlinedIcon, section: 'Sales & Customers', permissions: [PERMISSIONS.QUOTATIONS_VIEW], fallback: { path: paths.newQuotation, permissions: [PERMISSIONS.QUOTATIONS_CREATE] } },
   { title: 'Invoices', path: paths.invoices, icon: DescriptionOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.INVOICES_VIEW] },
-  { title: 'CRM & Follow-ups', path: paths.crm, icon: GroupOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.CRM_VIEW] },
+  { title: 'CRM & Follow-ups', path: paths.crm, icon: GroupOutlinedIcon, section: 'Sales & Customers', permissions: [PERMISSIONS.CRM_VIEW] },
   { title: 'Inventory', path: paths.inventory, icon: Inventory2OutlinedIcon, section: 'Master Management', permissions: [PERMISSIONS.INVENTORY_VIEW] },
   { title: 'Purchasing & Expenses', path: paths.purchasing, icon: BusinessOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PURCHASING_VIEW, PERMISSIONS.SUPPLIER_BILLS_VIEW, PERMISSIONS.EXPENSES_VIEW] },
-  { title: 'Sales Orders', path: paths.salesOrders, icon: DescriptionOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.SALES_ORDERS_VIEW] },
-  { title: 'Customer Portal Access', path: paths.portalAccess, icon: GroupOutlinedIcon, section: 'Quotation Management', permissions: [PERMISSIONS.PORTAL_MANAGE] },
+  { title: 'Sales Orders', path: paths.salesOrders, icon: DescriptionOutlinedIcon, section: 'Sales & Customers', permissions: [PERMISSIONS.SALES_ORDERS_VIEW] },
+  { title: 'Customer Portal Access', path: paths.portalAccess, icon: GroupOutlinedIcon, section: 'Sales & Customers', permissions: [PERMISSIONS.PORTAL_MANAGE] },
   { title: 'Customer Payments', path: paths.payments, icon: AccountBalanceOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PAYMENTS_VIEW] },
   { title: 'Receivables & Ageing', path: paths.receivables, icon: AssessmentOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.PAYMENTS_VIEW] },
   { title: 'Recurring Drafts', path: paths.billingSchedules, icon: NoteAddOutlinedIcon, section: 'Billing', permissions: [PERMISSIONS.BILLING_RECURRING] },
@@ -116,9 +116,11 @@ export function getRouteTitle(pathname: string) {
   if (/^\/items\/\d+$/.test(pathname)) return 'Item Details';
   if (pathname === paths.newQuotation) return 'Create Quotation';
   if (/^\/(invoices|proformas)\/new$/.test(pathname)) return pathname.startsWith('/proformas') ? 'Create Proforma Draft' : 'Create Invoice Draft';
-  if (/^\/(invoices|proformas|billing-adjustments)\/\d+\/fields$/.test(pathname)) return 'Review Invoice Fields';
+  if (/^\/(invoices|proformas|billing-adjustments)\/\d+\/fields$/.test(pathname)) return 'Review Additional Fields';
   if (/^\/(invoices|proformas)\/\d+\/edit$/.test(pathname)) return 'Edit Draft';
-  if (/^\/(invoices|proformas|billing-adjustments)\/\d+$/.test(pathname)) return 'Billing Document Details';
+  if (/^\/invoices\/\d+$/.test(pathname)) return 'Invoice Details';
+  if (/^\/proformas\/\d+$/.test(pathname)) return 'Proforma Details';
+  if (/^\/billing-adjustments\/\d+$/.test(pathname)) return 'Credit or Debit Note Details';
   if (/^\/payments\/\d+$/.test(pathname)) return 'Customer Receipt Details';
   if (/^\/quotations\/\d+\/edit$/.test(pathname)) return 'Edit Quotation';
   if (/^\/quotations\/\d+$/.test(pathname)) return 'Quotation Details';

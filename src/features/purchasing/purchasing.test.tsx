@@ -19,6 +19,21 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe('purchasing and standalone expense workflow', () => {
+  it.each([
+    ['orders', 'purchasing.view', 'CANCELLED', 'cancellationReason'],
+    ['receipts', 'purchasing.view', undefined, 'cancellationReason'],
+    ['bills', 'supplier-bills.view', 'VOID', 'voidReason'],
+    ['expenses', 'expenses.view', 'VOID', 'voidReason'],
+  ] as const)('shows the saved cancellation reason in a read-only %s detail', async (kind, permission, status, reasonField) => {
+    access.permissions = new Set([permission]);
+    vi.mocked(api.getPurchase).mockResolvedValue({ id: 1, status, reference: 'QA-CANCELLED', [reasonField]: 'Saved cancellation explanation', ...(kind === 'receipts' ? { cancelledAt: '2026-11-13T10:00:00Z' } : {}) });
+    vi.mocked(api.listReceiptReturns).mockResolvedValue({ records: [], pagination: { page: 1, limit: 20, total: 0 } });
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })}><NotificationProvider><MemoryRouter initialEntries={[`/purchasing?tab=${kind}&documentId=1`]}><PurchasingPage /></MemoryRouter></NotificationProvider></QueryClientProvider>);
+    expect(await screen.findByText('Saved cancellation explanation')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cancellation details' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Purchasing document actions' })).not.toBeInTheDocument();
+    expect(api.purchaseCommand).not.toHaveBeenCalled();
+  });
   it('renders source receipt identities and delegates return ordering to the server', async () => {
     access.permissions = new Set(['purchasing.view']);
     const receipt: api.PurchaseDocument = { id: 1, reference: 'GR-1', purchaseOrderId: 2, createdAt: '2026-11-10T10:00:00Z', order: { orderNumber: 'PO-2', currency: 'INR', supplierSnapshot: { name: 'Historical supplier' } }, warehouse: { name: 'Main store', code: 'MAIN' }, lines: [{ id: 3, purchaseOrderLineId: 4, quantity: '2', returnedQuantity: '1', orderLine: { lineNumber: 1, unitCost: '25', snapshot: { itemName: 'Historical component', description: 'Description retained from original order' } } }] };

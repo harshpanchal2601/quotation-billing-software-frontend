@@ -32,6 +32,7 @@ export type ApiError = {
   cancelled: boolean;
   isAuthError: boolean;
   isConflict: boolean;
+  approvalRequested: boolean;
   isFileSizeError: boolean;
   isFileTypeError: boolean;
 };
@@ -118,6 +119,7 @@ export function toApiError(error: unknown): ApiError {
       cancelled,
       isAuthError: statusCode === 401,
       isConflict: statusCode === 409,
+      approvalRequested: statusCode === 409 && isRecord(responseData?.errors) && responseData.errors.code === 'APPROVAL_REQUESTED',
       isFileSizeError: statusCode === 413,
       isFileTypeError: statusCode === 415,
     };
@@ -131,6 +133,7 @@ export function toApiError(error: unknown): ApiError {
     cancelled: false,
     isAuthError: false,
     isConflict: false,
+    approvalRequested: false,
     isFileSizeError: false,
     isFileTypeError: false,
   };

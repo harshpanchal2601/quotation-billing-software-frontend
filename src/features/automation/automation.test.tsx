@@ -8,6 +8,7 @@ import { NotificationProvider } from '@shared/ui/feedback';
 import { apiClient } from '@shared/api/apiClient';
 import * as api from './api/automation.api';
 import { TenantFieldsPanel } from './components/TenantFieldsPanel';
+import { InvoiceFieldHistory } from './components/InvoiceFieldHistory';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { AutomationPage } from './pages/AutomationPage';
 import { initialDefinition, type Approval, type PublishedDefinition } from './model/automation.types';
@@ -25,6 +26,24 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 describe('Wave 08 tenant configuration and approval UX', () => {
+  it('loads numbered billing field history on demand and requests sorting from the server', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { data: { history: [{ id: 9, version: 2, actorId: 10, createdAt: '2026-11-11T00:00:00Z', schemaSnapshot: [{ key: 'cf_checked', label: 'Checked' }], values: { cf_checked: false } }], pagination: { page: 1, limit: 50, hasMore: false } } } });
+    render(tree(<InvoiceFieldHistory scope="invoices" entityId={11} />));
+    expect(apiClient.get).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Additional field history' }));
+    expect(await screen.findByRole('table', { name: 'Additional field history' })).toBeInTheDocument();
+    expect(screen.getByText('No')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'No.' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Document version' }));
+    await waitFor(() => expect(apiClient.get).toHaveBeenLastCalledWith('/invoices/11/custom-fields/history', expect.objectContaining({ params: { page: 1, sortBy: 'version', sortOrder: 'asc' } })));
+  });
+  it('treats an exact full history page as final when the server has no further entry', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { data: { history: Array.from({ length: 50 }, (_, index) => ({ id: index + 1, version: index + 1, actorId: 10, createdAt: '2026-11-11T00:00:00Z', schemaSnapshot: [], values: {} })), pagination: { page: 1, limit: 50, hasMore: false } } } });
+    render(tree(<InvoiceFieldHistory scope="invoices" entityId={11} />));
+    await userEvent.click(screen.getByRole('button', { name: 'Additional field history' }));
+    expect(await screen.findByText('1–50 of 50')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Go to next page' })).toBeDisabled();
+  });
   it('keeps custom fields hidden without entitled access and loads them only on demand', async () => {
     access.allowed = false; const view = render(tree(<TenantFieldsPanel entity="COMPANY" entityId={1} editable />));
     expect(screen.queryByText('Additional business fields')).not.toBeInTheDocument(); expect(api.getFieldValues).not.toHaveBeenCalled();

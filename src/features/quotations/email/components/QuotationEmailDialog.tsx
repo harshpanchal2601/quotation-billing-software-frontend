@@ -61,6 +61,7 @@ export function QuotationEmailDialog({
   const [message, setMessage] = useState<string>('');
   const [selectedAttachmentIds, setSelectedAttachmentIds] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [approvalRequested, setApprovalRequested] = useState(false);
 
   // Fetch supporting attachments
   const { data: attachmentsData } = useQuery({
@@ -85,6 +86,7 @@ export function QuotationEmailDialog({
       );
       setSelectedAttachmentIds([]);
       setError(null);
+      setApprovalRequested(false);
     }
   }, [open, quotation, businessName]);
 
@@ -123,7 +125,7 @@ export function QuotationEmailDialog({
     },
     onError: (error) => {
       const apiError = toApiError(error);
-      if (!apiError.cancelled) setError(apiError.message);
+      if (!apiError.cancelled) { setApprovalRequested(apiError.approvalRequested); setError(apiError.message); }
     },
   });
 
@@ -193,7 +195,7 @@ export function QuotationEmailDialog({
     >
       <Box component="form" id="quotation-email-form" onSubmit={handleSubmit} aria-busy={emailMutation.isPending}>
           <Stack spacing={2.5}>
-            <ServerErrorAlert message={error} />
+            {approvalRequested && error ? <Alert severity="info">{error}</Alert> : <ServerErrorAlert message={error} />}
 
             {/* Document summary card */}
             <Paper variant="outlined" sx={{ p: 2, bgcolor: 'primary.50', borderColor: 'primary.200' }}>

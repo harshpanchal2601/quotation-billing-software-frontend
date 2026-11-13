@@ -15,6 +15,7 @@ export function ApprovalRequestBridge() {
       const details = error.response?.data.errors;
       if (error.response?.status === 409 && record(details) && details.code === 'APPROVAL_REQUIRED' && record(details.command) && !/^\/?approvals(?:\/|$)/.test(error.config?.url ?? '')) {
         await apiClient.post('/approvals', details.command, { firmContextRevision: error.config?.firmContextRevision });
+        error.response.data.errors = { ...details, code: 'APPROVAL_REQUESTED' };
         error.response.data.message = 'Approval requested. Open Approvals & Notifications to review the request. A different firm administrator must decide before you perform this action.';
       }
       return Promise.reject(error);

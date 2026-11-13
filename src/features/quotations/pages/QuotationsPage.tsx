@@ -48,7 +48,7 @@ export function QuotationsPage() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({
     open: false,
     message: '',
     severity: 'success',
@@ -118,7 +118,8 @@ export function QuotationsPage() {
     },
     onError: (error) => {
       const apiError = toApiError(error);
-      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: 'error' });
+      if (apiError.approvalRequested) setStatusDialogTarget(null);
+      if (!apiError.cancelled) setFeedback({ open: true, message: apiError.message, severity: apiError.approvalRequested ? 'info' : 'error' });
     },
   });
 

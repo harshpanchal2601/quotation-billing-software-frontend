@@ -17,7 +17,7 @@ describe('AppBreadcrumbs', () => {
 
     const breadcrumbs = screen.getByRole('navigation', { name: 'Breadcrumbs' });
     expect(within(breadcrumbs).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-      'Dashboard', 'Quotation Management', 'Quotations', 'Create Quotation',
+      'Dashboard', 'Sales & Customers', 'Quotations', 'Create Quotation',
     ]);
   });
 });

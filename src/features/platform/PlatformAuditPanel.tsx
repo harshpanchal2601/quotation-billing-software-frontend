@@ -1,24 +1,44 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import TableCell from '@mui/material/TableCell';
-import TableRow from '@mui/material/TableRow';
+import Stack from '@mui/material/Stack';
+import { ErrorState } from '@shared/components/common/ErrorState';
+import { AppButton } from '@shared/ui/actions';
+import { AppDialog } from '@shared/ui/dialogs';
+import { formatBusinessAction, formatRecordField, formatRecordValue } from '@shared/ui/display';
+import { DetailFields, DetailSection } from '@shared/ui/layout';
+import { RecordPagination, RecordTable, TableSkeleton, useTableSort } from '@shared/ui/tables';
 import { subscriptionsApi } from './subscriptions.api';
+import type { SubscriptionAuditEvent } from './subscriptions.types';
 import { PlatformSection } from './PlatformSection';
-import { PlatformPagination, PlatformTable } from './PlatformTable';
 
 export function PlatformAuditPanel({ firmId }: { firmId: number | null }) {
+  return <AuditHistory key={firmId ?? 'platform'} firmId={firmId} />;
+}
+function AuditHistory({ firmId }: { firmId: number | null }) {
   const [page, setPage] = useState(1);
-  const audit = useQuery({ queryKey: ['platform', 'subscription-audit', firmId, page], queryFn: ({ signal }) => subscriptionsApi.audit(firmId, page, signal) });
-  return (
-    <PlatformSection title="Platform subscription audit" description="Audited changes include the responsible platform administrator and recorded change details.">
-      <PlatformTable rowNumberStart={(page - 1) * 20 + 1} label="Platform audit" isLoading={audit.isPending} isError={audit.isError} isEmpty={!audit.data?.events.length} emptyMessage="No platform audit events" errorMessage="Platform audit could not be loaded." onRetry={() => { void audit.refetch(); }} columns={[{ key: 'date', label: 'Date' }, { key: 'kind', label: 'Operation' }, { key: 'actor', label: 'Actor' }, { key: 'firm', label: 'Firm' }, { key: 'details', label: 'Details' }]} pagination={<PlatformPagination label="Audit events" page={page} totalPages={Math.ceil((audit.data?.total ?? 0) / 20)} onChange={setPage} />}>
-        {audit.data?.events.map((event) => (
-          <TableRow key={event.id}>
-            <TableCell>{new Date(event.createdAt).toLocaleString()}</TableCell><TableCell>{event.kind.replace(/_/g, ' ')}</TableCell><TableCell>{event.authorId}</TableCell><TableCell>{event.firmId ?? 'Platform'}</TableCell>
-            <TableCell sx={{ minWidth: 220, maxWidth: 500 }}><details><summary>View changes</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(event.payload, null, 2)}</pre></details></TableCell>
-          </TableRow>
-        ))}
-      </PlatformTable>
-    </PlatformSection>
-  );
+  const [viewing, setViewing] = useState<SubscriptionAuditEvent | null>(null);
+  const sorting = useTableSort([{ key: 'id', label: 'Record number' }, { key: 'createdAt', label: 'Date' }, { key: 'kind', label: 'Operation' }, { key: 'authorId', label: 'Administrator number' }], { paramPrefix: 'platformAudit', defaultSortBy: 'id', onChange: () => setPage(1) });
+  const sort = { sortBy: sorting.sortBy, sortOrder: sorting.sortOrder };
+  const audit = useQuery({ queryKey: ['platform', 'subscription-audit', firmId, page, sort], queryFn: ({ signal }) => subscriptionsApi.audit(firmId, page, signal, sort) });
+  const entries: Array<[string, unknown]> = viewing?.payload != null && typeof viewing.payload === 'object' ? Object.entries(viewing.payload) : [['value', viewing?.payload]];
+  return <PlatformSection title="Platform subscription audit" description="Audited changes include the responsible platform administrator and recorded change details.">
+    {audit.isPending ? <TableSkeleton /> : null}
+    {audit.isError ? <ErrorState message="Platform audit could not be loaded." onRetry={() => void audit.refetch()} /> : null}
+    {audit.data ? <Stack spacing={1} aria-busy={audit.isFetching}>
+      <RecordTable rows={audit.data.events} rowKey={(event) => event.id} label="Platform audit" emptyMessage="No platform audit events have been recorded." rowNumberStart={(page - 1) * 20 + 1} sorting={sorting} columns={[
+        { key: 'date', sortKey: 'createdAt', label: 'Date', noWrap: true, render: (event) => formatRecordValue(event.createdAt, 'createdAt') },
+        { key: 'kind', sortKey: 'kind', label: 'Operation', minWidth: 220, render: (event) => formatBusinessAction(event.kind) },
+        { key: 'actor', sortKey: 'authorId', label: 'Administrator', render: (event) => `User #${event.authorId}` },
+        { key: 'firm', label: 'Firm', render: (event) => event.firmId == null ? 'Platform' : `Firm #${event.firmId}` },
+        { key: 'details', label: 'Details', render: (event) => <AppButton size="small" onClick={() => setViewing(event)}>View changes</AppButton> },
+      ]} />
+      <RecordPagination pagination={{ total: audit.data.total, limit: 20 }} page={page} change={setPage} />
+    </Stack> : null}
+    <AppDialog open={viewing !== null} title="Platform change details" fullWidth maxWidth="md" showCloseButton onClose={() => setViewing(null)} actions={<AppButton onClick={() => setViewing(null)}>Close</AppButton>}>
+      {viewing ? <Stack spacing={2}>
+        <DetailSection title="Change summary"><DetailFields fields={[{ label: 'Operation', value: formatBusinessAction(viewing.kind) }, { label: 'Recorded on', value: formatRecordValue(viewing.createdAt, 'createdAt') }, { label: 'Administrator', value: `User #${viewing.authorId}` }, { label: 'Firm', value: viewing.firmId == null ? 'Platform' : `Firm #${viewing.firmId}` }]} /></DetailSection>
+        <DetailSection title="Recorded changes"><DetailFields columns={1} fields={entries.map(([key, value]) => ({ label: formatRecordField(key), value: formatRecordValue(value, key) }))} /></DetailSection>
+      </Stack> : null}
+    </AppDialog>
+  </PlatformSection>;
 }

@@ -25,7 +25,7 @@ import { AppStatusChip, formatRecordStatus } from '@shared/ui/display';
 import { AppDialog, ConfirmDialog } from '@shared/ui/dialogs';
 import { useNotification } from '@shared/ui/feedback';
 import { AmountSummary, DetailActions, DetailFields, DetailHeader, DetailSection, PageContainer } from '@shared/ui/layout';
-import { convertProformaToInvoice, createBillingAdjustment, fetchBillingPdf, generateBillingPdf, getBillingDocument, issueBillingDocument, listBillingPdfs, updateCustomValues, voidBillingDocument } from '../api/invoices.api';
+import { cancelBillingDraft, convertProformaToInvoice, createBillingAdjustment, fetchBillingPdf, generateBillingPdf, getBillingDocument, issueBillingDocument, listBillingPdfs, updateCustomValues, voidBillingDocument } from '../api/invoices.api';
 import { CustomFieldsForm } from '../components/CustomFieldsForm';
 import { cancelOrderInvoiceDraft } from '../api/invoices.api';
 import { invoicesQueryKeys, useBillingFirmId } from '../model/invoices.query-keys';
@@ -70,7 +70,13 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
         catch { notify('The document was updated, but related records could not refresh. Reload before submitting another change.', 'warning'); }
       }
     },
-    onError: (error) => { const failure = toApiError(error); if (!failure.cancelled) { dismissFailure.current?.(); dismissFailure.current = notify(failure.message, 'error'); } },
+    onError: (error) => {
+      const failure = toApiError(error);
+      if (failure.cancelled) return;
+      dismissFailure.current?.();
+      if (failure.approvalRequested) setConfirmIssue(false);
+      dismissFailure.current = notify(failure.message, failure.approvalRequested ? 'info' : 'error');
+    },
     onSettled: () => { locked.current = false; },
   });
   function execute(run: () => Promise<unknown>, successMessage?: string, refresh = true) {
@@ -89,12 +95,12 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
   const typeLabel = document.kind.replace(/_/g, ' ').toLowerCase();
   const additionalValuesChanged = document.customFieldSchema.some((field) => (customValues[field.key] ?? null) !== (document.customFieldValues[field.key] ?? null));
   return <PageContainer><DetailHeader title={document.documentNumber ?? `Draft #${document.id}`} description={`${typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1)} · Version ${document.version}`} status={<AppStatusChip label={formatRecordStatus(document.status)} variant={document.status === 'ISSUED' ? 'success' : document.status === 'VOID' ? 'error' : 'neutral'} size="medium" />} backAction={<AppButton size="small" color="inherit" onClick={() => navigate(returnPath)}>Back to list</AppButton>} />
-    {mutation.isError ? <Alert severity="error">{toApiError(mutation.error).message}</Alert> : null}
+    {mutation.isError && !toApiError(mutation.error).cancelled ? <Alert severity={toApiError(mutation.error).approvalRequested ? 'info' : 'error'}>{toApiError(mutation.error).message}</Alert> : null}
     {document.kind === 'PROFORMA' ? <Alert severity="info">This is an estimate, not a tax invoice. It does not add an amount for the customer to pay.</Alert> : null}
-    {document.status === 'VOID' ? <Alert severity="warning">{document.issuedAt ? `Cancelled: ${document.voidReason}. The original document and its history are kept for your records.` : `Draft cancelled: ${document.voidReason}. Its order quantities are available to invoice again.`}</Alert> : null}
+    {document.status === 'VOID' ? <Alert severity="warning"><Typography variant="body2">{document.issuedAt ? 'Cancelled' : 'Draft cancelled'}: {document.voidReason}</Typography><Typography variant="body2">{document.issuedAt ? 'The original document and its history are kept for your records.' : document.sourceSalesOrderId ? 'Its order quantities are available to invoice again.' : 'The draft and its history are kept for your records.'}</Typography></Alert> : null}
     <DetailActions label="Document actions">
       {draft && canEdit && !sourceLocked ? <AppButton onClick={() => navigate(`/${scope}/${document.id}/edit`, { state: { from: returnPath } })}>Edit draft</AppButton> : null}
-      {draft && document.sourceSalesOrderId && canVoid ? <AppButton disabled={mutation.isPending} onClick={() => setCancelDraftOpen(true)}>Cancel order invoice draft</AppButton> : null}
+      {draft && canVoid ? <AppButton color="error" disabled={mutation.isPending} onClick={() => setCancelDraftOpen(true)}>{document.sourceSalesOrderId ? 'Cancel order invoice draft' : 'Cancel draft'}</AppButton> : null}
       {draft && document.kind === 'INVOICE' && !sourceLocked && canRecurring && canCreateInvoice ? <AppButton onClick={() => navigate(`/billing-schedules?sourceDraftId=${document.id}`)}>Create recurring schedule</AppButton> : null}
       {draft && canIssue ? <AppButton variant="contained" disabled={mutation.isPending} onClick={() => setConfirmIssue(true)}>Issue {document.kind === 'PROFORMA' ? 'proforma' : typeLabel}</AppButton> : null}
       {document.status === 'ISSUED' && canDocuments ? <AppButton variant="contained" isLoading={mutation.isPending} onClick={() => execute(() => generateBillingPdf(scope, document.id), 'PDF version generated.')}>Generate PDF version</AppButton> : null}
@@ -174,18 +180,18 @@ function InvoiceDetails({ scope, document }: { scope: BillingScope; document: In
     {voidOpen ? <CancellationDialog document={document} scope={scope} onClose={() => setVoidOpen(false)} saved={refresh} /> : null}
     <AppDialog open={pdfUrl !== null} onClose={() => setPdfUrl(null)} title="Saved document PDF" fullWidth maxWidth="lg" fullScreen={compact} actions={<AppButton onClick={() => setPdfUrl(null)}>Close</AppButton>}>{pdfUrl ? <iframe src={pdfUrl} title="Billing PDF preview" style={{ width: '100%', height: '75vh', border: 0 }} /> : null}</AppDialog>
     {adjustOpen ? <AdjustmentDialog source={document} onClose={() => setAdjustOpen(false)} /> : null}
-    {cancelDraftOpen ? <CancellationDialog document={document} scope={scope} orderDraft onClose={() => setCancelDraftOpen(false)} saved={refresh} /> : null}
+    {cancelDraftOpen ? <CancellationDialog document={document} scope={scope} draft onClose={() => setCancelDraftOpen(false)} saved={refresh} /> : null}
   </PageContainer>;
 }
-function CancellationDialog({ document, scope, orderDraft = false, onClose, saved }: { document: InvoiceDocument; scope: BillingScope; orderDraft?: boolean; onClose: () => void; saved: () => Promise<unknown> }) {
+function CancellationDialog({ document, scope, draft = false, onClose, saved }: { document: InvoiceDocument; scope: BillingScope; draft?: boolean; onClose: () => void; saved: () => Promise<unknown> }) {
   const [reason, setReason] = useState(''); const [confirmed, setConfirmed] = useState(false);
-  const title = orderDraft ? 'Cancel invoice draft' : `Cancel ${document.kind === 'PROFORMA' ? 'proforma invoice' : 'invoice'}`;
-  return <CommandForm dialog initialOpen hideTrigger title={title} label={title} cancelLabel={orderDraft ? 'Keep draft' : 'Keep invoice'} submitColor="error" onClosed={onClose} saved={saved} successMessage={orderDraft ? 'Invoice draft cancelled.' : 'Document cancelled.'} isSubmitDisabled={reason.trim().length < 5 || !orderDraft && !confirmed}
-    submit={() => orderDraft ? cancelOrderInvoiceDraft(document, reason) : voidBillingDocument(scope, document, reason)}>
+  const title = draft ? document.kind === 'INVOICE' ? 'Cancel invoice draft' : document.kind === 'PROFORMA' ? 'Cancel proforma draft' : 'Cancel note draft' : `Cancel ${document.kind === 'PROFORMA' ? 'proforma invoice' : 'invoice'}`;
+  return <CommandForm dialog initialOpen hideTrigger title={title} label={title} cancelLabel={draft ? 'Keep draft' : 'Keep invoice'} submitColor="error" onClosed={onClose} saved={saved} successMessage={draft ? 'Draft cancelled.' : 'Document cancelled.'} isSubmitDisabled={reason.trim().length < 5 || !draft && !confirmed}
+    submit={() => draft ? document.sourceSalesOrderId ? cancelOrderInvoiceDraft(document, reason) : cancelBillingDraft(scope, document, reason) : voidBillingDocument(scope, document, reason)}>
     <input type="hidden" name="cancellation" value={JSON.stringify({ reason, confirmed })} />
-    <Typography>{orderDraft ? 'The draft stays in your records. Its order quantities become available to invoice again.' : 'Cancellation is allowed only on the issue date and before this document is included in GST returns. The original document and history are kept. Use a credit or debit note for later corrections.'}</Typography>
+    <Typography>{draft ? document.sourceSalesOrderId ? 'The draft stays in your records. Its order quantities become available to invoice again.' : 'This unissued draft will be marked cancelled and kept in your records. It will not change issued documents, payments or stock.' : 'Cancellation is allowed only on the issue date and before this document is included in GST returns. The original document and history are kept. Use a credit or debit note for later corrections.'}</Typography>
     <TextField name="reason" label="Cancellation reason" required multiline minRows={2} value={reason} inputProps={{ minLength: 5, maxLength: 2000 }} onChange={(event) => setReason(event.target.value)} />
-    {!orderDraft ? <FormControlLabel control={<Checkbox name="confirmed" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />} label="The sale is cancelled, and this document has not been included in GST returns." /> : null}
+    {!draft ? <FormControlLabel control={<Checkbox name="confirmed" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />} label="The sale is cancelled, and this document has not been included in GST returns." /> : null}
   </CommandForm>;
 }
 function AdjustmentDialog({ source, onClose }: { source: InvoiceDocument; onClose: () => void }) {

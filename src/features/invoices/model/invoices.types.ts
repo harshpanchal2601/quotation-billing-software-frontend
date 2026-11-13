@@ -25,5 +25,5 @@ export type InvoiceDocument = {
 };
 export type PdfDocument = { id: number; versionNumber: number; fileHash: string; fileSize: number; generatedAt: string };
 export type CustomerOption = { id: number; name: string; gstin: string | null };
-export type ItemOption = { id: number; name: string; itemCode: string; unitRate: string; taxRate: string; hsnCode: string | null; measurementUnit: string };
+export type ItemOption = { id: number; name: string; itemCode: string; supplyType: InvoiceLine['supplyType']; unitRate: string; taxRate: string; hsnCode: string | null; measurementUnit: string };
 export type AdjustmentDraft = { sourceInvoiceId: number; kind: 'CREDIT_NOTE' | 'DEBIT_NOTE'; reason: string; idempotencyKey: string; gstReductionEligible: boolean; annualReturnFiledAt: string | null; recipientItcReversalConfirmed: boolean; lines: { sourceLineNumber: number; quantity: string; unitRate: string }[]; customFieldValues: CustomValues };

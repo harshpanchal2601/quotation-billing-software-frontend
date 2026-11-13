@@ -28,3 +28,9 @@ export function getDefaultAuthenticatedPath(user: Pick<AuthUser, 'accountType' |
   if (user.accountType === 'SUPER_ADMIN') return paths.platformFirms;
   return landingCandidates.find(([permission]) => user.permissions.includes(permission))?.[1] ?? paths.accessDenied;
 }
+
+export function getPostLoginPath(user: Pick<AuthUser, 'accountType' | 'permissions' | 'mustChangePassword'>, requestedPath?: string) {
+  if (user.mustChangePassword) return paths.changePassword;
+  if (requestedPath && requestedPath !== paths.changePassword && requestedPath !== paths.login) return requestedPath;
+  return getDefaultAuthenticatedPath(user);
+}

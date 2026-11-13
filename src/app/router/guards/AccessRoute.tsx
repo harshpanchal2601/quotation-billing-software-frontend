@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 
-import { getDefaultAuthenticatedPath, useAuth, type AccountType, type Permission } from '@features/auth';
+import { useAuth, type AccountType, type Permission } from '@features/auth';
 import { useSelectedFirm } from '@shared/tenancy/selectedFirm';
 import { permitsEntitledPermission, useEntitlements } from '@shared/tenancy/entitlements';
 import { FullPageLoader } from '@shared/components/common/FullPageLoader';
@@ -22,13 +22,13 @@ export function AccessRoute({ children, permissions, accountTypes, tenantScoped 
 
   if (user === null) return null;
   if (accountTypes !== undefined && !accountTypes.includes(user.accountType)) {
-    return <Navigate to={getDefaultAuthenticatedPath(user)} replace />;
+    return <Navigate to={paths.accessDenied} replace />;
   }
   if (tenantScoped && user.accountType === 'SUPER_ADMIN' && selectedFirm === null) {
     return <Navigate to={paths.platformFirms} replace />;
   }
   if (permissions !== undefined && !permissions.some((permission) => user.permissions.includes(permission))) {
-    return <Navigate to={getDefaultAuthenticatedPath(user)} replace />;
+    return <Navigate to={paths.accessDenied} replace />;
   }
   if (tenantScoped && permissions !== undefined) {
     if (access.isPending) return <FullPageLoader />;
